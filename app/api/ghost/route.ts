@@ -1,0 +1,310 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { GhostRequest, GhostResult, GhostPipelineError } from '@/types/ghost';
+import { processGhostMannequin } from '@/lib/ghost/pipeline';
+
+/**
+ * POST /api/ghost - Process ghost mannequin request
+ * 
+ * Expected request body:
+ * {
+ *   "flatlay": "base64 or URL",
+ *   "onModel": "optional base64 or URL",
+ *   "options": {
+ *     "preserveLabels": true,
+ *     "outputSize": "2048x2048",
+ *     "backgroundColor": "white"
+ *   }
+ * }
+ */
+export async function POST(request: NextRequest) {
+  console.log('Received ghost mannequin processing request');
+
+  try {
+    // Parse request body
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON',
+          details: error instanceof Error ? error.message : 'Unknown parsing error'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate required fields
+    if (!body.flatlay) {
+      return NextResponse.json(
+        { 
+          error: 'Missing required field: flatlay',
+          code: 'MISSING_FLATLAY'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate environment variables
+    const falApiKey = process.env.FAL_API_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    if (!falApiKey) {
+      console.error('FAL_API_KEY environment variable is not set');
+      return NextResponse.json(
+        { 
+          error: 'Server configuration error: FAL API key not configured',
+          code: 'MISSING_FAL_API_KEY'
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!geminiApiKey) {
+      console.error('GEMINI_API_KEY environment variable is not set');
+      return NextResponse.json(
+        { 
+          error: 'Server configuration error: Gemini API key not configured',
+          code: 'MISSING_GEMINI_API_KEY'
+        },
+        { status: 500 }
+      );
+    }
+
+    // Construct ghost request
+    const ghostRequest: GhostRequest = {
+      flatlay: body.flatlay,
+      onModel: body.onModel,
+      options: {
+        preserveLabels: body.options?.preserveLabels ?? true,
+        outputSize: body.options?.outputSize ?? '2048x2048',
+        backgroundColor: body.options?.backgroundColor ?? 'white',
+      },
+    };
+
+    // Prepare pipeline options
+    const pipelineOptions = {
+      falApiKey,
+      geminiApiKey,
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseKey: process.env.SUPABASE_ANON_KEY,
+      enableLogging: process.env.NODE_ENV === 'development',
+      timeouts: {
+        backgroundRemoval: parseInt(process.env.TIMEOUT_BACKGROUND_REMOVAL || '30000'),
+        analysis: parseInt(process.env.TIMEOUT_ANALYSIS || '20000'),
+        rendering: parseInt(process.env.TIMEOUT_RENDERING || '60000'),
+      },
+    };
+
+    console.log('Starting ghost mannequin pipeline processing...');
+
+    // Process the request
+    const result: GhostResult = await processGhostMannequin(ghostRequest, pipelineOptions);
+
+    // Determine HTTP status based on result
+    const statusCode = result.status === 'completed' ? 200 : 
+                      result.status === 'processing' ? 202 : 500;
+
+    // Log result
+    if (result.status === 'completed') {
+      console.log(`Ghost mannequin processing completed successfully in ${result.metrics.processingTime}`);
+    } else {
+      console.error('Ghost mannequin processing failed:', result.error);
+    }
+
+    return NextResponse.json(result, { status: statusCode });
+
+  } catch (error) {
+    console.error('Unexpected error in ghost mannequin API:', error);
+
+    // Handle known pipeline errors
+    if (error instanceof GhostPipelineError) {
+      const statusCode = getHttpStatusFromError(error);
+      return NextResponse.json(
+        {
+          sessionId: 'unknown',
+          status: 'failed',
+          error: {
+            message: error.message,
+            code: error.code,
+            stage: error.stage,
+          },
+          metrics: {
+            processingTime: '0s',
+            stageTimings: {
+              backgroundRemoval: 0,
+              analysis: 0,
+              rendering: 0,
+            },
+          },
+        } as GhostResult,
+        { status: statusCode }
+      );
+    }
+
+    // Handle unexpected errors
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+        details: process.env.NODE_ENV === 'development' ? 
+          (error instanceof Error ? error.message : String(error)) : 
+          undefined
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/ghost - Health check and API information
+ */
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const action = url.searchParams.get('action');
+
+  try {
+    // Health check endpoint
+    if (action === 'health') {
+      const falApiKey = process.env.FAL_API_KEY;
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+
+      if (!falApiKey || !geminiApiKey) {
+        return NextResponse.json(
+          {
+            healthy: false,
+            services: {
+              fal: !!falApiKey,
+              gemini: !!geminiApiKey,
+              supabase: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
+            },
+            errors: [
+              !falApiKey && 'FAL_API_KEY not configured',
+              !geminiApiKey && 'GEMINI_API_KEY not configured',
+            ].filter(Boolean),
+            timestamp: new Date().toISOString(),
+          },
+          { status: 503 }
+        );
+      }
+
+      // Could add more detailed health checks here
+      return NextResponse.json({
+        healthy: true,
+        services: {
+          fal: true,
+          gemini: true,
+          supabase: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
+        },
+        errors: [],
+        timestamp: new Date().toISOString(),
+        version: '0.1.0',
+      });
+    }
+
+    // Default API information
+    return NextResponse.json({
+      name: 'Ghost Mannequin Pipeline API',
+      version: '0.1.0',
+      description: 'AI-powered ghost mannequin generation from flatlay images',
+      endpoints: {
+        'POST /api/ghost': 'Process ghost mannequin request',
+        'GET /api/ghost?action=health': 'Health check',
+      },
+      supportedFormats: ['image/jpeg', 'image/png', 'image/webp'],
+      maxFileSize: '10MB',
+      stages: [
+        'background_removal - FAL.AI Bria 2.0',
+        'analysis - Gemini 2.5 Pro with structured output',
+        'rendering - Gemini 2.5 Flash (placeholder for image generation)',
+      ],
+    });
+
+  } catch (error) {
+    console.error('Error in GET /api/ghost:', error);
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * OPTIONS /api/ghost - CORS preflight
+ */
+export async function OPTIONS(request: NextRequest) {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
+/**
+ * Convert pipeline error to appropriate HTTP status code
+ */
+function getHttpStatusFromError(error: GhostPipelineError): number {
+  switch (error.code) {
+    case 'MISSING_FLATLAY':
+    case 'MISSING_IMAGE_URL':
+    case 'INVALID_IMAGE_FORMAT':
+      return 400;
+    
+    case 'CLIENT_NOT_CONFIGURED':
+    case 'MISSING_FAL_API_KEY':
+    case 'MISSING_GEMINI_API_KEY':
+      return 500;
+    
+    case 'RATE_LIMIT_EXCEEDED':
+    case 'GEMINI_QUOTA_EXCEEDED':
+      return 429;
+    
+    case 'INSUFFICIENT_CREDITS':
+      return 402;
+    
+    case 'CONTENT_BLOCKED':
+      return 422;
+    
+    case 'STAGE_TIMEOUT':
+      return 408;
+    
+    case 'IMAGE_FETCH_FAILED':
+      return 502;
+    
+    default:
+      return 500;
+  }
+}
+
+/**
+ * Validate request size and content type
+ */
+function validateRequest(request: NextRequest): { valid: boolean; error?: string } {
+  const contentLength = request.headers.get('content-length');
+  const maxSize = 50 * 1024 * 1024; // 50MB for base64 images
+
+  if (contentLength && parseInt(contentLength) > maxSize) {
+    return {
+      valid: false,
+      error: `Request too large. Maximum size is ${maxSize / 1024 / 1024}MB`
+    };
+  }
+
+  const contentType = request.headers.get('content-type');
+  if (contentType && !contentType.includes('application/json')) {
+    return {
+      valid: false,
+      error: 'Content-Type must be application/json'
+    };
+  }
+
+  return { valid: true };
+}
