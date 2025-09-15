@@ -1,390 +1,367 @@
-# Ghost Mannequin Pipeline
+# 🎭 Ghost Mannequin Pipeline
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Next.js](https://img.shields.io/badge/Next.js-14.0-black.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)
-
-An AI-powered Ghost Mannequin Pipeline that transforms flatlay product photos into professional ghost mannequin images using cutting-edge AI technology.
+AI-powered transformation of flatlay product photos into professional ghost mannequin images using advanced multi-stage analysis and generation.
 
 ## 🌟 Overview
 
-The Ghost Mannequin Pipeline combines multiple AI services to create professional product photography:
+This system orchestrates multiple AI services in a sophisticated four-stage pipeline to transform flatlay garment photos into professional ghost mannequin images:
 
-1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from flatlay images
-2. **Garment Analysis** - Gemini 2.5 Pro analyzes garment structure and details
-3. **Ghost Mannequin Generation** - Gemini 2.5 Flash creates the final ghost mannequin effect
-
-Perfect for e-commerce, fashion brands, and product photography workflows.
-
-## 🚀 Features
-
-- **AI-Powered Processing**: State-of-the-art AI models for each pipeline stage
-- **Structured Analysis**: Detailed garment analysis with JSON schema validation
-- **RESTful API**: Simple HTTP API for easy integration
-- **TypeScript**: Full type safety throughout the codebase
-- **Scalable Architecture**: Modular design ready for production deployment
-- **Error Handling**: Comprehensive error handling and logging
-- **Batch Processing**: Support for processing multiple images
-- **Health Checks**: Built-in monitoring and health check endpoints
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript 5.2
-- **AI Services**: 
-  - FAL.AI (Background removal)
-  - Google Gemini AI (Analysis & Generation)
-- **Storage**: Supabase (optional)
-- **Validation**: Zod schema validation
-- **Deployment**: Docker-ready with standalone output
-
-## 📋 Prerequisites
-
-- Node.js 18+ and npm 9+
-- FAL.AI API key ([Get here](https://fal.ai/dashboard))
-- Google Gemini API key ([Get here](https://aistudio.google.com/app/apikey))
-- Optional: Supabase project for storage
-
-## ⚡ Quick Start
-
-### 1. Clone and Install
-
-```bash
-git clone <repository-url>
-cd ghost-mannequin-pipeline
-npm install
-```
-
-### 2. Environment Setup
-
-```bash
-# Copy environment template
-cp .env.example .env.local
-
-# Edit .env.local with your API keys
-FAL_API_KEY=your_fal_api_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-### 3. Development Server
-
-```bash
-npm run dev
-```
-
-The API will be available at `http://localhost:3000/api/ghost`
-
-### 4. Test the API
-
-```bash
-# Health check
-curl http://localhost:3000/api/ghost?action=health
-
-# Process an image (example)
-curl -X POST http://localhost:3000/api/ghost \
-  -H "Content-Type: application/json" \
-  -d '{
-    "flatlay": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASA...",
-    "options": {
-      "outputSize": "2048x2048",
-      "backgroundColor": "white"
-    }
-  }'
-```
-
-## 📖 API Documentation
-
-### POST `/api/ghost`
-
-Process a ghost mannequin request.
-
-**Request Body:**
-```json
-{
-  "flatlay": "string",      // Required: base64 or URL
-  "onModel": "string",      // Optional: base64 or URL
-  "options": {
-    "preserveLabels": true,           // Preserve garment labels
-    "outputSize": "2048x2048",       // Output image size
-    "backgroundColor": "white"        // Background color
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "sessionId": "uuid",
-  "status": "completed",
-  "renderUrl": "string",
-  "cleanedImageUrl": "string",
-  "metrics": {
-    "processingTime": "4.8s",
-    "stageTimings": {
-      "backgroundRemoval": 2100,
-      "analysis": 1500,
-      "rendering": 1200
-    }
-  }
-}
-```
-
-**Error Response:**
-```json
-{
-  "sessionId": "uuid",
-  "status": "failed",
-  "error": {
-    "message": "Error description",
-    "code": "ERROR_CODE",
-    "stage": "background_removal"
-  }
-}
-```
-
-### GET `/api/ghost?action=health`
-
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "healthy": true,
-  "services": {
-    "fal": true,
-    "gemini": true,
-    "supabase": true
-  },
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `FAL_API_KEY` | ✅ | FAL.AI API key for background removal |
-| `GEMINI_API_KEY` | ✅ | Google Gemini API key |
-| `SUPABASE_URL` | ❌ | Supabase project URL |
-| `SUPABASE_ANON_KEY` | ❌ | Supabase anonymous key |
-| `TIMEOUT_BACKGROUND_REMOVAL` | ❌ | Timeout in ms (default: 30000) |
-| `TIMEOUT_ANALYSIS` | ❌ | Timeout in ms (default: 20000) |
-| `TIMEOUT_RENDERING` | ❌ | Timeout in ms (default: 60000) |
-
-### Processing Options
-
-```typescript
-interface GhostRequest {
-  flatlay: string;        // Base64 data URL or HTTP URL
-  onModel?: string;       // Optional reference image
-  options?: {
-    preserveLabels?: boolean;           // Default: true
-    outputSize?: '1024x1024' | '2048x2048'; // Default: '2048x2048'
-    backgroundColor?: 'white' | 'transparent'; // Default: 'white'
-  };
-}
-```
+1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from product images
+2. **Garment Analysis** - Gemini 2.5 Pro performs comprehensive structural analysis
+3. **Enrichment Analysis** - Gemini 2.5 Pro extracts rendering-critical attributes
+4. **Ghost Mannequin Generation** - Gemini 2.5 Flash creates the final ghost mannequin effect
 
 ## 🏗️ Architecture
 
+### Core Components
+
+- **API Route**: `app/api/ghost/route.ts` - Main HTTP API endpoint with comprehensive error handling
+- **Pipeline Orchestrator**: `lib/ghost/pipeline.ts` - `GhostMannequinPipeline` class manages the entire workflow
+- **FAL.AI Integration**: `lib/ghost/fal.ts` - Background removal using Bria 2.0 model
+- **Gemini Integration**: `lib/ghost/gemini.ts` - Dual-stage analysis and image generation
+- **Type System**: `types/ghost.ts` - Comprehensive TypeScript definitions with Zod schemas
+
+### Pipeline Flow
+
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client App    │    │   Next.js API   │    │  AI Services    │
-│                 │───▶│                 │───▶│                 │
-│ - Upload images │    │ - Validation    │    │ - FAL.AI Bria   │
-│ - Display       │    │ - Pipeline      │    │ - Gemini Pro    │
-│   results       │    │   orchestration │    │ - Gemini Flash  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │  Supabase       │
-                       │  (Optional)     │
-                       │ - File storage  │
-                       │ - Metadata      │
-                       └─────────────────┘
+GhostRequest → Background Removal → Base Analysis → Enrichment Analysis → Ghost Mannequin Generation → GhostResult
 ```
 
-### Pipeline Stages
+Each stage has configurable timeouts, error handling, and performance metrics tracking.
 
-1. **Input Validation**
-   - Check required fields
-   - Validate image formats
-   - Verify API keys
+## 📊 Analysis Framework
 
-2. **Background Removal**
-   - FAL.AI Bria 2.0 API
-   - Remove background from flatlay
-   - Return cleaned RGBA image
+### Two-Stage Analysis System
 
-3. **Garment Analysis**
-   - Gemini 2.5 Pro with structured output
-   - Analyze construction details
-   - Generate JSON schema-validated analysis
+#### Stage 1: Base Structural Analysis
+- **Label Detection**: Brand tags, size labels, care instructions with OCR and spatial coordinates
+- **Detail Preservation**: Logos, stitching, hardware with priority classification
+- **Construction Analysis**: Seams, drape, silhouette rules for structural integrity
+- **Spatial Mapping**: Normalized bounding boxes, orientations, and color sampling
 
-4. **Ghost Mannequin Generation**
-   - Gemini 2.5 Flash image generation
-   - Use analysis data for context
-   - Create final ghost mannequin image
+#### Stage 2: Enrichment Analysis  
+- **Color Precision**: Exact hex values, temperature, saturation for accurate reproduction
+- **Fabric Behavior**: Drape quality, surface sheen, texture depth, transparency levels
+- **Construction Precision**: Seam visibility, edge finishing, hardware details
+- **Rendering Guidance**: Lighting preferences, shadow behavior, detail sharpness
+- **Market Intelligence**: Price tier, style longevity, care complexity
 
-## 🚀 Deployment
+## 🔧 API Endpoints
 
-### Using Docker
+### Process Ghost Mannequin
+```http
+POST /api/ghost
+Content-Type: application/json
 
-```dockerfile
-# Build stage
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-RUN npm run build
-
-# Runtime stage
-FROM node:18-alpine AS runner
-WORKDIR /app
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/static ./.next/static
-
-EXPOSE 3000
-CMD ["node", "server.js"]
+{
+  "flatlay": "data:image/jpeg;base64,..." or "https://...",
+  "onModel": "data:image/jpeg;base64,..." or "https://..." (optional),
+  "options": {
+    "outputSize": "2048x2048",
+    "backgroundColor": "white",
+    "preserveLabels": true
+  }
+}
 ```
 
-### Build Commands
+### Health Check
+```http
+GET /api/ghost?action=health
+```
 
+## 📋 Data Schemas
+
+### Base Analysis JSON Schema
+```typescript
+interface AnalysisJSON {
+  type: "garment_analysis"
+  meta: {
+    schema_version: "4.1"
+    session_id: string
+  }
+  labels_found: Array<{
+    type: "brand" | "size" | "care" | "price" | "other"
+    location: string
+    bbox_norm: [number, number, number, number]
+    text: string
+    ocr_conf: number
+    readable: boolean
+    preserve: boolean
+    visibility: "fully_visible" | "partially_occluded" | "barely_visible"
+  }>
+  preserve_details: Array<{
+    element: string
+    priority: "critical" | "important" | "moderate"
+    location: string
+    region_bbox_norm?: [number, number, number, number]
+    notes: string
+  }>
+  hollow_regions: Array<{
+    region_type: "neckline" | "sleeves" | "front_opening" | "armholes" | "other"
+    keep_hollow: boolean
+    inner_visible: boolean
+    inner_description?: string
+    edge_sampling_notes?: string
+  }>
+  construction_details: Array<{
+    feature: string
+    silhouette_rule: string
+    critical_for_structure: boolean
+  }>
+  special_handling?: string
+}
+```
+
+### Enrichment Analysis JSON Schema
+```typescript
+interface EnrichmentJSON {
+  type: "garment_enrichment_focused"
+  meta: {
+    schema_version: "4.3"
+    session_id: string
+    base_analysis_ref: string
+  }
+  color_precision: {
+    primary_hex: string // #RRGGBB format
+    secondary_hex?: string
+    color_temperature: "warm" | "cool" | "neutral"
+    saturation_level: "muted" | "moderate" | "vibrant"
+    pattern_direction?: "horizontal" | "vertical" | "diagonal" | "random"
+    pattern_repeat_size?: "micro" | "small" | "medium" | "large"
+  }
+  fabric_behavior: {
+    drape_quality: "crisp" | "flowing" | "structured" | "fluid" | "stiff"
+    surface_sheen: "matte" | "subtle_sheen" | "glossy" | "metallic"
+    texture_depth?: "flat" | "subtle_texture" | "pronounced_texture" | "heavily_textured"
+    wrinkle_tendency?: "wrinkle_resistant" | "moderate" | "wrinkles_easily"
+    transparency_level: "opaque" | "semi_opaque" | "translucent" | "sheer"
+  }
+  construction_precision: {
+    seam_visibility: "hidden" | "subtle" | "visible" | "decorative"
+    edge_finishing: "raw" | "serged" | "bound" | "rolled" | "pinked"
+    stitching_contrast: boolean
+    hardware_finish?: "none" | "matte_metal" | "polished_metal" | "plastic" | "fabric_covered"
+    closure_visibility?: "none" | "hidden" | "functional" | "decorative"
+  }
+  rendering_guidance: {
+    lighting_preference: "soft_diffused" | "directional" | "high_key" | "dramatic"
+    shadow_behavior: "minimal_shadows" | "soft_shadows" | "defined_shadows" | "dramatic_shadows"
+    texture_emphasis?: "minimize" | "subtle" | "enhance" | "maximize"
+    color_fidelity_priority: "low" | "medium" | "high" | "critical"
+    detail_sharpness?: "soft" | "natural" | "sharp" | "ultra_sharp"
+  }
+  market_intelligence?: {
+    price_tier: "budget" | "mid_range" | "premium" | "luxury"
+    style_longevity: "trendy" | "seasonal" | "classic" | "timeless"
+    care_complexity?: "easy_care" | "moderate_care" | "delicate" | "specialty_care"
+    target_season?: Array<"spring" | "summer" | "fall" | "winter">
+  }
+  confidence_breakdown: {
+    color_confidence: number // 0.0-1.0
+    fabric_confidence: number // 0.0-1.0
+    construction_confidence?: number // 0.0-1.0
+    overall_confidence: number // 0.0-1.0
+  }
+}
+```
+
+## 🤖 AI Prompts
+
+### Base Analysis Prompt
+The system uses a comprehensive 2000+ word prompt that instructs Gemini Pro to:
+- Perform exhaustive label detection with OCR and spatial mapping
+- Analyze garment construction and structural requirements
+- Identify critical details for preservation
+- Map hollow regions and edge characteristics
+- Provide technical garment analysis with fashion expertise
+
+### Enrichment Analysis Prompt
+A focused 1500+ word prompt for rendering-critical attributes:
+- Extract precise color data with hex values
+- Analyze fabric behavior and physics properties
+- Document construction details affecting appearance
+- Provide technical rendering guidance
+- Assess market positioning and quality indicators
+
+### Ghost Mannequin Generation Prompt
+A sophisticated 1200+ word prompt for final image generation:
+- Integrate both base analysis and enrichment data
+- Use Image B (flatlay) as visual ground truth
+- Apply Image A (on-model) for proportional guidance
+- Implement precise color fidelity and fabric physics
+- Generate professional ghost mannequin effect
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- FAL.AI API key
+- Google Gemini API key
+
+### Installation
 ```bash
-# Build for production
-npm run build
+# Clone the repository
+git clone https://github.com/yourusername/ghost-mannequin-pipeline.git
+cd ghost-mannequin-pipeline
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env.local
+# Add your API keys to .env.local
+```
+
+### Environment Variables
+```bash
+# Essential API keys
+FAL_API_KEY=your_fal_api_key_here          # Get from https://fal.ai/dashboard
+GEMINI_API_KEY=your_gemini_api_key_here    # Get from https://aistudio.google.com/app/apikey
+
+# Optional Supabase storage
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Pipeline timeouts (optional, defaults provided)
+TIMEOUT_BACKGROUND_REMOVAL=30000  # 30 seconds
+TIMEOUT_ANALYSIS=90000           # 90 seconds  
+TIMEOUT_ENRICHMENT=120000        # 120 seconds
+TIMEOUT_RENDERING=180000         # 180 seconds
+```
+
+### Development
+```bash
+# Start development server
+npm run dev
 
 # Type checking
 npm run type-check
 
 # Linting
 npm run lint
+
+# Production build
+npm start
 ```
 
-### Environment Setup for Production
+## 📝 Usage Examples
 
+### Basic Processing
 ```bash
-# Production environment variables
-NODE_ENV=production
-FAL_API_KEY=your_production_fal_key
-GEMINI_API_KEY=your_production_gemini_key
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_key
-```
-
-## 🧪 Testing
-
-### Manual Testing with curl
-
-```bash
-# Test with base64 image
 curl -X POST http://localhost:3000/api/ghost \
   -H "Content-Type: application/json" \
   -d '{
-    "flatlay": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+    "flatlay": "data:image/jpeg;base64,...",
+    "options": {
+      "outputSize": "2048x2048"
+    }
   }'
+```
 
-# Test with URL
+### Advanced Processing with On-Model Reference
+```bash
 curl -X POST http://localhost:3000/api/ghost \
   -H "Content-Type: application/json" \
   -d '{
-    "flatlay": "https://example.com/flatlay.jpg",
-    "onModel": "https://example.com/model.jpg"
+    "flatlay": "https://example.com/detail.jpg",
+    "onModel": "https://example.com/model.jpg",
+    "options": {
+      "outputSize": "2048x2048",
+      "backgroundColor": "white",
+      "preserveLabels": true
+    }
   }'
 ```
 
 ### Health Check
-
 ```bash
 curl http://localhost:3000/api/ghost?action=health
 ```
 
-## 📊 Monitoring
+## 📊 Performance Metrics
 
-### Metrics Available
+### Typical Processing Times
+- **Background Removal**: 15-30 seconds per image
+- **Base Analysis**: 60-90 seconds
+- **Enrichment Analysis**: 30-60 seconds  
+- **Ghost Mannequin Generation**: 60-120 seconds
+- **Total Pipeline**: 3-5 minutes end-to-end
 
-- Processing times per stage
-- Success/failure rates
-- Error types and frequencies
-- API response times
+### Quality Features
+- Professional-grade ghost mannequin effects
+- Precise color reproduction with hex-level accuracy
+- Realistic fabric physics and draping
+- Brand label and detail preservation
+- Market-appropriate presentation quality
 
-### Logging
+## 🔍 Error Handling
 
-The pipeline includes comprehensive logging:
+The system includes comprehensive error handling with specific error codes:
 
-```typescript
-// Enable detailed logging
-ENABLE_PIPELINE_LOGGING=true
-ENABLE_REQUEST_LOGGING=true
-LOG_LEVEL=debug
+- `BACKGROUND_REMOVAL_FAILED` - FAL.AI processing issues
+- `ANALYSIS_FAILED` - Gemini analysis errors
+- `ENRICHMENT_FAILED` - Enrichment analysis issues  
+- `RENDERING_FAILED` - Ghost mannequin generation problems
+- `STAGE_TIMEOUT` - Processing timeout exceeded
+- `CLIENT_NOT_CONFIGURED` - Missing API keys
+- `GEMINI_QUOTA_EXCEEDED` - API quota limits
+- `CONTENT_BLOCKED` - Safety filter activation
+
+## 🧪 Testing
+
+### API Testing Scripts
+```bash
+# Test basic pipeline
+./test-api.sh
+
+# Test enrichment analysis
+node test-enrichment.js
+
+# Test full pipeline
+node test-pipeline-now.js
 ```
 
-## 🔍 Troubleshooting
+## 📁 Project Structure
 
-### Common Issues
-
-**1. "FAL_API_KEY not configured"**
-- Ensure your `.env.local` file has the correct FAL.AI API key
-- Verify the key is valid at https://fal.ai/dashboard
-
-**2. "Gemini API quota exceeded"**
-- Check your Google Cloud Console for quota limits
-- Consider implementing rate limiting
-
-**3. "Invalid image format"**
-- Ensure images are in JPEG, PNG, or WebP format
-- Check file size limits (10MB default)
-
-**4. "Stage timeout"**
-- Increase timeout values in environment variables
-- Check network connectivity to AI services
-
-### Debug Mode
-
-```bash
-NODE_ENV=development
-ENABLE_DEV_ENDPOINTS=true
-ENABLE_PIPELINE_LOGGING=true
+```
+ghost-mannequin-pipeline/
+├── app/api/ghost/route.ts     # Main API endpoint
+├── lib/ghost/
+│   ├── pipeline.ts            # Pipeline orchestrator
+│   ├── fal.ts                # FAL.AI integration
+│   └── gemini.ts             # Gemini AI integration
+├── types/ghost.ts             # TypeScript definitions
+├── components/                # UI components
+├── Input/                     # Test images and samples
+├── test-*.js                  # Testing scripts
+└── README.md                  # This file
 ```
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-### Development Guidelines
+## 📄 License
 
-- Follow TypeScript best practices
-- Add comprehensive error handling
-- Include JSDoc comments for functions
-- Update tests for new features
-- Maintain backward compatibility
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- [FAL.AI](https://fal.ai) for excellent background removal API
-- [Google Gemini](https://ai.google.dev) for powerful AI capabilities
-- [Next.js](https://nextjs.org) for the amazing framework
-- [Supabase](https://supabase.com) for backend services
+- **FAL.AI** for background removal capabilities
+- **Google Gemini** for advanced AI analysis and generation
+- **Vercel** for deployment platform
+- **Next.js** for the application framework
 
-## 📧 Support
+## 🔗 Links
 
-For support, please open an issue in the GitHub repository or contact the development team.
+- [FAL.AI Documentation](https://fal.ai/docs)
+- [Google Gemini API](https://ai.google.dev/)
+- [Next.js Documentation](https://nextjs.org/docs)
 
 ---
 
-**Built with ❤️ for the future of product photography**
+*Built with ❤️ for the fashion and e-commerce industry*
