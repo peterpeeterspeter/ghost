@@ -4,11 +4,12 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-This is an **AI-powered Ghost Mannequin Pipeline** built with Next.js 14 and TypeScript that transforms flatlay product photos into professional ghost mannequin images. The system orchestrates multiple AI services in a three-stage pipeline:
+This is an **AI-powered Ghost Mannequin Pipeline** built with Next.js 14 and TypeScript that transforms flatlay product photos into professional ghost mannequin images. The system orchestrates multiple AI services in a four-stage pipeline:
 
 1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from flatlay images
 2. **Garment Analysis** - Gemini 2.5 Pro analyzes garment structure with structured JSON output
-3. **Ghost Mannequin Generation** - Gemini 2.5 Flash creates the final ghost mannequin effect
+3. **Enrichment Analysis** - Gemini 2.5 Pro performs focused analysis of rendering-critical attributes (colors, fabrics, construction details)
+4. **Ghost Mannequin Generation** - Gemini 2.5 Flash creates the final ghost mannequin effect using both base and enrichment analysis
 
 ## Architecture
 
@@ -24,7 +25,7 @@ This is an **AI-powered Ghost Mannequin Pipeline** built with Next.js 14 and Typ
 
 ```typescript
 GhostRequest → validateRequest() → executeStage('background_removal') 
-→ executeStage('analysis') → executeStage('rendering') → GhostResult
+→ executeStage('analysis') → executeStage('enrichment') → executeStage('rendering') → GhostResult
 ```
 
 Each stage has configurable timeouts, error handling, and performance metrics tracking. The `GhostMannequinPipeline` class maintains state throughout processing and provides detailed logging.
@@ -32,6 +33,7 @@ Each stage has configurable timeouts, error handling, and performance metrics tr
 ### Key Architectural Patterns
 
 - **Staged Processing**: Each pipeline stage is isolated with its own error handling and timeout management
+- **Dual Analysis System**: Base analysis for garment structure + enrichment analysis for rendering fidelity
 - **Structured Output**: Gemini Pro uses Zod schema validation for consistent JSON analysis output
 - **Comprehensive Error Handling**: Custom `GhostPipelineError` class with stage-specific error codes
 - **State Management**: Pipeline state tracking with session IDs and processing metrics
@@ -101,14 +103,16 @@ SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 # Pipeline timeouts (optional, defaults provided)
 TIMEOUT_BACKGROUND_REMOVAL=30000  # 30 seconds
-TIMEOUT_ANALYSIS=20000           # 20 seconds  
-TIMEOUT_RENDERING=60000          # 60 seconds
+TIMEOUT_ANALYSIS=90000           # 90 seconds  
+TIMEOUT_ENRICHMENT=60000         # 60 seconds
+TIMEOUT_RENDERING=180000         # 180 seconds
 ```
 
 ## Key Files to Know
 
-- **`types/ghost.ts`**: Complete type definitions, Zod schemas, error classes, and processing constants
-- **`lib/ghost/pipeline.ts`**: Main pipeline orchestration with the `GhostMannequinPipeline` class
+- **`types/ghost.ts`**: Complete type definitions including enrichment schemas, Zod validation, error classes, and processing constants
+- **`lib/ghost/pipeline.ts`**: Main pipeline orchestration with four-stage processing including enrichment analysis
+- **`lib/ghost/gemini.ts`**: Both base analysis and enrichment analysis functions with fallback handling
 - **`app/api/ghost/route.ts`**: HTTP API endpoint with request validation and error mapping
 - **`.env.example`**: Comprehensive environment configuration template with all available options
 
@@ -182,8 +186,9 @@ import { removeBackground } from '@/lib/ghost/fal';
 const result = await removeBackground(imageUrl);
 
 // Test garment analysis  
-import { analyzeGarment } from '@/lib/ghost/gemini';
-const analysis = await analyzeGarment(cleanedImageUrl);
+import { analyzeGarment, analyzeGarmentEnrichment } from '@/lib/ghost/gemini';
+const analysis = await analyzeGarment(cleanedImageUrl, sessionId);
+const enrichment = await analyzeGarmentEnrichment(cleanedImageUrl, enrichmentSessionId, analysis.meta.session_id);
 
 // Test full pipeline
 import { processGhostMannequin } from '@/lib/ghost/pipeline';

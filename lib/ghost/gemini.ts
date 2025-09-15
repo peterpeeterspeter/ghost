@@ -3,12 +3,17 @@ import {
   AnalysisJSON, 
   AnalysisJSONSchema,
   AnalysisJSONSchemaObject,
-  GarmentAnalysisResult, 
+  EnrichmentJSON,
+  EnrichmentJSONSchema,
+  EnrichmentJSONSchemaObject,
+  GarmentAnalysisResult,
+  GarmentEnrichmentResult,
   GhostMannequinResult,
   GeminiAnalysisRequest,
   GeminiRenderRequest,
   GhostPipelineError,
   ANALYSIS_PROMPT,
+  ENRICHMENT_ANALYSIS_PROMPT,
   GHOST_MANNEQUIN_PROMPT
 } from "@/types/ghost";
 
@@ -153,7 +158,94 @@ export async function analyzeGarment(imageUrl: string, sessionId: string): Promi
 }
 
 /**
- * Try analysis with structured output (responseSchema)
+ * Perform enrichment analysis on garment using Gemini Pro model with structured output (STEP 2)
+ * This is the second analysis stage that focuses on rendering-critical attributes
+ * @param imageUrl - Clean garment image URL or base64 (same as first analysis)
+ * @param sessionId - Session ID for tracking
+ * @param baseAnalysisSessionId - Session ID from the base analysis for reference
+ * @returns Promise with structured enrichment analysis and processing time
+ */
+export async function analyzeGarmentEnrichment(
+  imageUrl: string, 
+  sessionId: string,
+  baseAnalysisSessionId: string
+): Promise<GarmentEnrichmentResult> {
+  const startTime = Date.now();
+
+  if (!genAI) {
+    throw new GhostPipelineError(
+      'Gemini client not configured. Call configureGeminiClient first.',
+      'CLIENT_NOT_CONFIGURED',
+      'analysis'
+    );
+  }
+
+  try {
+    console.log('Starting garment enrichment analysis with Gemini Pro...');
+
+    // Try structured output first, with fallback to unstructured if it fails
+    let enrichment: EnrichmentJSON;
+    let processingTime: number;
+
+    try {
+      const result = await analyzeEnrichmentWithStructuredOutput(imageUrl, sessionId, baseAnalysisSessionId);
+      enrichment = result.enrichment;
+      processingTime = result.processingTime;
+    } catch (structuredError) {
+      console.warn('Enrichment structured output failed, falling back to unstructured analysis:', structuredError);
+      const result = await analyzeEnrichmentWithFallbackMode(imageUrl, sessionId, baseAnalysisSessionId);
+      enrichment = result.enrichment;
+      processingTime = result.processingTime;
+    }
+
+    console.log(`Garment enrichment analysis completed in ${processingTime}ms`);
+
+    return {
+      enrichment,
+      processingTime: Date.now() - startTime,
+    };
+
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error('Garment enrichment analysis failed:', error);
+
+    // Re-throw if already a GhostPipelineError
+    if (error instanceof GhostPipelineError) {
+      throw error;
+    }
+
+    // Handle Gemini-specific errors
+    if (error instanceof Error) {
+      if (error.message.includes('quota') || error.message.includes('rate limit')) {
+        throw new GhostPipelineError(
+          'Gemini API quota exceeded or rate limit hit',
+          'GEMINI_QUOTA_EXCEEDED',
+          'analysis',
+          error
+        );
+      }
+
+      if (error.message.includes('safety') || error.message.includes('blocked')) {
+        throw new GhostPipelineError(
+          'Content blocked by Gemini safety filters',
+          'CONTENT_BLOCKED',
+          'analysis',
+          error
+        );
+      }
+    }
+
+    throw new GhostPipelineError(
+      `Garment enrichment analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'ANALYSIS_FAILED',
+      'analysis',
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Try analysis with structured output (responseSchema) - WORKING VERSION FROM COMMIT
  */
 async function analyzeWithStructuredOutput(imageUrl: string, sessionId: string): Promise<{ analysis: AnalysisJSON, processingTime: number }> {
   const startTime = Date.now();
@@ -346,19 +438,22 @@ function ensureRequiredFields(response: any, sessionId: string): any {
 }
 
 /**
- * Generate ghost mannequin image using Gemini Flash model
+ * Generate ghost mannequin image using Gemini Flash model with enhanced analysis integration
  * @param flatlayImage - Clean flatlay image (base64 or URL)
- * @param onModelImage - Optional on-model reference image
- * @param analysis - Structured garment analysis
+ * @param analysis - Structured garment analysis (base analysis)
+ * @param originalImage - Optional on-model reference image
+ * @param enrichment - Optional enrichment analysis for enhanced rendering
  * @returns Promise with rendered image URL and processing time
  */
 export async function generateGhostMannequin(
   flatlayImage: string,
   analysis: AnalysisJSON,
-  originalImage?: string
+  originalImage?: string,
+  enrichment?: EnrichmentJSON
 ): Promise<GhostMannequinResult> {
   const startTime = Date.now();
-  let analysisFilePath: string | null = null;
+  let baseAnalysisFilePath: string | null = null;
+  let enrichmentAnalysisFilePath: string | null = null;
   let fs: any;
 
   if (!genAI) {
@@ -407,95 +502,77 @@ export async function generateGhostMannequin(
     const flatlayData = await prepareImageForGemini(flatlayImage);
     const flatlayMimeType = getImageMimeType(flatlayImage);
     
-    // Create temporary JSON file with analysis data
+    // Create temporary JSON files for analysis data
     fs = await import('fs/promises');
     const path = await import('path');
     const os = await import('os');
     
     const tempDir = os.tmpdir();
-    const analysisFileName = `analysis_${Date.now()}.json`;
-    analysisFilePath = path.join(tempDir, analysisFileName);
+    const timestamp = Date.now();
     
-    // Write complete JSON analysis to temporary file
-    await fs.writeFile(analysisFilePath, JSON.stringify(analysis, null, 2), 'utf-8');
-    console.log(`Created analysis JSON file: ${analysisFilePath}`);
+    // Create base analysis JSON file
+    const baseAnalysisFileName = `base_analysis_${timestamp}.json`;
+    baseAnalysisFilePath = path.join(tempDir, baseAnalysisFileName);
+    await fs.writeFile(baseAnalysisFilePath, JSON.stringify(analysis, null, 2), 'utf-8');
+    console.log(`Created base analysis JSON file: ${baseAnalysisFilePath}`);
     
-    // Read the JSON file as text content to send to Gemini
-    const analysisJsonContent = await fs.readFile(analysisFilePath, 'utf-8');
-    const analysisJsonBase64 = Buffer.from(analysisJsonContent, 'utf-8').toString('base64');
+    // Read the base analysis JSON file
+    const baseAnalysisJsonContent = await fs.readFile(baseAnalysisFilePath, 'utf-8');
+    const baseAnalysisJsonBase64 = Buffer.from(baseAnalysisJsonContent, 'utf-8').toString('base64');
     
-    // Your comprehensive ghost mannequin prompt
-    const imageGenPrompt = `Create a professional three-dimensional ghost mannequin photograph for e-commerce product display, transforming flat garment images into a dimensional presentation that shows how the clothing would appear when worn by an invisible person.
-
-## DETAILED SCENE NARRATIVE:
-
-Imagine a high-end photography studio with perfect white cyclorama background and professional lighting equipment. In the center of this space, a garment floats in three-dimensional space, filled with the volume and shape of an invisible human body. The fabric drapes naturally with realistic weight and movement, showing natural creases and folds exactly as clothing would appear on a person. The garment maintains its authentic colors and patterns while displaying proper fit and dimensional form. This is captured with studio-quality photography equipment using an 85mm portrait lens with even, shadow-free lighting.
-
-## MULTI-IMAGE COMPOSITION AUTHORITY:
-
-**Image B (Detail Source)** - This is your primary visual reference containing the absolute truth for all colors, patterns, textures, construction details, and material properties. Copy these elements with complete fidelity.
-
-**JSON Analysis Data** - Contains mandatory preservation rules for specific elements, their coordinates, and structural requirements that must be followed exactly.
-
-**Image A (Model Reference)** - Use only for understanding basic proportions and spatial relationships; all visual details should come from Image B.
-
-## STEP-BY-STEP CONSTRUCTION PROCESS:
-
-**First, establish the invisible body framework:** Create a three-dimensional human torso form with natural anatomical proportions - realistic shoulder width spanning approximately 18 inches, natural chest projection forward from the spine, gradual waist taper, and proper arm positioning with slight outward angle from the body. This invisible form should suggest a person of average build standing in a relaxed, professional pose.
-
-**Second, map the garment onto this form:** Take the exact visual information from Image B - every color, pattern element, texture detail, and construction feature - and wrap it seamlessly around the three-dimensional body form. Maintain perfect color fidelity using the precise hues visible in Image B. Preserve all pattern continuity and directional flow exactly as shown in the detail image.
-
-**Third, create natural hollow openings:** Generate clean, realistic openings where human body parts would be - a natural neck opening showing the interior construction without adding invented elements, armhole openings that reveal the garment's internal structure only if visible in Image B, and for open-front garments like kimonos or cardigans, maintain the front opening exactly as designed without artificially closing it.
-
-**Fourth, apply JSON preservation requirements:** Locate each element marked with "critical" priority in the JSON data and ensure it appears sharp and clearly readable within its specified bounding box coordinates. For elements marked "preserve: true" in labels_found, maintain perfect legibility without repainting or altering the text. Follow any construction_details rules for structural requirements like maintaining wide sleeves or open fronts.
-
-**Finally, perfect the dimensional presentation:** Ensure the garment displays realistic fabric physics with natural drape, appropriate weight, and authentic material behavior. The final result should show perfect bilateral symmetry while maintaining the organic quality of how fabric naturally falls and moves.
-
-## TECHNICAL PHOTOGRAPHY SPECIFICATIONS:
-
-Capture this scene using professional product photography standards: pure white seamless background achieving perfect #FFFFFF color value, high-key studio lighting with multiple soft sources eliminating all shadows and hot spots, tack-sharp focus throughout the entire garment with no depth-of-field blur, high resolution suitable for detailed e-commerce viewing, and flawless color accuracy matching the source materials.
-
-## CONSTRUCTION GUIDELINES FOR DIFFERENT GARMENT TYPES:
-
-For upper body garments like shirts and jackets, emphasize proper shoulder structure and natural sleeve hang. For dresses and full-length pieces, show realistic torso-to-hem proportions with natural fabric flow. For outerwear, display appropriate volume and structure while showing closure details clearly. For open-front styles like kimonos, cardigans, or jackets, never artificially close the front opening - maintain the designed silhouette exactly.
-
-## HOLLOW REGION HANDLING:
-
-Create authentic empty spaces at neck and armhole openings. If Image B shows visible interior fabric, lining, or construction details, reproduce these exactly. If no interior details are visible in Image B, leave these areas as clean hollow space with no invented content - no skin tones, undershirts, generic gray fill, or artificial inner surfaces.
-
-## DETAIL FIDELITY REQUIREMENTS:
-
-Maintain razor-sharp clarity for all brand logos, text elements, decorative details, hardware components like buttons or zippers, stitching patterns, and trim elements. Preserve the exact spatial relationships and proportions of these details as they appear in Image B. For labels and text marked as critical in the JSON, ensure perfect legibility within their specified coordinate boundaries.
-
-## QUALITY VALIDATION CRITERIA:
-
-The final image must demonstrate three-dimensional volume rather than flat arrangement, show realistic fabric drape and weight, maintain absolute color accuracy to Image B, preserve all JSON-specified critical elements in sharp detail, present professional e-commerce photography quality, display perfect structural accuracy for the garment type, and create an authentic ghost mannequin effect suitable for online retail presentation.
-
-Generate this professional three-dimensional ghost mannequin product photograph with complete attention to these comprehensive specifications.`;
+    // Create enrichment analysis JSON file if enrichment data is provided
+    let enrichmentAnalysisJsonBase64: string | null = null;
+    if (enrichment) {
+      const enrichmentAnalysisFileName = `enrichment_analysis_${timestamp}.json`;
+      enrichmentAnalysisFilePath = path.join(tempDir, enrichmentAnalysisFileName);
+      await fs.writeFile(enrichmentAnalysisFilePath, JSON.stringify(enrichment, null, 2), 'utf-8');
+      console.log(`Created enrichment analysis JSON file: ${enrichmentAnalysisFilePath}`);
+      
+      const enrichmentAnalysisJsonContent = await fs.readFile(enrichmentAnalysisFilePath, 'utf-8');
+      enrichmentAnalysisJsonBase64 = Buffer.from(enrichmentAnalysisJsonContent, 'utf-8').toString('base64');
+    }
+    
+    // Use the enhanced ghost mannequin prompt with multi-source data authority
+    const imageGenPrompt = GHOST_MANNEQUIN_PROMPT;
     
     const contentParts: any[] = [
       {
         text: imageGenPrompt,
       },
       {
-        text: "analysis.json (JSON Analysis Data):",
+        text: "Base Analysis JSON (Structural analysis with label detection and construction details):",
       },
       {
         inlineData: {
-          data: analysisJsonBase64,
+          data: baseAnalysisJsonBase64,
           mimeType: 'application/json',
         },
       },
-      {
-        text: "Image B (Detail Source - Primary visual reference):",
-      },
-      {
-        inlineData: {
-          data: flatlayData,
-          mimeType: flatlayMimeType,
-        },
-      },
     ];
+    
+    // Add enrichment analysis JSON if provided
+    if (enrichmentAnalysisJsonBase64) {
+      contentParts.push({
+        text: "Enrichment Analysis JSON (Color precision, fabric behavior, and rendering guidance):",
+      });
+      contentParts.push({
+        inlineData: {
+          data: enrichmentAnalysisJsonBase64,
+          mimeType: 'application/json',
+        },
+      });
+    }
+    
+    // Add Image B (Detail Source)
+    contentParts.push({
+      text: "Image B (Detail Source - Primary visual reference):",
+    });
+    contentParts.push({
+      inlineData: {
+        data: flatlayData,
+        mimeType: flatlayMimeType,
+      },
+    });
 
     // Add original image if provided (Image A)
     if (originalImage) {
@@ -602,13 +679,22 @@ Generate this professional three-dimensional ghost mannequin product photograph 
     const processingTime = Date.now() - startTime;
     console.log(`Ghost mannequin generation completed in ${processingTime}ms`);
     
-    // Cleanup temporary JSON file
-    if (analysisFilePath && fs) {
+    // Cleanup temporary JSON files
+    if (baseAnalysisFilePath && fs) {
       try {
-        await fs.unlink(analysisFilePath);
-        console.log(`Cleaned up temporary analysis file: ${analysisFilePath}`);
+        await fs.unlink(baseAnalysisFilePath);
+        console.log(`Cleaned up temporary base analysis file: ${baseAnalysisFilePath}`);
       } catch (cleanupError) {
-        console.warn(`Failed to cleanup temporary file ${analysisFilePath}:`, cleanupError);
+        console.warn(`Failed to cleanup temporary file ${baseAnalysisFilePath}:`, cleanupError);
+      }
+    }
+    
+    if (enrichmentAnalysisFilePath && fs) {
+      try {
+        await fs.unlink(enrichmentAnalysisFilePath);
+        console.log(`Cleaned up temporary enrichment analysis file: ${enrichmentAnalysisFilePath}`);
+      } catch (cleanupError) {
+        console.warn(`Failed to cleanup temporary file ${enrichmentAnalysisFilePath}:`, cleanupError);
       }
     }
 
@@ -621,13 +707,22 @@ Generate this professional three-dimensional ghost mannequin product photograph 
     const processingTime = Date.now() - startTime;
     console.error('Ghost mannequin generation failed:', error);
     
-    // Cleanup temporary JSON file on error
-    if (analysisFilePath && fs) {
+    // Cleanup temporary JSON files on error
+    if (baseAnalysisFilePath && fs) {
       try {
-        await fs.unlink(analysisFilePath);
-        console.log(`Cleaned up temporary analysis file after error: ${analysisFilePath}`);
+        await fs.unlink(baseAnalysisFilePath);
+        console.log(`Cleaned up temporary base analysis file after error: ${baseAnalysisFilePath}`);
       } catch (cleanupError) {
-        console.warn(`Failed to cleanup temporary file on error ${analysisFilePath}:`, cleanupError);
+        console.warn(`Failed to cleanup temporary file on error ${baseAnalysisFilePath}:`, cleanupError);
+      }
+    }
+    
+    if (enrichmentAnalysisFilePath && fs) {
+      try {
+        await fs.unlink(enrichmentAnalysisFilePath);
+        console.log(`Cleaned up temporary enrichment analysis file after error: ${enrichmentAnalysisFilePath}`);
+      } catch (cleanupError) {
+        console.warn(`Failed to cleanup temporary file on error ${enrichmentAnalysisFilePath}:`, cleanupError);
       }
     }
 
@@ -816,4 +911,269 @@ export async function validateGeminiApi(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Try enrichment analysis with structured output (responseSchema) - STEP 2
+ */
+async function analyzeEnrichmentWithStructuredOutput(
+  imageUrl: string, 
+  sessionId: string,
+  baseAnalysisSessionId: string
+): Promise<{ enrichment: EnrichmentJSON, processingTime: number }> {
+  const startTime = Date.now();
+  
+  console.log('Attempting enrichment structured output analysis...');
+  
+  // Get the Gemini Pro model with structured output
+  const model = genAI!.getGenerativeModel({
+    model: "gemini-2.5-pro",
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: "application/json",
+      responseSchema: EnrichmentJSONSchemaObject,
+    },
+  });
+
+  // Prepare image data
+  const imageData = await prepareImageForGemini(imageUrl);
+  const mimeType = getImageMimeType(imageUrl);
+
+  // Create the prompt with session context and base analysis reference
+  const enhancedPrompt = `${ENRICHMENT_ANALYSIS_PROMPT}
+
+Session ID: ${sessionId}
+Base Analysis Reference: ${baseAnalysisSessionId}
+Ensure the response includes this session ID in the meta.session_id field and the base analysis reference in meta.base_analysis_ref.
+
+IMPORTANT: Return a valid JSON response that exactly matches the garment_enrichment_focused schema structure.`;
+  
+  const result = await model.generateContent([
+    {
+      text: enhancedPrompt,
+    },
+    {
+      inlineData: {
+        data: imageData,
+        mimeType,
+      },
+    },
+  ]);
+
+  const response = await result.response;
+  const responseText = response.text();
+  
+  if (!responseText) {
+    throw new Error('Empty response from Gemini Pro enrichment structured analysis');
+  }
+
+  // Parse and validate the JSON response
+  const parsedResponse = JSON.parse(responseText);
+  const enrichment = EnrichmentJSONSchema.parse(parsedResponse);
+  
+  return {
+    enrichment,
+    processingTime: Date.now() - startTime
+  };
+}
+
+/**
+ * Fallback enrichment analysis without structured output constraints
+ */
+async function analyzeEnrichmentWithFallbackMode(
+  imageUrl: string, 
+  sessionId: string,
+  baseAnalysisSessionId: string
+): Promise<{ enrichment: EnrichmentJSON, processingTime: number }> {
+  const startTime = Date.now();
+  
+  console.log('Attempting enrichment fallback analysis without structured output...');
+  
+  // Get the Gemini Pro model without structured output constraints
+  const model = genAI!.getGenerativeModel({
+    model: "gemini-2.5-pro",
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      // No responseSchema - let Gemini generate freely
+    },
+  });
+
+  // Prepare image data
+  const imageData = await prepareImageForGemini(imageUrl);
+  const mimeType = getImageMimeType(imageUrl);
+
+  // Simplified prompt for fallback
+  const fallbackPrompt = `Analyze this garment image and return enrichment analysis JSON with the exact structure below.
+
+{
+  "type": "garment_enrichment_focused",
+  "meta": {
+    "schema_version": "4.3",
+    "session_id": "${sessionId}",
+    "base_analysis_ref": "${baseAnalysisSessionId}"
+  },
+  "color_precision": {
+    "primary_hex": "#000000",
+    "color_temperature": "neutral",
+    "saturation_level": "moderate"
+  },
+  "fabric_behavior": {
+    "drape_quality": "structured",
+    "surface_sheen": "matte",
+    "transparency_level": "opaque"
+  },
+  "construction_precision": {
+    "seam_visibility": "visible",
+    "edge_finishing": "serged",
+    "stitching_contrast": false
+  },
+  "rendering_guidance": {
+    "lighting_preference": "soft_diffused",
+    "shadow_behavior": "soft_shadows",
+    "color_fidelity_priority": "high"
+  },
+  "confidence_breakdown": {
+    "color_confidence": 0.8,
+    "fabric_confidence": 0.7,
+    "overall_confidence": 0.75
+  }
+}
+
+Analyze the garment for:
+1. Precise color information with hex codes
+2. Fabric behavior and surface properties  
+3. Construction details affecting appearance
+4. Rendering guidance for optimal results
+5. Confidence scores for each analysis area
+
+Return only valid JSON with proper structure.`;
+  
+  const result = await model.generateContent([
+    {
+      text: fallbackPrompt,
+    },
+    {
+      inlineData: {
+        data: imageData,
+        mimeType,
+      },
+    },
+  ]);
+
+  const response = await result.response;
+  const responseText = response.text();
+  
+  if (!responseText) {
+    throw new Error('Empty response from Gemini Pro enrichment fallback analysis');
+  }
+
+  // Parse JSON and create a minimal valid enrichment analysis
+  let parsedResponse: any;
+  try {
+    parsedResponse = JSON.parse(responseText);
+  } catch (parseError) {
+    // If JSON parsing fails, create a minimal fallback
+    parsedResponse = createMinimalEnrichmentAnalysis(sessionId, baseAnalysisSessionId);
+  }
+
+  // Ensure the response has required fields
+  const validatedResponse = ensureRequiredEnrichmentFields(parsedResponse, sessionId, baseAnalysisSessionId);
+  
+  // Validate against schema
+  const enrichment = EnrichmentJSONSchema.parse(validatedResponse);
+  
+  return {
+    enrichment,
+    processingTime: Date.now() - startTime
+  };
+}
+
+/**
+ * Create a minimal valid enrichment analysis when all else fails
+ */
+function createMinimalEnrichmentAnalysis(sessionId: string, baseAnalysisSessionId: string): any {
+  return {
+    type: "garment_enrichment_focused",
+    meta: {
+      schema_version: "4.3",
+      session_id: sessionId,
+      base_analysis_ref: baseAnalysisSessionId
+    },
+    color_precision: {
+      primary_hex: "#808080",
+      color_temperature: "neutral",
+      saturation_level: "moderate"
+    },
+    fabric_behavior: {
+      drape_quality: "structured",
+      surface_sheen: "matte",
+      transparency_level: "opaque"
+    },
+    construction_precision: {
+      seam_visibility: "visible",
+      edge_finishing: "serged",
+      stitching_contrast: false
+    },
+    rendering_guidance: {
+      lighting_preference: "soft_diffused",
+      shadow_behavior: "soft_shadows",
+      color_fidelity_priority: "high"
+    },
+    confidence_breakdown: {
+      color_confidence: 0.5,
+      fabric_confidence: 0.5,
+      overall_confidence: 0.5
+    }
+  };
+}
+
+/**
+ * Ensure enrichment response has all required fields for schema validation
+ */
+function ensureRequiredEnrichmentFields(response: any, sessionId: string, baseAnalysisSessionId: string): any {
+  return {
+    type: response.type || "garment_enrichment_focused",
+    meta: {
+      schema_version: response.meta?.schema_version || "4.3",
+      session_id: response.meta?.session_id || sessionId,
+      base_analysis_ref: response.meta?.base_analysis_ref || baseAnalysisSessionId
+    },
+    color_precision: {
+      primary_hex: response.color_precision?.primary_hex || "#808080",
+      secondary_hex: response.color_precision?.secondary_hex,
+      color_temperature: response.color_precision?.color_temperature || "neutral",
+      saturation_level: response.color_precision?.saturation_level || "moderate",
+      pattern_direction: response.color_precision?.pattern_direction,
+      pattern_repeat_size: response.color_precision?.pattern_repeat_size
+    },
+    fabric_behavior: {
+      drape_quality: response.fabric_behavior?.drape_quality || "structured",
+      surface_sheen: response.fabric_behavior?.surface_sheen || "matte",
+      texture_depth: response.fabric_behavior?.texture_depth,
+      wrinkle_tendency: response.fabric_behavior?.wrinkle_tendency,
+      transparency_level: response.fabric_behavior?.transparency_level || "opaque"
+    },
+    construction_precision: {
+      seam_visibility: response.construction_precision?.seam_visibility || "visible",
+      edge_finishing: response.construction_precision?.edge_finishing || "serged",
+      stitching_contrast: typeof response.construction_precision?.stitching_contrast === 'boolean' ? response.construction_precision.stitching_contrast : false,
+      hardware_finish: response.construction_precision?.hardware_finish,
+      closure_visibility: response.construction_precision?.closure_visibility
+    },
+    rendering_guidance: {
+      lighting_preference: response.rendering_guidance?.lighting_preference || "soft_diffused",
+      shadow_behavior: response.rendering_guidance?.shadow_behavior || "soft_shadows",
+      texture_emphasis: response.rendering_guidance?.texture_emphasis,
+      color_fidelity_priority: response.rendering_guidance?.color_fidelity_priority || "high",
+      detail_sharpness: response.rendering_guidance?.detail_sharpness
+    },
+    market_intelligence: response.market_intelligence,
+    confidence_breakdown: {
+      color_confidence: typeof response.confidence_breakdown?.color_confidence === 'number' ? response.confidence_breakdown.color_confidence : 0.5,
+      fabric_confidence: typeof response.confidence_breakdown?.fabric_confidence === 'number' ? response.confidence_breakdown.fabric_confidence : 0.5,
+      construction_confidence: typeof response.confidence_breakdown?.construction_confidence === 'number' ? response.confidence_breakdown.construction_confidence : undefined,
+      overall_confidence: typeof response.confidence_breakdown?.overall_confidence === 'number' ? response.confidence_breakdown.overall_confidence : 0.5
+    }
+  };
 }

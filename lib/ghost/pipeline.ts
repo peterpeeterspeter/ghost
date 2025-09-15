@@ -5,11 +5,12 @@ import {
   GhostPipelineError,
   BackgroundRemovalResult,
   GarmentAnalysisResult,
+  GarmentEnrichmentResult,
   GhostMannequinResult,
   ProcessingStage
 } from '@/types/ghost';
 import { configureFalClient, removeBackground } from './fal';
-import { configureGeminiClient, analyzeGarment, generateGhostMannequin } from './gemini';
+import { configureGeminiClient, analyzeGarment, analyzeGarmentEnrichment, generateGhostMannequin } from './gemini';
 
 // Configuration interface
 interface PipelineOptions {
@@ -21,6 +22,7 @@ interface PipelineOptions {
   timeouts?: {
     backgroundRemoval?: number;
     analysis?: number;
+    enrichment?: number;
     rendering?: number;
   };
 }
@@ -35,6 +37,7 @@ interface PipelineState {
     backgroundRemovalFlatlay?: BackgroundRemovalResult;
     backgroundRemovalOnModel?: BackgroundRemovalResult;
     analysis?: GarmentAnalysisResult;
+    enrichment?: GarmentEnrichmentResult;
     rendering?: GhostMannequinResult;
   };
   error?: GhostPipelineError;
@@ -54,6 +57,7 @@ export class GhostMannequinPipeline {
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
+        enrichment: 120000,       // 120 seconds for enrichment analysis (increased)
         rendering: 180000,        // 180 seconds (increased for ghost mannequin generation)
       },
       ...options,
@@ -143,15 +147,32 @@ export class GhostMannequinPipeline {
         return result;
       });
 
-      // Stage 3: Ghost Mannequin Generation (TWO cleaned images + JSON)
+      // Stage 3: Enrichment Analysis (Focused high-value analysis)
+      await this.executeStage('enrichment', async () => {
+        this.log('Stage 3: Enrichment analysis - Focused rendering-critical attributes');
+        const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
+        const baseAnalysisSessionId = this.state.stageResults.analysis!.analysis.meta.session_id;
+        const enrichmentSessionId = `${this.state.sessionId}_enrichment`;
+        
+        const result = await this.executeWithTimeout(
+          analyzeGarmentEnrichment(cleanedGarmentDetail, enrichmentSessionId, baseAnalysisSessionId),
+          this.options.timeouts!.enrichment!,
+          'enrichment'
+        );
+        this.state.stageResults.enrichment = result;
+        return result;
+      });
+
+      // Stage 4: Ghost Mannequin Generation (TWO cleaned images + JSON analysis + Enrichment)
       await this.executeStage('rendering', async () => {
-        this.log('Stage 3: Ghost mannequin generation - Using TWO cleaned images + JSON analysis');
+        this.log('Stage 4: Ghost mannequin generation - Using TWO cleaned images + JSON analysis + Enrichment');
         const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
         const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
         const analysis = this.state.stageResults.analysis!.analysis;
+        const enrichmentData = this.state.stageResults.enrichment?.enrichment; // Optional
         
         const result = await this.executeWithTimeout(
-          generateGhostMannequin(cleanedGarmentDetail, analysis, cleanedOnModel),
+          generateGhostMannequin(cleanedGarmentDetail, analysis, cleanedOnModel, enrichmentData),
           this.options.timeouts!.rendering!,
           'rendering'
         );
@@ -267,6 +288,7 @@ export class GhostMannequinPipeline {
         stageTimings: {
           backgroundRemoval: (stageResults.backgroundRemovalFlatlay?.processingTime || 0) + (stageResults.backgroundRemovalOnModel?.processingTime || 0),
           analysis: stageResults.analysis?.processingTime || 0,
+          enrichment: stageResults.enrichment?.processingTime || 0,
           rendering: stageResults.rendering?.processingTime || 0,
         },
       },
@@ -285,6 +307,7 @@ export class GhostMannequinPipeline {
     if (stageResults.analysis) {
       (result as any).analysis = stageResults.analysis.analysis;
     }
+    
 
     // Add error details if failed
     if (this.state.status === 'failed' && this.state.error) {

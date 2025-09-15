@@ -225,6 +225,241 @@ export const AnalysisJSONSchemaObject = {
 
 export type AnalysisJSON = z.infer<typeof AnalysisJSONSchema>;
 
+// Enrichment Analysis Schema (Step 2)
+export const EnrichmentJSONSchema = z.object({
+  type: z.literal('garment_enrichment_focused'),
+  meta: z.object({
+    schema_version: z.literal('4.3'),
+    session_id: z.string(),
+    base_analysis_ref: z.string(),
+  }),
+  color_precision: z.object({
+    primary_hex: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    secondary_hex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    color_temperature: z.enum(['warm', 'cool', 'neutral']),
+    saturation_level: z.enum(['muted', 'moderate', 'vibrant']),
+    pattern_direction: z.enum(['horizontal', 'vertical', 'diagonal', 'random']).optional(),
+    pattern_repeat_size: z.enum(['micro', 'small', 'medium', 'large']).optional(),
+  }),
+  fabric_behavior: z.object({
+    drape_quality: z.enum(['crisp', 'flowing', 'structured', 'fluid', 'stiff']),
+    surface_sheen: z.enum(['matte', 'subtle_sheen', 'glossy', 'metallic']),
+    texture_depth: z.enum(['flat', 'subtle_texture', 'pronounced_texture', 'heavily_textured']).optional(),
+    wrinkle_tendency: z.enum(['wrinkle_resistant', 'moderate', 'wrinkles_easily']).optional(),
+    transparency_level: z.enum(['opaque', 'semi_opaque', 'translucent', 'sheer']),
+  }),
+  construction_precision: z.object({
+    seam_visibility: z.enum(['hidden', 'subtle', 'visible', 'decorative']),
+    edge_finishing: z.enum(['raw', 'serged', 'bound', 'rolled', 'pinked']),
+    stitching_contrast: z.boolean(),
+    hardware_finish: z.enum(['none', 'matte_metal', 'polished_metal', 'plastic', 'fabric_covered']).optional(),
+    closure_visibility: z.enum(['none', 'hidden', 'functional', 'decorative']).optional(),
+  }),
+  rendering_guidance: z.object({
+    lighting_preference: z.enum(['soft_diffused', 'directional', 'high_key', 'dramatic']),
+    shadow_behavior: z.enum(['minimal_shadows', 'soft_shadows', 'defined_shadows', 'dramatic_shadows']),
+    texture_emphasis: z.enum(['minimize', 'subtle', 'enhance', 'maximize']).optional(),
+    color_fidelity_priority: z.enum(['low', 'medium', 'high', 'critical']),
+    detail_sharpness: z.enum(['soft', 'natural', 'sharp', 'ultra_sharp']).optional(),
+  }),
+  market_intelligence: z.object({
+    price_tier: z.enum(['budget', 'mid_range', 'premium', 'luxury']),
+    style_longevity: z.enum(['trendy', 'seasonal', 'classic', 'timeless']),
+    care_complexity: z.enum(['easy_care', 'moderate_care', 'delicate', 'specialty_care']).optional(),
+    target_season: z.array(z.enum(['spring', 'summer', 'fall', 'winter'])).optional(),
+  }).optional(),
+  confidence_breakdown: z.object({
+    color_confidence: z.number().max(1),
+    fabric_confidence: z.number().max(1),
+    construction_confidence: z.number().max(1).optional(),
+    overall_confidence: z.number().max(1),
+  }),
+});
+
+// Enrichment Analysis Schema Object for Gemini structured output
+export const EnrichmentJSONSchemaObject = {
+  type: "object",
+  properties: {
+    type: {
+      type: "string",
+      enum: ["garment_enrichment_focused"]
+    },
+    meta: {
+      type: "object",
+      properties: {
+        schema_version: {
+          type: "string",
+          enum: ["4.3"]
+        },
+        session_id: {
+          type: "string"
+        },
+        base_analysis_ref: {
+          type: "string"
+        }
+      },
+      required: ["schema_version", "session_id", "base_analysis_ref"]
+    },
+    color_precision: {
+      type: "object",
+      properties: {
+        primary_hex: {
+          type: "string",
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        },
+        secondary_hex: {
+          type: "string",
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        },
+        color_temperature: {
+          type: "string",
+          enum: ["warm", "cool", "neutral"]
+        },
+        saturation_level: {
+          type: "string",
+          enum: ["muted", "moderate", "vibrant"]
+        },
+        pattern_direction: {
+          type: "string",
+          enum: ["horizontal", "vertical", "diagonal", "random"]
+        },
+        pattern_repeat_size: {
+          type: "string",
+          enum: ["micro", "small", "medium", "large"]
+        }
+      },
+      required: ["primary_hex", "color_temperature", "saturation_level"]
+    },
+    fabric_behavior: {
+      type: "object",
+      properties: {
+        drape_quality: {
+          type: "string",
+          enum: ["crisp", "flowing", "structured", "fluid", "stiff"]
+        },
+        surface_sheen: {
+          type: "string",
+          enum: ["matte", "subtle_sheen", "glossy", "metallic"]
+        },
+        texture_depth: {
+          type: "string",
+          enum: ["flat", "subtle_texture", "pronounced_texture", "heavily_textured"]
+        },
+        wrinkle_tendency: {
+          type: "string",
+          enum: ["wrinkle_resistant", "moderate", "wrinkles_easily"]
+        },
+        transparency_level: {
+          type: "string",
+          enum: ["opaque", "semi_opaque", "translucent", "sheer"]
+        }
+      },
+      required: ["drape_quality", "surface_sheen", "transparency_level"]
+    },
+    construction_precision: {
+      type: "object",
+      properties: {
+        seam_visibility: {
+          type: "string",
+          enum: ["hidden", "subtle", "visible", "decorative"]
+        },
+        edge_finishing: {
+          type: "string",
+          enum: ["raw", "serged", "bound", "rolled", "pinked"]
+        },
+        stitching_contrast: {
+          type: "boolean"
+        },
+        hardware_finish: {
+          type: "string",
+          enum: ["none", "matte_metal", "polished_metal", "plastic", "fabric_covered"]
+        },
+        closure_visibility: {
+          type: "string",
+          enum: ["none", "hidden", "functional", "decorative"]
+        }
+      },
+      required: ["seam_visibility", "edge_finishing", "stitching_contrast"]
+    },
+    rendering_guidance: {
+      type: "object",
+      properties: {
+        lighting_preference: {
+          type: "string",
+          enum: ["soft_diffused", "directional", "high_key", "dramatic"]
+        },
+        shadow_behavior: {
+          type: "string",
+          enum: ["minimal_shadows", "soft_shadows", "defined_shadows", "dramatic_shadows"]
+        },
+        texture_emphasis: {
+          type: "string",
+          enum: ["minimize", "subtle", "enhance", "maximize"]
+        },
+        color_fidelity_priority: {
+          type: "string",
+          enum: ["low", "medium", "high", "critical"]
+        },
+        detail_sharpness: {
+          type: "string",
+          enum: ["soft", "natural", "sharp", "ultra_sharp"]
+        }
+      },
+      required: ["lighting_preference", "shadow_behavior", "color_fidelity_priority"]
+    },
+    market_intelligence: {
+      type: "object",
+      properties: {
+        price_tier: {
+          type: "string",
+          enum: ["budget", "mid_range", "premium", "luxury"]
+        },
+        style_longevity: {
+          type: "string",
+          enum: ["trendy", "seasonal", "classic", "timeless"]
+        },
+        care_complexity: {
+          type: "string",
+          enum: ["easy_care", "moderate_care", "delicate", "specialty_care"]
+        },
+        target_season: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["spring", "summer", "fall", "winter"]
+          }
+        }
+      },
+      required: ["price_tier", "style_longevity"]
+    },
+    confidence_breakdown: {
+      type: "object",
+      properties: {
+        color_confidence: {
+          type: "number",
+          maximum: 1
+        },
+        fabric_confidence: {
+          type: "number",
+          maximum: 1
+        },
+        construction_confidence: {
+          type: "number",
+          maximum: 1
+        },
+        overall_confidence: {
+          type: "number",
+          maximum: 1
+        }
+      },
+      required: ["color_confidence", "fabric_confidence", "overall_confidence"]
+    }
+  },
+  required: ["type", "meta", "color_precision", "fabric_behavior", "construction_precision", "rendering_guidance", "confidence_breakdown"]
+};
+
+export type EnrichmentJSON = z.infer<typeof EnrichmentJSONSchema>;
+
 // Pipeline stage results
 export interface BackgroundRemovalResult {
   cleanedImageUrl: string;
@@ -233,6 +468,12 @@ export interface BackgroundRemovalResult {
 
 export interface GarmentAnalysisResult {
   analysis: AnalysisJSON;
+  processingTime: number;
+}
+
+
+export interface GarmentEnrichmentResult {
+  enrichment: EnrichmentJSON;
   processingTime: number;
 }
 
@@ -254,13 +495,14 @@ export interface GhostResult {
     stageTimings: {
       backgroundRemoval: number;
       analysis: number;
+      enrichment: number;
       rendering: number;
     };
   };
   error?: {
     message: string;
     code: string;
-    stage: 'background_removal' | 'analysis' | 'rendering';
+    stage: 'background_removal' | 'analysis' | 'enrichment' | 'rendering';
   };
 }
 
@@ -353,7 +595,7 @@ export class GhostPipelineError extends Error {
   constructor(
     message: string,
     public code: string,
-    public stage: 'background_removal' | 'analysis' | 'rendering',
+    public stage: 'background_removal' | 'analysis' | 'enrichment' | 'rendering',
     public cause?: Error
   ) {
     super(message);
@@ -362,7 +604,7 @@ export class GhostPipelineError extends Error {
 }
 
 // Utility types
-export type ProcessingStage = 'background_removal' | 'analysis' | 'rendering';
+export type ProcessingStage = 'background_removal' | 'analysis' | 'enrichment' | 'rendering';
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 // Constants
@@ -432,47 +674,237 @@ Analyze this garment image with meticulous attention to labels and preservable d
 export const GHOST_MANNEQUIN_PROMPT = `Create a professional three-dimensional ghost mannequin photograph for e-commerce product display, transforming flat garment images into a dimensional presentation that shows how the clothing would appear when worn by an invisible person.
 
 ## DETAILED SCENE NARRATIVE:
-
 Imagine a high-end photography studio with perfect white cyclorama background and professional lighting equipment. In the center of this space, a garment floats in three-dimensional space, filled with the volume and shape of an invisible human body. The fabric drapes naturally with realistic weight and movement, showing natural creases and folds exactly as clothing would appear on a person. The garment maintains its authentic colors and patterns while displaying proper fit and dimensional form. This is captured with studio-quality photography equipment using an 85mm portrait lens with even, shadow-free lighting.
 
-## MULTI-IMAGE COMPOSITION AUTHORITY:
+## MULTI-SOURCE DATA AUTHORITY:
+**Image B (Detail Source)** - Primary visual reference containing the absolute truth for all colors, patterns, textures, construction details, and material properties. Copy these elements with complete fidelity.
 
-**Image B (Detail Source)** - This is your primary visual reference containing the absolute truth for all colors, patterns, textures, construction details, and material properties. Copy these elements with complete fidelity.
+**Base Analysis JSON** - Contains mandatory preservation rules for specific elements, their coordinates, structural requirements, and construction details that must be followed exactly.
 
-**JSON Analysis Data** - Contains mandatory preservation rules for specific elements, their coordinates, and structural requirements that must be followed exactly.
+**Enrichment Analysis JSON** - Provides technical specifications for color precision, fabric behavior, rendering guidance, and quality expectations that must be integrated into the final result.
 
 **Image A (Model Reference)** - Use only for understanding basic proportions and spatial relationships; all visual details should come from Image B.
 
-## STEP-BY-STEP CONSTRUCTION PROCESS:
+## ENHANCED TECHNICAL SPECIFICATIONS:
 
-**First, establish the invisible body framework:** Create a three-dimensional human torso form with natural anatomical proportions - realistic shoulder width spanning approximately 18 inches, natural chest projection forward from the spine, gradual waist taper, and proper arm positioning with slight outward angle from the body. This invisible form should suggest a person of average build standing in a relaxed, professional pose.
+### COLOR PRECISION INTEGRATION:
+Apply the exact color values from the enrichment analysis:
+- **Primary Color**: Use the specified hex value as the dominant garment color with perfect fidelity
+- **Secondary Color**: If provided, apply to accent elements, patterns, or trim details
+- **Color Temperature**: Adjust lighting setup to complement warm/cool/neutral color temperature
+- **Saturation Level**: Render colors at the specified saturation intensity (muted/moderate/vibrant)
+- **Pattern Direction**: Align patterns according to specified direction (horizontal/vertical/diagonal/random)
+- **Pattern Scale**: Size pattern elements according to specified repeat size (micro/small/medium/large)
 
-**Second, map the garment onto this form:** Take the exact visual information from Image B - every color, pattern element, texture detail, and construction feature - and wrap it seamlessly around the three-dimensional body form. Maintain perfect color fidelity using the precise hues visible in Image B. Preserve all pattern continuity and directional flow exactly as shown in the detail image.
+### FABRIC BEHAVIOR SIMULATION:
+Implement realistic fabric physics based on enrichment analysis:
+- **Drape Quality**: Simulate fabric behavior (crisp/flowing/structured/fluid/stiff)
+  - Crisp: Sharp edges and angular folds
+  - Flowing: Smooth, continuous curves
+  - Structured: Maintains defined shape with minimal droop
+  - Fluid: Liquid-like movement with soft cascading
+  - Stiff: Rigid appearance with minimal flexibility
+- **Surface Sheen**: Apply appropriate light reflection (matte/subtle_sheen/glossy/metallic)
+- **Transparency Level**: Render opacity correctly (opaque/semi_opaque/translucent/sheer)
+- **Texture Depth**: Show surface relief (flat/subtle_texture/pronounced_texture/heavily_textured)
+- **Wrinkle Tendency**: Add realistic creasing based on fabric type
 
-**Third, create natural hollow openings:** Generate clean, realistic openings where human body parts would be - a natural neck opening showing the interior construction without adding invented elements, armhole openings that reveal the garment's internal structure only if visible in Image B, and for open-front garments like kimonos or cardigans, maintain the front opening exactly as designed without artificially closing it.
+### ADVANCED LIGHTING IMPLEMENTATION:
+Configure studio lighting according to rendering guidance:
+- **Lighting Preference**: 
+  - Soft_diffused: Even, wraparound lighting with no harsh shadows
+  - Directional: Controlled directional lighting with defined light source
+  - High_key: Bright, cheerful lighting with minimal shadows
+  - Dramatic: Contrasty lighting with defined highlights and shadows
+- **Shadow Behavior**: Control shadow intensity and quality
+  - Minimal_shadows: Nearly shadowless presentation
+  - Soft_shadows: Gentle, diffused shadows
+  - Defined_shadows: Clear but not harsh shadow definition
+  - Dramatic_shadows: Strong shadow contrast for depth
+- **Detail Sharpness**: Adjust focus and clarity (soft/natural/sharp/ultra_sharp)
+- **Texture Emphasis**: Control fabric texture visibility (minimize/subtle/enhance/maximize)
 
-**Fourth, apply JSON preservation requirements:** Locate each element marked with "critical" priority in the JSON data and ensure it appears sharp and clearly readable within its specified bounding box coordinates. For elements marked "preserve: true" in labels_found, maintain perfect legibility without repainting or altering the text. Follow any construction_details rules for structural requirements like maintaining wide sleeves or open fronts.
+### CONSTRUCTION PRECISION RENDERING:
+Apply construction details from enrichment analysis:
+- **Seam Visibility**: Render seams according to specified prominence (hidden/subtle/visible/decorative)
+- **Edge Finishing**: Show edge treatments accurately (raw/serged/bound/rolled/pinked)
+- **Stitching Contrast**: Apply or minimize thread visibility based on contrast specification
+- **Hardware Finish**: Render metal/plastic elements with specified finish (matte_metal/polished_metal/plastic/fabric_covered)
+- **Closure Visibility**: Handle closures appropriately (none/hidden/functional/decorative)
 
-**Finally, perfect the dimensional presentation:** Ensure the garment displays realistic fabric physics with natural drape, appropriate weight, and authentic material behavior. The final result should show perfect bilateral symmetry while maintaining the organic quality of how fabric naturally falls and moves.
+## STEP-BY-STEP ENHANCED CONSTRUCTION PROCESS:
 
-## TECHNICAL PHOTOGRAPHY SPECIFICATIONS:
+### Step 1: Establish Dimensional Framework
+Create a three-dimensional human torso form with natural anatomical proportions - realistic shoulder width spanning approximately 18 inches, natural chest projection forward from the spine, gradual waist taper, and proper arm positioning with slight outward angle from the body. This invisible form should suggest a person of average build standing in a relaxed, professional pose.
 
-Capture this scene using professional product photography standards: pure white seamless background achieving perfect #FFFFFF color value, high-key studio lighting with multiple soft sources eliminating all shadows and hot spots, tack-sharp focus throughout the entire garment with no depth-of-field blur, high resolution suitable for detailed e-commerce viewing, and flawless color accuracy matching the source materials.
+### Step 2: Apply Color and Pattern Precision
+Map the exact visual information from Image B onto the three-dimensional form, using the precise hex color values from the enrichment analysis. Maintain perfect color fidelity and apply the specified color temperature adjustments. Ensure pattern elements follow the specified direction and scale parameters.
 
-## CONSTRUCTION GUIDELINES FOR DIFFERENT GARMENT TYPES:
+### Step 3: Implement Fabric Physics
+Apply the fabric behavior specifications from the enrichment analysis:
+- Simulate the specified drape quality for realistic fabric movement
+- Apply appropriate surface sheen for light interaction
+- Maintain proper transparency levels
+- Add texture depth according to specifications
+- Include natural wrinkles based on fabric tendency
 
-For upper body garments like shirts and jackets, emphasize proper shoulder structure and natural sleeve hang. For dresses and full-length pieces, show realistic torso-to-hem proportions with natural fabric flow. For outerwear, display appropriate volume and structure while showing closure details clearly. For open-front styles like kimonos, cardigans, or jackets, never artificially close the front opening - maintain the designed silhouette exactly.
+### Step 4: Configure Professional Lighting
+Set up studio lighting according to the rendering guidance:
+- Apply the specified lighting preference for overall illumination
+- Implement shadow behavior according to specifications
+- Adjust for color temperature compatibility
+- Ensure critical color fidelity priority is maintained
 
-## HOLLOW REGION HANDLING:
+### Step 5: Execute Base Analysis Requirements
+Process all elements from the base analysis JSON:
+- Locate each element marked with "critical" priority and ensure it appears sharp and clearly readable within specified bounding box coordinates
+- For elements marked "preserve: true" in labels_found, maintain perfect legibility without repainting or altering the text
+- Follow construction_details rules for structural requirements like maintaining wide sleeves or open fronts
+- Implement hollow_regions specifications for neck openings, sleeves, and front openings
 
-Create authentic empty spaces at neck and armhole openings. If Image B shows visible interior fabric, lining, or construction details, reproduce these exactly. If no interior details are visible in Image B, leave these areas as clean hollow space with no invented content - no skin tones, undershirts, generic gray fill, or artificial inner surfaces.
+### Step 6: Final Quality Integration
+Perfect the dimensional presentation using enrichment specifications:
+- Apply detail sharpness settings throughout the garment
+- Implement texture emphasis preferences
+- Ensure market intelligence requirements are reflected in overall quality level
+- Validate confidence levels are met through technical precision
 
-## DETAIL FIDELITY REQUIREMENTS:
+## QUALITY VALIDATION WITH ENRICHMENT CRITERIA:
+The final image must demonstrate:
+- **Color Accuracy**: Perfect fidelity to specified hex values and color properties
+- **Fabric Realism**: Accurate simulation of specified fabric behavior and physics
+- **Technical Excellence**: Implementation of all rendering guidance specifications
+- **Construction Fidelity**: Accurate representation of all construction precision details
+- **Professional Quality**: Appropriate to specified market tier and style requirements
+- **Lighting Optimization**: Perfect implementation of lighting preferences and shadow behavior
+- **Detail Preservation**: All base analysis critical elements maintained at specified sharpness level
 
-Maintain razor-sharp clarity for all brand logos, text elements, decorative details, hardware components like buttons or zippers, stitching patterns, and trim elements. Preserve the exact spatial relationships and proportions of these details as they appear in Image B. For labels and text marked as critical in the JSON, ensure perfect legibility within their specified coordinate boundaries.
+## CONFIDENCE INTEGRATION:
+Use the confidence scores from enrichment analysis to prioritize rendering quality:
+- **High Confidence Areas** (0.8+): Render with maximum precision and detail
+- **Medium Confidence Areas** (0.6-0.8): Apply standard quality with careful attention
+- **Lower Confidence Areas** (<0.6): Use conservative interpretation, avoid over-rendering
 
-## QUALITY VALIDATION CRITERIA:
+## MARKET INTELLIGENCE APPLICATION:
+Apply market context from enrichment analysis:
+- **Price Tier**: Adjust overall presentation quality to match market positioning (budget/mid_range/premium/luxury)
+- **Style Longevity**: Consider presentation approach for trendy vs classic pieces
+- **Target Season**: Ensure styling and presentation appropriate for seasonal context
 
-The final image must demonstrate three-dimensional volume rather than flat arrangement, show realistic fabric drape and weight, maintain absolute color accuracy to Image B, preserve all JSON-specified critical elements in sharp detail, present professional e-commerce photography quality, display perfect structural accuracy for the garment type, and create an authentic ghost mannequin effect suitable for online retail presentation.
+Generate this professional three-dimensional ghost mannequin product photograph with complete integration of both structural analysis and enrichment specifications, ensuring technical excellence and commercial appropriateness.`;
 
-Generate this professional three-dimensional ghost mannequin product photograph with complete attention to these comprehensive specifications.`;
+// Focused High-Value Enrichment Analysis Prompt (Step 2)
+export const ENRICHMENT_ANALYSIS_PROMPT = `You are an expert fashion technology AI performing **focused enrichment analysis** for professional garment reproduction. This analysis builds upon completed structural analysis and focuses on **rendering-critical attributes** that directly impact ghost mannequin generation quality.
+
+## ANALYSIS MISSION:
+
+Extract **high-value technical properties** that enable photorealistic garment reproduction with precise color fidelity, accurate fabric behavior, and professional lighting guidance.
+
+## ENRICHMENT FOCUS AREAS:
+
+### 1. COLOR PRECISION (Priority: Critical)
+
+**Objective**: Extract precise color data for accurate reproduction
+
+- **Primary Hex Color**: Dominant garment color as exact 6-digit hex (#RRGGBB)
+- **Secondary Hex Color**: Secondary color if present (patterns, accents, trim)
+- **Color Temperature**: Warm/cool/neutral classification for lighting setup
+- **Saturation Level**: Muted/moderate/vibrant for color intensity matching
+- **Pattern Direction**: Horizontal/vertical/diagonal/random for alignment guidance
+- **Pattern Repeat Size**: Micro/small/medium/large for texture scaling
+
+**Analysis Method**: Sample color from well-lit, representative areas. Avoid shadows, highlights, or color-cast regions.
+
+### 2. FABRIC BEHAVIOR (Priority: Critical)
+
+**Objective**: Understand how fabric moves and appears for realistic draping
+
+- **Drape Quality**: How fabric falls and flows (crisp/flowing/structured/fluid/stiff)
+- **Surface Sheen**: Light reflection properties (matte/subtle_sheen/glossy/metallic)
+- **Texture Depth**: Surface relief characteristics (flat/subtle_texture/pronounced_texture/heavily_textured)
+- **Wrinkle Tendency**: Fabric's crease behavior (wrinkle_resistant/moderate/wrinkles_easily)
+- **Transparency Level**: Opacity characteristics (opaque/semi_opaque/translucent/sheer)
+
+**Analysis Method**: Examine how light interacts with fabric surface, how fabric falls at edges, and visible texture patterns.
+
+### 3. CONSTRUCTION PRECISION (Priority: Important)
+
+**Objective**: Document construction details that affect visual appearance
+
+- **Seam Visibility**: How prominent seams appear (hidden/subtle/visible/decorative)
+- **Edge Finishing**: How raw edges are treated (raw/serged/bound/rolled/pinked)
+- **Stitching Contrast**: Whether thread color contrasts with fabric (true/false)
+- **Hardware Finish**: Metal/plastic finish type (none/matte_metal/polished_metal/plastic/fabric_covered)
+- **Closure Visibility**: How closures appear (none/hidden/functional/decorative)
+
+**Analysis Method**: Focus on visible construction elements that impact final rendered appearance.
+
+### 4. RENDERING GUIDANCE (Priority: Important)
+
+**Objective**: Provide technical direction for optimal image generation
+
+- **Lighting Preference**: Best lighting approach (soft_diffused/directional/high_key/dramatic)
+- **Shadow Behavior**: How shadows should appear (minimal_shadows/soft_shadows/defined_shadows/dramatic_shadows)
+- **Texture Emphasis**: How much to emphasize fabric texture (minimize/subtle/enhance/maximize)
+- **Color Fidelity Priority**: Importance of exact color matching (low/medium/high/critical)
+- **Detail Sharpness**: Optimal detail rendering (soft/natural/sharp/ultra_sharp)
+
+**Analysis Method**: Consider fabric properties and garment style to recommend optimal rendering parameters.
+
+### 5. MARKET INTELLIGENCE (Priority: Useful)
+
+**Objective**: Provide commercial context for styling decisions
+
+- **Price Tier**: Quality/market positioning (budget/mid_range/premium/luxury)
+- **Style Longevity**: Fashion lifecycle (trendy/seasonal/classic/timeless)
+- **Care Complexity**: Maintenance requirements (easy_care/moderate_care/delicate/specialty_care)
+- **Target Season**: Seasonal appropriateness (spring/summer/fall/winter array)
+
+**Analysis Method**: Assess construction quality, fabric choice, and design sophistication.
+
+## TECHNICAL ANALYSIS GUIDELINES:
+
+### Color Sampling Protocol:
+
+1. **Primary Color**: Sample from largest solid color area under neutral lighting
+2. **Secondary Color**: Sample from significant accent or pattern elements
+3. **Avoid**: Shadow areas, highlight reflections, color-cast regions
+4. **Validate**: Ensure hex values represent true garment colors
+
+### Fabric Assessment Technique:
+
+1. **Drape Observation**: Look at how fabric falls at sleeves, hem, and loose areas
+2. **Sheen Analysis**: Examine light reflection patterns across surface
+3. **Texture Evaluation**: Assess visible surface relief and weave structure
+4. **Transparency Check**: Look for any see-through qualities or opacity variations
+
+### Construction Evaluation:
+
+1. **Seam Inspection**: Check visibility and prominence of construction seams
+2. **Edge Analysis**: Examine how fabric edges are finished
+3. **Hardware Review**: Catalog all visible metal/plastic elements
+4. **Detail Documentation**: Note contrast stitching and decorative elements
+
+## CONFIDENCE SCORING:
+
+Provide confidence levels (0.0-1.0) for each analysis area:
+
+- **Color Confidence**: How certain you are about color accuracy
+- **Fabric Confidence**: How well you can assess fabric properties from image
+- **Construction Confidence**: How clearly construction details are visible
+- **Overall Confidence**: General analysis reliability
+
+## CRITICAL REQUIREMENTS:
+
+- **Evidence-Based**: Only report what you can clearly observe
+- **Rendering-Focused**: Prioritize attributes that affect image generation quality
+- **Precision**: Provide exact hex values and specific classifications
+- **Commercial Awareness**: Consider how quality level affects presentation expectations
+- **Technical Accuracy**: Use professional fashion and textile terminology
+
+## OUTPUT FORMAT:
+
+Return analysis as JSON matching the garment_enrichment_focused schema exactly.
+
+Focus on **rendering-critical attributes** that enable professional-quality ghost mannequin generation with accurate color reproduction and realistic fabric behavior.`;
+

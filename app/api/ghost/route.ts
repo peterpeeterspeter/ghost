@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
       timeouts: {
         backgroundRemoval: parseInt(process.env.TIMEOUT_BACKGROUND_REMOVAL || '30000'),
         analysis: parseInt(process.env.TIMEOUT_ANALYSIS || '20000'),
+        enrichment: parseInt(process.env.TIMEOUT_ENRICHMENT || '120000'),
         rendering: parseInt(process.env.TIMEOUT_RENDERING || '60000'),
       },
     };
@@ -159,6 +160,7 @@ export async function POST(request: NextRequest) {
             stageTimings: {
               backgroundRemoval: 0,
               analysis: 0,
+              enrichment: 0,
               rendering: 0,
             },
           },
