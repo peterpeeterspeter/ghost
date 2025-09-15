@@ -2,24 +2,48 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GhostRequest, GhostResult, GhostPipelineError } from '@/types/ghost';
 import { processGhostMannequin } from '@/lib/ghost/pipeline';
 
+// Configure API route options for large file uploads
+export const maxDuration = 300; // 5 minutes
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+// Body size limit - allow up to 50MB for base64 images
+const MAX_BODY_SIZE = 50 * 1024 * 1024; // 50MB
+
 /**
  * POST /api/ghost - Process ghost mannequin request
  * 
- * Expected request body:
+ * Expected request body (Two-Image Workflow):
  * {
- *   "flatlay": "base64 or URL",
- *   "onModel": "optional base64 or URL",
+ *   "flatlay": "base64 or URL of Detail Source (Image B) - REQUIRED",
+ *   "onModel": "base64 or URL of On-Model Reference (Image A) - OPTIONAL",
  *   "options": {
  *     "preserveLabels": true,
  *     "outputSize": "2048x2048",
  *     "backgroundColor": "white"
  *   }
  * }
+ * 
+ * Image Roles:
+ * - flatlay (Image B): Detail source with absolute truth for colors, patterns, textures, construction details
+ * - onModel (Image A): On-model reference for understanding proportions and spatial relationships
  */
 export async function POST(request: NextRequest) {
   console.log('Received ghost mannequin processing request');
 
   try {
+    // Check request size
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
+      return NextResponse.json(
+        {
+          error: `Request too large. Maximum size is ${MAX_BODY_SIZE / 1024 / 1024}MB`,
+          code: 'REQUEST_TOO_LARGE'
+        },
+        { status: 413 }
+      );
+    }
+
     // Parse request body
     let body: any;
     try {

@@ -2,19 +2,11 @@
 const nextConfig = {
   // Enable experimental features if needed
   experimental: {
-    // Enable if using app directory features
-    appDir: true,
+    // App directory is now stable, no need to enable
   },
 
-  // API configuration
-  api: {
-    // Increase body size limit for base64 images (50MB)
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-    // Increase response size limit
-    responseLimit: '50mb',
-  },
+  // API configuration is now handled differently in App Router
+  // Body size limits are configured per route handler
 
   // Image configuration for handling large images
   images: {
@@ -145,8 +137,7 @@ const nextConfig = {
     // Enable source maps in development
     productionBrowserSourceMaps: false,
     
-    // Fast refresh
-    fastRefresh: true,
+    // Fast refresh is enabled by default in development
   }),
 
   // Production configuration

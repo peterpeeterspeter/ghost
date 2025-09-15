@@ -36,21 +36,63 @@ export async function removeBackground(imageUrl: string): Promise<BackgroundRemo
       image_url: imageUrl,
     };
 
-    console.log('Starting background removal with FAL.AI Bria 2.0...');
+    console.log('🚀 Starting background removal with FAL.AI Bria 2.0...');
     
+    let processedImageUrl = imageUrl;
+    
+    // Handle base64 images properly as per FAL documentation
+    if (imageUrl.startsWith('data:image/')) {
+      const base64Size = (imageUrl.length * 3) / 4; // Rough base64 to bytes conversion
+      console.log('📊 Base64 image size:', (base64Size / 1024 / 1024).toFixed(2), 'MB');
+      
+      // For images > 1MB, use FAL storage upload as recommended in docs
+      if (base64Size > 1024 * 1024) { // 1MB threshold
+        console.log('🔄 Large image detected, uploading to FAL storage...');
+        try {
+          // Extract base64 data and convert to File object for auto-upload
+          const [header, base64Data] = imageUrl.split(',');
+          const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+          const buffer = Buffer.from(base64Data, 'base64');
+          
+          // Create File object - FAL will auto-upload this
+          const file = new File([buffer], 'image.jpg', { type: mimeType });
+          const uploadedUrl = await fal.storage.upload(file);
+          processedImageUrl = uploadedUrl;
+          console.log('✅ Image uploaded to FAL storage:', uploadedUrl);
+        } catch (uploadError) {
+          console.warn('⚠️ FAL storage upload failed, using direct base64:', uploadError);
+          // Fall back to direct base64 (may cause HTTP 413 for very large images)
+        }
+      } else {
+        console.log('📤 Small image, using direct base64');
+      }
+    } else {
+      console.log('🔗 Using external URL:', imageUrl.substring(0, 50) + '...');
+    }
+
     // Call FAL.AI Bria background removal endpoint
-    const result = await fal.subscribe("fal-ai/bria/background/remove", {
-      input: request,
-      logs: true,
-      onQueueUpdate: (update) => {
-        console.log('FAL.AI Queue Update:', update);
+    console.log('📤 Sending request to FAL.AI Bria endpoint...');
+    const result: any = await fal.subscribe("fal-ai/bria/background/remove", {
+      input: {
+        image_url: processedImageUrl
       },
-    }) as FalBriaResponse;
+      logs: false,
+      onQueueUpdate: (update) => {
+        if (update.status) {
+          console.log('📋 FAL Status:', update.status);
+        }
+      },
+    });
 
     const processingTime = Date.now() - startTime;
 
-    // Validate response
-    if (!result?.image?.url) {
+    // Validate response according to FAL.AI documentation
+    const responseData = result?.data || result;
+    const resultImageUrl = responseData?.image?.url;
+    
+    if (!resultImageUrl || typeof resultImageUrl !== 'string') {
+      console.error('FAL.AI response structure:', result);
+      console.error('Response data:', responseData);
       throw new GhostPipelineError(
         'Invalid response from FAL.AI: missing image URL',
         'INVALID_FAL_RESPONSE',
@@ -61,7 +103,7 @@ export async function removeBackground(imageUrl: string): Promise<BackgroundRemo
     console.log(`Background removal completed in ${processingTime}ms`);
     
     return {
-      cleanedImageUrl: result.image.url,
+      cleanedImageUrl: resultImageUrl,
       processingTime,
     };
 
@@ -69,7 +111,7 @@ export async function removeBackground(imageUrl: string): Promise<BackgroundRemo
     const processingTime = Date.now() - startTime;
     
     console.error('Background removal failed:', error);
-
+    
     // Handle FAL.AI specific errors
     if (error instanceof Error) {
       if (error.message.includes('rate limit')) {
@@ -147,26 +189,7 @@ export async function validateImageUrl(imageUrl: string): Promise<boolean> {
   }
 }
 
-/**
- * Convert base64 image to temporary URL for FAL.AI processing
- * Note: In production, you might want to upload to a temporary storage first
- * @param base64Data - Base64 encoded image data
- * @returns string - URL that can be used by FAL.AI
- */
-export function prepareImageForFal(base64Data: string): string {
-  // If it's already a URL, return as-is
-  if (base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
-    return base64Data;
-  }
 
-  // If it's a base64 data URL, return as-is (FAL.AI should handle this)
-  if (base64Data.startsWith('data:image/')) {
-    return base64Data;
-  }
-
-  // If it's just base64 data without the data URL prefix, add it
-  return `data:image/jpeg;base64,${base64Data}`;
-}
 
 /**
  * Get estimated processing time for background removal based on image size
@@ -194,5 +217,41 @@ export async function getEstimatedProcessingTime(imageUrl: string): Promise<numb
     return 5000; // Default 5 seconds if we can't determine size
   } catch {
     return 5000; // Default 5 seconds on error
+  }
+}
+
+/**
+ * Upload generated image to FAL storage for permanent URL
+ * @param imageDataUrl - Base64 data URL of the image
+ * @returns Promise<string> - Permanent storage URL
+ */
+export async function uploadImageToFalStorage(imageDataUrl: string): Promise<string> {
+  try {
+    console.log('Uploading generated image to FAL storage...');
+    
+    // Convert data URL to file for upload
+    const base64Data = imageDataUrl.split(',')[1];
+    const mimeType = imageDataUrl.match(/data:([^;]+)/)?.[1] || 'image/png';
+    
+    // Create a blob from base64
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const file = new File([byteArray], 'ghost-mannequin.png', { type: mimeType });
+    
+    // Upload to FAL storage using the same pattern as background removal
+    const uploadResult = await fal.storage.upload(file);
+    
+    console.log('Image uploaded to FAL storage successfully:', uploadResult);
+    return uploadResult;
+    
+  } catch (error) {
+    console.error('FAL storage upload failed:', error);
+    
+    // Return original data URL as fallback
+    return imageDataUrl;
   }
 }

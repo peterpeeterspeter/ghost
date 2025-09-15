@@ -32,7 +32,8 @@ interface PipelineState {
   startTime: number;
   currentStage: ProcessingStage | null;
   stageResults: {
-    backgroundRemoval?: BackgroundRemovalResult;
+    backgroundRemovalFlatlay?: BackgroundRemovalResult;
+    backgroundRemovalOnModel?: BackgroundRemovalResult;
     analysis?: GarmentAnalysisResult;
     rendering?: GhostMannequinResult;
   };
@@ -52,8 +53,8 @@ export class GhostMannequinPipeline {
       enableLogging: true,
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
-        analysis: 20000,          // 20 seconds
-        rendering: 60000,         // 60 seconds
+        analysis: 90000,          // 90 seconds (increased for complex analysis)
+        rendering: 180000,        // 180 seconds (increased for ghost mannequin generation)
       },
       ...options,
     };
@@ -105,24 +106,36 @@ export class GhostMannequinPipeline {
       // Validate request
       await this.validateRequest(request);
 
-      // Stage 1: Background Removal
+      // Stage 1a: Background Removal - Flatlay (Garment Detail)
       await this.executeStage('background_removal', async () => {
-        this.log('Stage 1: Background removal');
-        const result = await this.executeWithTimeout(
+        this.log('Stage 1a: Background removal - Garment detail image');
+        const flatlayResult = await this.executeWithTimeout(
           removeBackground(request.flatlay),
           this.options.timeouts!.backgroundRemoval!,
           'background_removal'
         );
-        this.state.stageResults.backgroundRemoval = result;
-        return result;
+        this.state.stageResults.backgroundRemovalFlatlay = flatlayResult;
+        
+        // Stage 1b: Background Removal - On-Model (if provided)
+        if (request.onModel) {
+          this.log('Stage 1b: Background removal - On-model image');
+          const onModelResult = await this.executeWithTimeout(
+            removeBackground(request.onModel),
+            this.options.timeouts!.backgroundRemoval!,
+            'background_removal'
+          );
+          this.state.stageResults.backgroundRemovalOnModel = onModelResult;
+        }
+        
+        return flatlayResult;
       });
 
-      // Stage 2: Garment Analysis
+      // Stage 2: Garment Analysis (ONLY on garment detail image)
       await this.executeStage('analysis', async () => {
-        this.log('Stage 2: Garment analysis');
-        const cleanedImage = this.state.stageResults.backgroundRemoval!.cleanedImageUrl;
+        this.log('Stage 2: Garment analysis - Processing ONLY garment detail image');
+        const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
         const result = await this.executeWithTimeout(
-          analyzeGarment(cleanedImage),
+          analyzeGarment(cleanedGarmentDetail, this.state.sessionId),
           this.options.timeouts!.analysis!,
           'analysis'
         );
@@ -130,13 +143,15 @@ export class GhostMannequinPipeline {
         return result;
       });
 
-      // Stage 3: Ghost Mannequin Generation
+      // Stage 3: Ghost Mannequin Generation (TWO cleaned images + JSON)
       await this.executeStage('rendering', async () => {
-        this.log('Stage 3: Ghost mannequin generation');
-        const cleanedImage = this.state.stageResults.backgroundRemoval!.cleanedImageUrl;
+        this.log('Stage 3: Ghost mannequin generation - Using TWO cleaned images + JSON analysis');
+        const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
+        const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
         const analysis = this.state.stageResults.analysis!.analysis;
+        
         const result = await this.executeWithTimeout(
-          generateGhostMannequin(cleanedImage, analysis, request.onModel),
+          generateGhostMannequin(cleanedGarmentDetail, analysis, cleanedOnModel),
           this.options.timeouts!.rendering!,
           'rendering'
         );
@@ -250,7 +265,7 @@ export class GhostMannequinPipeline {
       metrics: {
         processingTime: `${(totalTime / 1000).toFixed(2)}s`,
         stageTimings: {
-          backgroundRemoval: stageResults.backgroundRemoval?.processingTime || 0,
+          backgroundRemoval: (stageResults.backgroundRemovalFlatlay?.processingTime || 0) + (stageResults.backgroundRemovalOnModel?.processingTime || 0),
           analysis: stageResults.analysis?.processingTime || 0,
           rendering: stageResults.rendering?.processingTime || 0,
         },
@@ -259,10 +274,16 @@ export class GhostMannequinPipeline {
 
     // Add successful results
     if (this.state.status === 'completed') {
-      result.cleanedImageUrl = stageResults.backgroundRemoval?.cleanedImageUrl;
+      result.cleanedImageUrl = stageResults.backgroundRemovalFlatlay?.cleanedImageUrl;
+      result.cleanedOnModelUrl = stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
       result.renderUrl = stageResults.rendering?.renderUrl;
       // Note: analysisUrl would be set if we store the analysis JSON to storage
       // result.analysisUrl = `/ghost/analysis/${this.state.sessionId}.json`;
+    }
+    
+    // Add analysis data if available (for both success and partial results)
+    if (stageResults.analysis) {
+      (result as any).analysis = stageResults.analysis.analysis;
     }
 
     // Add error details if failed
