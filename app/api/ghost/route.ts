@@ -117,10 +117,14 @@ export async function POST(request: NextRequest) {
       renderingModel: (process.env.RENDERING_MODEL as 'gemini-flash' | 'seedream') || 'gemini-flash',
       timeouts: {
         backgroundRemoval: parseInt(process.env.TIMEOUT_BACKGROUND_REMOVAL || '30000'),
-        analysis: parseInt(process.env.TIMEOUT_ANALYSIS || '20000'),
+        analysis: parseInt(process.env.TIMEOUT_ANALYSIS || '90000'),
         enrichment: parseInt(process.env.TIMEOUT_ENRICHMENT || '120000'),
-        rendering: parseInt(process.env.TIMEOUT_RENDERING || '60000'),
+        consolidation: parseInt(process.env.TIMEOUT_CONSOLIDATION || '45000'),
+        rendering: parseInt(process.env.TIMEOUT_RENDERING || '180000'),
+        qa: parseInt(process.env.TIMEOUT_QA || '60000'),
       },
+      enableQaLoop: process.env.ENABLE_QA_LOOP !== 'false',
+      maxQaIterations: parseInt(process.env.MAX_QA_ITERATIONS || '2'),
     };
 
     console.log('Starting ghost mannequin pipeline processing...');
@@ -162,6 +166,7 @@ export async function POST(request: NextRequest) {
               backgroundRemoval: 0,
               analysis: 0,
               enrichment: 0,
+              consolidation: 0,
               rendering: 0,
             },
           },

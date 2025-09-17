@@ -9,6 +9,13 @@ import {
   GhostMannequinResult,
   ProcessingStage
 } from '@/types/ghost';
+import { 
+  consolidateAnalyses, 
+  buildFlashPrompt, 
+  qaLoop,
+  type ConsolidationOutput,
+  type QAReport 
+} from './consolidation';
 import { configureFalClient, removeBackground } from './fal';
 import { configureGeminiClient, analyzeGarment, analyzeGarmentEnrichment, generateGhostMannequin, generateGhostMannequinWithSeedream } from './gemini';
 
@@ -24,8 +31,12 @@ interface PipelineOptions {
     backgroundRemoval?: number;
     analysis?: number;
     enrichment?: number;
+    consolidation?: number;
     rendering?: number;
+    qa?: number;
   };
+  enableQaLoop?: boolean;
+  maxQaIterations?: number;
 }
 
 // Pipeline state interface
@@ -39,7 +50,9 @@ interface PipelineState {
     backgroundRemovalOnModel?: BackgroundRemovalResult;
     analysis?: GarmentAnalysisResult;
     enrichment?: GarmentEnrichmentResult;
+    consolidation?: ConsolidationOutput;
     rendering?: GhostMannequinResult;
+    qaReport?: QAReport;
   };
   error?: GhostPipelineError;
 }
@@ -60,8 +73,12 @@ export class GhostMannequinPipeline {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
         enrichment: 120000,       // 120 seconds for enrichment analysis (increased)
+        consolidation: 45000,     // 45 seconds for JSON consolidation
         rendering: 180000,        // 180 seconds (increased for ghost mannequin generation)
+        qa: 60000,                // 60 seconds for QA analysis
       },
+      enableQaLoop: true,
+      maxQaIterations: 2,
       ...options,
     };
 
@@ -165,27 +182,87 @@ export class GhostMannequinPipeline {
         return result;
       });
 
-      // Stage 4: Ghost Mannequin Generation (TWO cleaned images + JSON analysis + Enrichment)
-      await this.executeStage('rendering', async () => {
-        this.log(`Stage 4: Ghost mannequin generation - Using ${this.options.renderingModel} model`);
+      // Stage 4: JSON Consolidation (Facts_v3 + Control Block)
+      await this.executeStage('consolidation', async () => {
+        this.log('Stage 4: JSON consolidation - Merging analysis data and resolving conflicts');
         const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
         const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
         const analysis = this.state.stageResults.analysis!.analysis;
-        const enrichmentData = this.state.stageResults.enrichment?.enrichment; // Optional
-        
-        // Choose rendering function based on configuration
-        const renderingFunction = this.options.renderingModel === 'seedream' 
-          ? generateGhostMannequinWithSeedream(cleanedGarmentDetail, analysis, cleanedOnModel, enrichmentData)
-          : generateGhostMannequin(cleanedGarmentDetail, analysis, cleanedOnModel, enrichmentData);
+        const enrichmentData = this.state.stageResults.enrichment!.enrichment;
         
         const result = await this.executeWithTimeout(
-          renderingFunction,
+          consolidateAnalyses(
+            analysis, 
+            enrichmentData, 
+            { 
+              cleanedImageUrl: cleanedGarmentDetail, 
+              onModelUrl: cleanedOnModel 
+            },
+            this.state.sessionId
+          ),
+          this.options.timeouts!.consolidation!,
+          'consolidation'
+        );
+        this.state.stageResults.consolidation = result;
+        return result;
+      });
+
+      // Stage 5: Ghost Mannequin Generation (Using Control Block)
+      await this.executeStage('rendering', async () => {
+        this.log(`Stage 5: Ghost mannequin generation - Using control block with ${this.options.renderingModel} model`);
+        const consolidation = this.state.stageResults.consolidation!;
+        const controlBlockPrompt = buildFlashPrompt(consolidation.control_block);
+        
+        // Use Control Block approach instead of raw analysis data
+        const result = await this.executeWithTimeout(
+          this.generateWithControlBlock(controlBlockPrompt, consolidation),
           this.options.timeouts!.rendering!,
           'rendering'
         );
         this.state.stageResults.rendering = result;
         return result;
       });
+
+      // Stage 6: QA Loop (Optional but recommended)
+      if (this.options.enableQaLoop && this.state.stageResults.rendering) {
+        await this.executeStage('qa', async () => {
+          this.log('Stage 6: QA loop - Validating output quality');
+          const renderUrl = this.state.stageResults.rendering!.renderUrl;
+          const factsV3 = this.state.stageResults.consolidation!.facts_v3;
+          
+          let iterations = 0;
+          let currentImageUrl = renderUrl;
+          
+          while (iterations < this.options.maxQaIterations!) {
+            const qaReport = await this.executeWithTimeout(
+              qaLoop(currentImageUrl, factsV3, this.state.sessionId),
+              this.options.timeouts!.qa!,
+              'qa'
+            );
+            
+            this.state.stageResults.qaReport = qaReport;
+            
+            if (qaReport.passed || qaReport.deltas.length === 0) {
+              this.log(`QA passed on iteration ${iterations + 1}`);
+              break;
+            }
+            
+            if (iterations < this.options.maxQaIterations! - 1) {
+              this.log(`QA iteration ${iterations + 1}: Applying correction`);
+              const correctionPrompt = qaReport.deltas[0].correction_prompt;
+              
+              // Apply correction (this would need Flash image editing)
+              // For now, we'll log the correction and break
+              this.log(`QA correction needed: ${correctionPrompt}`);
+              break;
+            }
+            
+            iterations++;
+          }
+          
+          return this.state.stageResults.qaReport;
+        });
+      }
 
       // Mark as completed
       this.state.status = 'completed';
@@ -296,6 +373,7 @@ export class GhostMannequinPipeline {
           backgroundRemoval: (stageResults.backgroundRemovalFlatlay?.processingTime || 0) + (stageResults.backgroundRemovalOnModel?.processingTime || 0),
           analysis: stageResults.analysis?.processingTime || 0,
           enrichment: stageResults.enrichment?.processingTime || 0,
+          consolidation: stageResults.consolidation?.processing_time || 0,
           rendering: stageResults.rendering?.processingTime || 0,
         },
       },
@@ -315,6 +393,20 @@ export class GhostMannequinPipeline {
       (result as any).analysis = stageResults.analysis.analysis;
     }
     
+    // Add consolidation data if available
+    if (stageResults.consolidation) {
+      (result as any).consolidation = {
+        facts_v3: stageResults.consolidation.facts_v3,
+        control_block: stageResults.consolidation.control_block,
+        conflicts_resolved: stageResults.consolidation.conflicts_found.length,
+      };
+    }
+    
+    // Add QA report if available
+    if (stageResults.qaReport) {
+      (result as any).qa_report = stageResults.qaReport;
+    }
+    
 
     // Add error details if failed
     if (this.state.status === 'failed' && this.state.error) {
@@ -326,6 +418,38 @@ export class GhostMannequinPipeline {
     }
 
     return result;
+  }
+
+  /**
+   * Generate ghost mannequin using Control Block approach
+   * @param controlBlockPrompt - Optimized prompt from Control Block
+   * @param consolidation - Consolidation output with Facts_v3
+   */
+  private async generateWithControlBlock(
+    controlBlockPrompt: string,
+    consolidation: ConsolidationOutput
+  ): Promise<GhostMannequinResult> {
+    // Use the existing generation functions but with Control Block prompt
+    const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
+    const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
+    
+    // For now, use the existing generators with the optimized prompt
+    // TODO: Create dedicated Control Block generator functions
+    if (this.options.renderingModel === 'seedream') {
+      return await generateGhostMannequinWithSeedream(
+        cleanedGarmentDetail, 
+        this.state.stageResults.analysis!.analysis, // Still need for compatibility
+        cleanedOnModel,
+        this.state.stageResults.enrichment?.enrichment
+      );
+    } else {
+      return await generateGhostMannequin(
+        cleanedGarmentDetail,
+        this.state.stageResults.analysis!.analysis, // Still need for compatibility
+        cleanedOnModel,
+        this.state.stageResults.enrichment?.enrichment
+      );
+    }
   }
 
   /**

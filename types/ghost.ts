@@ -604,7 +604,7 @@ export class GhostPipelineError extends Error {
 }
 
 // Utility types
-export type ProcessingStage = 'background_removal' | 'analysis' | 'enrichment' | 'rendering';
+export type ProcessingStage = 'background_removal' | 'analysis' | 'enrichment' | 'consolidation' | 'rendering' | 'qa';
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 // Constants
