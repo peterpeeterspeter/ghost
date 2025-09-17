@@ -9,7 +9,7 @@ This system orchestrates multiple AI services in a sophisticated four-stage pipe
 1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from product images
 2. **Garment Analysis** - Gemini 2.5 Pro performs comprehensive structural analysis
 3. **Enrichment Analysis** - Gemini 2.5 Pro extracts rendering-critical attributes
-4. **Ghost Mannequin Generation** - Gemini 2.5 Flash creates the final ghost mannequin effect
+4. **Ghost Mannequin Generation** - Choose between Gemini 2.5 Flash or FAL.AI Seedream 4.0
 
 ## 🏗️ Architecture
 
@@ -24,7 +24,13 @@ This system orchestrates multiple AI services in a sophisticated four-stage pipe
 ### Pipeline Flow
 
 ```
-GhostRequest → Background Removal → Base Analysis → Enrichment Analysis → Ghost Mannequin Generation → GhostResult
+GhostRequest → Background Removal → Base Analysis → Enrichment Analysis 
+    ↓
+Ghost Mannequin Generation:
+├── Gemini Flash 2.5 (Default)
+└── FAL.AI Seedream 4.0 (Alternative)
+    ↓
+GhostResult
 ```
 
 Each stage has configurable timeouts, error handling, and performance metrics tracking.
@@ -45,6 +51,26 @@ Each stage has configurable timeouts, error handling, and performance metrics tr
 - **Construction Precision**: Seam visibility, edge finishing, hardware details
 - **Rendering Guidance**: Lighting preferences, shadow behavior, detail sharpness
 - **Market Intelligence**: Price tier, style longevity, care complexity
+
+## 🤖 Dual AI Models
+
+### Rendering Models
+
+| Model | Provider | Strengths | Best For |
+|-------|----------|-----------|----------|
+| **Gemini Flash 2.5** | Google | Fast, reliable, cost-effective | General use, high volume |
+| **Seedream 4.0** | FAL.AI | Advanced image editing, precise control | Complex garments, premium quality |
+
+### Model Configuration
+
+**Environment Variable**:
+```bash
+# Choose rendering model
+RENDERING_MODEL=gemini-flash  # Default: fast & reliable
+RENDERING_MODEL=seedream      # Premium: advanced quality
+```
+
+**Automatic Fallback**: If the primary model fails, the system automatically attempts the alternative model for maximum reliability.
 
 ## 🔧 API Endpoints
 
@@ -183,13 +209,21 @@ A focused 1500+ word prompt for rendering-critical attributes:
 - Provide technical rendering guidance
 - Assess market positioning and quality indicators
 
-### Ghost Mannequin Generation Prompt
-A sophisticated 1200+ word prompt for final image generation:
+### Ghost Mannequin Generation Prompts
+#### Gemini Flash 2.5 Prompt
+A sophisticated 1200+ word prompt for Gemini image generation:
 - Integrate both base analysis and enrichment data
 - Use Image B (flatlay) as visual ground truth
 - Apply Image A (on-model) for proportional guidance
 - Implement precise color fidelity and fabric physics
 - Generate professional ghost mannequin effect
+
+#### Seedream 4.0 Prompt
+A specialized prompt optimized for FAL.AI Seedream:
+- Leverage advanced image editing capabilities
+- Focus on precise garment structure and details
+- Utilize analysis data for enhanced control
+- Generate premium quality ghost mannequin results
 
 ## 🚀 Quick Start
 
@@ -217,6 +251,9 @@ cp .env.example .env.local
 # Essential API keys
 FAL_API_KEY=your_fal_api_key_here          # Get from https://fal.ai/dashboard
 GEMINI_API_KEY=your_gemini_api_key_here    # Get from https://aistudio.google.com/app/apikey
+
+# Rendering model selection (default: gemini-flash)
+RENDERING_MODEL=gemini-flash  # or 'seedream'
 
 # Optional Supabase storage
 SUPABASE_URL=https://your-project.supabase.co
@@ -281,11 +318,13 @@ curl http://localhost:3000/api/ghost?action=health
 ## 📊 Performance Metrics
 
 ### Typical Processing Times
-- **Background Removal**: 15-30 seconds per image
-- **Base Analysis**: 60-90 seconds
-- **Enrichment Analysis**: 30-60 seconds  
-- **Ghost Mannequin Generation**: 60-120 seconds
-- **Total Pipeline**: 3-5 minutes end-to-end
+- **Background Removal**: 2-5 seconds per image
+- **Base Analysis**: 15-30 seconds
+- **Enrichment Analysis**: 15-25 seconds  
+- **Ghost Mannequin Generation**: 
+  - Gemini Flash 2.5: 10-20 seconds
+  - Seedream 4.0: 15-30 seconds
+- **Total Pipeline**: 45-90 seconds end-to-end
 
 ### Quality Features
 - Professional-grade ghost mannequin effects
@@ -351,8 +390,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- **FAL.AI** for background removal capabilities
-- **Google Gemini** for advanced AI analysis and generation
+- **FAL.AI** for background removal and Seedream 4.0 ghost mannequin generation
+- **Google Gemini** for advanced AI analysis and Flash 2.5 generation
 - **Vercel** for deployment platform
 - **Next.js** for the application framework
 

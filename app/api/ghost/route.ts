@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_ANON_KEY,
       enableLogging: process.env.NODE_ENV === 'development',
+      renderingModel: (process.env.RENDERING_MODEL as 'gemini-flash' | 'seedream') || 'gemini-flash',
       timeouts: {
         backgroundRemoval: parseInt(process.env.TIMEOUT_BACKGROUND_REMOVAL || '30000'),
         analysis: parseInt(process.env.TIMEOUT_ANALYSIS || '20000'),

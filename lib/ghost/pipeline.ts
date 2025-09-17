@@ -10,7 +10,7 @@ import {
   ProcessingStage
 } from '@/types/ghost';
 import { configureFalClient, removeBackground } from './fal';
-import { configureGeminiClient, analyzeGarment, analyzeGarmentEnrichment, generateGhostMannequin } from './gemini';
+import { configureGeminiClient, analyzeGarment, analyzeGarmentEnrichment, generateGhostMannequin, generateGhostMannequinWithSeedream } from './gemini';
 
 // Configuration interface
 interface PipelineOptions {
@@ -19,6 +19,7 @@ interface PipelineOptions {
   supabaseUrl?: string;
   supabaseKey?: string;
   enableLogging?: boolean;
+  renderingModel?: 'gemini-flash' | 'seedream'; // Simple model choice for rendering only
   timeouts?: {
     backgroundRemoval?: number;
     analysis?: number;
@@ -54,6 +55,7 @@ export class GhostMannequinPipeline {
   constructor(options: PipelineOptions) {
     this.options = {
       enableLogging: true,
+      renderingModel: 'gemini-flash', // Default to original Gemini Flash
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
@@ -165,14 +167,19 @@ export class GhostMannequinPipeline {
 
       // Stage 4: Ghost Mannequin Generation (TWO cleaned images + JSON analysis + Enrichment)
       await this.executeStage('rendering', async () => {
-        this.log('Stage 4: Ghost mannequin generation - Using TWO cleaned images + JSON analysis + Enrichment');
+        this.log(`Stage 4: Ghost mannequin generation - Using ${this.options.renderingModel} model`);
         const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
         const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
         const analysis = this.state.stageResults.analysis!.analysis;
         const enrichmentData = this.state.stageResults.enrichment?.enrichment; // Optional
         
+        // Choose rendering function based on configuration
+        const renderingFunction = this.options.renderingModel === 'seedream' 
+          ? generateGhostMannequinWithSeedream(cleanedGarmentDetail, analysis, cleanedOnModel, enrichmentData)
+          : generateGhostMannequin(cleanedGarmentDetail, analysis, cleanedOnModel, enrichmentData);
+        
         const result = await this.executeWithTimeout(
-          generateGhostMannequin(cleanedGarmentDetail, analysis, cleanedOnModel, enrichmentData),
+          renderingFunction,
           this.options.timeouts!.rendering!,
           'rendering'
         );
