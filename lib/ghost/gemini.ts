@@ -598,7 +598,15 @@ export async function generateGhostMannequin(
     console.log('Gemini 2.5 Flash completed generation...');
     
     // Debug: Log the complete response with safety ratings
-    console.log('Full Gemini response (first 1500 chars):', JSON.stringify(response, null, 2).substring(0, 1500));
+    console.log('\n=== DETAILED GEMINI FLASH RESPONSE DEBUG ===');
+    console.log('Response object keys:', Object.keys(response));
+    console.log('Full response structure:', JSON.stringify({
+      candidates: response.candidates?.length || 0,
+      promptFeedback: response.promptFeedback ? 'present' : 'missing',
+      usageMetadata: response.usageMetadata ? 'present' : 'missing'
+    }, null, 2));
+    console.log('First 2000 chars of full response:', JSON.stringify(response, null, 2).substring(0, 2000));
+    console.log('=== END RESPONSE DEBUG ===\n');
     
     // Check for prompt feedback and safety ratings
     if (response.promptFeedback) {
@@ -886,13 +894,110 @@ function createEnhancedPrompt(analysis: AnalysisJSON): string {
  * Fallback ghost mannequin generation when Gemini image generation fails
  */
 async function generateFallbackGhostMannequin(flatlayImage: string, analysis: AnalysisJSON): Promise<string> {
-  console.log('Using fallback ghost mannequin generation...');
+  console.log('\n=== USING FALLBACK GHOST MANNEQUIN GENERATION ===');
+  console.log('This indicates Gemini Flash did not generate an image.');
+  console.log('Reasons could be:');
+  console.log('1. Content safety filters blocked the prompt');
+  console.log('2. Model did not return image data in expected format');
+  console.log('3. API error or timeout during image generation');
+  console.log('4. Model does not support image generation for this prompt');
   
-  // For now, return the cleaned flatlay image as fallback
-  // In a production system, you might integrate with other image generation services
-  // like DALL-E, Midjourney, or Stable Diffusion here
+  // Try a much simpler ghost mannequin generation with Gemini Flash
+  console.log('Attempting simple fallback generation...');
   
-  return flatlayImage; // Return the cleaned background-removed image
+  try {
+    const model = genAI!.getGenerativeModel({
+      model: "gemini-2.5-flash-image-preview",
+      generationConfig: {
+        temperature: 0.1,
+      },
+    });
+    
+    const imageData = await prepareImageForGemini(flatlayImage);
+    const mimeType = getImageMimeType(flatlayImage);
+    
+    const simplePrompt = "Transform this flat garment image into a 3D ghost mannequin effect showing how it would look when worn by an invisible person. Create a professional product photo with proper dimensional form and natural fabric draping.";
+    
+    const result = await model.generateContent([
+      { text: simplePrompt },
+      {
+        inlineData: {
+          data: imageData,
+          mimeType: mimeType,
+        },
+      },
+    ]);
+    
+    const response = await result.response;
+    const candidates = response.candidates;
+    
+    if (candidates && candidates.length > 0) {
+      const candidate = candidates[0];
+      if (candidate.content && candidate.content.parts) {
+        const imagePart = candidate.content.parts.find(part => 
+          part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')
+        );
+        
+        if (imagePart && imagePart.inlineData) {
+          console.log('Simple fallback generation successful! Uploading to FAL storage...');
+          const imageDataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+          const { uploadImageToFalStorage } = await import('./fal');
+          return await uploadImageToFalStorage(imageDataUrl);
+        }
+      }
+    }
+    
+    console.log('Simple fallback also failed - no image generated');
+  } catch (fallbackError) {
+    console.error('Fallback generation failed:', fallbackError);
+  }
+  
+  console.log('Returning original cleaned image as final fallback');
+  console.log('=== END FALLBACK GENERATION ===\n');
+  
+  // As a last resort, return the cleaned background-removed image
+  return flatlayImage;
+}
+
+/**
+ * Test Gemini Flash image generation with a simple prompt
+ */
+export async function testGeminiFlashImageGeneration(): Promise<boolean> {
+  if (!genAI) {
+    return false;
+  }
+
+  try {
+    console.log('Testing Gemini Flash image generation...');
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash-image-preview",
+      generationConfig: { temperature: 0.5 }
+    });
+    
+    const result = await model.generateContent([
+      { text: "Generate a simple red circle on a white background." }
+    ]);
+    
+    const response = await result.response;
+    console.log('Test response candidates:', response.candidates?.length || 0);
+    
+    if (response.candidates && response.candidates.length > 0) {
+      const candidate = response.candidates[0];
+      if (candidate.content && candidate.content.parts) {
+        const hasImage = candidate.content.parts.some(part => 
+          part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')
+        );
+        console.log('Test image generation result:', hasImage ? 'SUCCESS' : 'NO_IMAGE');
+        return hasImage;
+      }
+    }
+    
+    console.log('Test image generation result: NO_CANDIDATES');
+    return false;
+  } catch (error) {
+    console.error('Test image generation failed:', error);
+    return false;
+  }
 }
 
 /**
