@@ -12,12 +12,21 @@ import {
 import { 
   consolidateAnalyses, 
   buildFlashPrompt, 
+  buildSeeDreamPrompt,
   qaLoop,
   type ConsolidationOutput,
   type QAReport 
 } from './consolidation';
 import { configureFalClient, removeBackground } from './fal';
-import { configureGeminiClient, analyzeGarment, analyzeGarmentEnrichment, generateGhostMannequin, generateGhostMannequinWithSeedream } from './gemini';
+import { 
+  configureGeminiClient, 
+  analyzeGarment, 
+  analyzeGarmentEnrichment, 
+  generateGhostMannequin, 
+  generateGhostMannequinWithSeedream,
+  generateGhostMannequinWithControlBlock,
+  generateGhostMannequinWithControlBlockGemini 
+} from './gemini';
 
 // Configuration interface
 interface PipelineOptions {
@@ -211,11 +220,18 @@ export class GhostMannequinPipeline {
       await this.executeStage('rendering', async () => {
         this.log(`Stage 5: Ghost mannequin generation - Using control block with ${this.options.renderingModel} model`);
         const consolidation = this.state.stageResults.consolidation!;
-        const controlBlockPrompt = buildFlashPrompt(consolidation.control_block);
+        
+        // For SeeDream, use the optimized prompt format
+        const promptToUse = this.options.renderingModel === 'seedream' ?
+          buildSeeDreamPrompt(consolidation.control_block, consolidation.facts_v3) :
+          buildFlashPrompt(consolidation.control_block);
+          
+        // Log the generated prompt type
+        this.log(`Using ${this.options.renderingModel === 'seedream' ? 'SeeDream 4.0 optimized' : 'standard'} prompt format`);
         
         // Use Control Block approach instead of raw analysis data
         const result = await this.executeWithTimeout(
-          this.generateWithControlBlock(controlBlockPrompt, consolidation),
+          this.generateWithControlBlock(promptToUse, consolidation),
           this.options.timeouts!.rendering!,
           'rendering'
         );
@@ -375,6 +391,7 @@ export class GhostMannequinPipeline {
           enrichment: stageResults.enrichment?.processingTime || 0,
           consolidation: stageResults.consolidation?.processing_time || 0,
           rendering: stageResults.rendering?.processingTime || 0,
+          qa: 0, // QA stage timing (placeholder for future implementation)
         },
       },
     };
@@ -429,25 +446,30 @@ export class GhostMannequinPipeline {
     controlBlockPrompt: string,
     consolidation: ConsolidationOutput
   ): Promise<GhostMannequinResult> {
-    // Use the existing generation functions but with Control Block prompt
     const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
     const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
     
-    // For now, use the existing generators with the optimized prompt
-    // TODO: Create dedicated Control Block generator functions
+    // Log the consolidated data for debugging
+    this.log('Control Block Data:');
+    this.log(`Facts V3: ${JSON.stringify(consolidation.facts_v3, null, 2)}`);
+    this.log(`Control Block: ${JSON.stringify(consolidation.control_block, null, 2)}`);
+    this.log(`Conflicts Resolved: ${consolidation.conflicts_found.length}`);
+    this.log(`Generated Prompt: ${controlBlockPrompt}`);
+    
+    // Use Control Block-enhanced generation
     if (this.options.renderingModel === 'seedream') {
-      return await generateGhostMannequinWithSeedream(
-        cleanedGarmentDetail, 
-        this.state.stageResults.analysis!.analysis, // Still need for compatibility
-        cleanedOnModel,
-        this.state.stageResults.enrichment?.enrichment
+      return await generateGhostMannequinWithControlBlock(
+        cleanedGarmentDetail,
+        controlBlockPrompt,
+        consolidation,
+        cleanedOnModel
       );
     } else {
-      return await generateGhostMannequin(
+      return await generateGhostMannequinWithControlBlockGemini(
         cleanedGarmentDetail,
-        this.state.stageResults.analysis!.analysis, // Still need for compatibility
-        cleanedOnModel,
-        this.state.stageResults.enrichment?.enrichment
+        controlBlockPrompt,
+        consolidation,
+        cleanedOnModel
       );
     }
   }

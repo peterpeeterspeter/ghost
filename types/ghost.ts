@@ -496,13 +496,15 @@ export interface GhostResult {
       backgroundRemoval: number;
       analysis: number;
       enrichment: number;
+      consolidation: number;
       rendering: number;
+      qa: number;
     };
   };
   error?: {
     message: string;
     code: string;
-    stage: 'background_removal' | 'analysis' | 'enrichment' | 'rendering';
+    stage: 'background_removal' | 'analysis' | 'enrichment' | 'consolidation' | 'rendering' | 'qa';
   };
 }
 
@@ -595,7 +597,7 @@ export class GhostPipelineError extends Error {
   constructor(
     message: string,
     public code: string,
-    public stage: 'background_removal' | 'analysis' | 'enrichment' | 'rendering',
+    public stage: 'background_removal' | 'analysis' | 'enrichment' | 'consolidation' | 'rendering' | 'qa',
     public cause?: Error
   ) {
     super(message);
