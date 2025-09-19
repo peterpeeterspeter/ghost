@@ -35,7 +35,7 @@ interface PipelineOptions {
   supabaseUrl?: string;
   supabaseKey?: string;
   enableLogging?: boolean;
-  renderingModel?: 'gemini-flash' | 'seedream'; // Simple model choice for rendering only
+  renderingModel?: 'freepik-gemini' | 'gemini-flash' | 'seedream'; // Simple model choice for rendering only
   timeouts?: {
     backgroundRemoval?: number;
     analysis?: number;
@@ -77,7 +77,7 @@ export class GhostMannequinPipeline {
   constructor(options: PipelineOptions) {
     this.options = {
       enableLogging: true,
-      renderingModel: 'gemini-flash', // Default to original Gemini Flash
+      renderingModel: 'freepik-gemini', // Default to Freepik Gemini with less restrictive policies
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
@@ -221,13 +221,18 @@ export class GhostMannequinPipeline {
         this.log(`Stage 5: Ghost mannequin generation - Using control block with ${this.options.renderingModel} model`);
         const consolidation = this.state.stageResults.consolidation!;
         
-        // For SeeDream, use the optimized prompt format
-        const promptToUse = this.options.renderingModel === 'seedream' ?
-          buildSeeDreamPrompt(consolidation.control_block, consolidation.facts_v3) :
-          buildFlashPrompt(consolidation.control_block);
+        // Choose prompt format based on rendering model
+        let promptToUse: string;
+        if (this.options.renderingModel === 'seedream') {
+          promptToUse = buildSeeDreamPrompt(consolidation.control_block, consolidation.facts_v3);
+        } else {
+          // Use Flash prompt for both freepik-gemini and gemini-flash
+          promptToUse = buildFlashPrompt(consolidation.control_block);
+        }
           
         // Log the generated prompt type
-        this.log(`Using ${this.options.renderingModel === 'seedream' ? 'SeeDream 4.0 optimized' : 'standard'} prompt format`);
+        const promptType = this.options.renderingModel === 'seedream' ? 'SeeDream 4.0 optimized' : 'Gemini Flash';
+        this.log(`Using ${promptType} prompt format`);
         
         // Use Control Block approach instead of raw analysis data
         const result = await this.executeWithTimeout(
@@ -465,6 +470,8 @@ export class GhostMannequinPipeline {
         cleanedOnModel
       );
     } else {
+      // Use Freepik's Gemini 2.5 Flash for both freepik-gemini and legacy gemini-flash
+      // Freepik has less restrictive content policies
       return await generateGhostMannequinWithControlBlockGemini(
         cleanedGarmentDetail,
         controlBlockPrompt,
@@ -554,6 +561,7 @@ export async function healthCheck(options: PipelineOptions): Promise<{
   services: {
     fal: boolean;
     gemini: boolean;
+    freepik: boolean;
     supabase: boolean;
   };
   errors: string[];
@@ -562,6 +570,7 @@ export async function healthCheck(options: PipelineOptions): Promise<{
   const services = {
     fal: false,
     gemini: false,
+    freepik: false,
     supabase: false,
   };
 
@@ -581,6 +590,23 @@ export async function healthCheck(options: PipelineOptions): Promise<{
     services.gemini = true;
   } catch (error) {
     errors.push(`Gemini: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  // Test Freepik (if using freepik-gemini model)
+  if (options.renderingModel === 'freepik-gemini') {
+    try {
+      const { checkFreepikHealth } = await import('./freepik');
+      const freepikHealth = await checkFreepikHealth();
+      if (freepikHealth.status === 'healthy') {
+        services.freepik = true;
+      } else {
+        errors.push(`Freepik: ${freepikHealth.message}`);
+      }
+    } catch (error) {
+      errors.push(`Freepik: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  } else {
+    services.freepik = true; // Consider it healthy if not using Freepik
   }
 
   // Test Supabase (if configured)

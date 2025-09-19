@@ -201,35 +201,48 @@ export async function GET(request: NextRequest) {
     if (action === 'health') {
       const falApiKey = process.env.FAL_API_KEY;
       const geminiApiKey = process.env.GEMINI_API_KEY;
+      const freepikApiKey = process.env.FREEPIK_API_KEY;
+      const renderingModel = process.env.RENDERING_MODEL || 'freepik-gemini';
 
-      if (!falApiKey || !geminiApiKey) {
+      const errors: string[] = [];
+      
+      // Check required API keys
+      if (!falApiKey) errors.push('FAL_API_KEY not configured');
+      if (!geminiApiKey) errors.push('GEMINI_API_KEY not configured');
+      if (renderingModel === 'freepik-gemini' && !freepikApiKey) {
+        errors.push('FREEPIK_API_KEY not configured for freepik-gemini model');
+      }
+
+      const services = {
+        fal: !!falApiKey,
+        gemini: !!geminiApiKey,
+        freepik: renderingModel === 'freepik-gemini' ? !!freepikApiKey : true,
+        supabase: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
+      };
+
+      // Only require essential services (supabase is optional)
+      const essentialServices = { fal: services.fal, gemini: services.gemini, freepik: services.freepik };
+      const healthy = Object.values(essentialServices).every(Boolean) && errors.length === 0;
+
+      if (!healthy) {
         return NextResponse.json(
           {
             healthy: false,
-            services: {
-              fal: !!falApiKey,
-              gemini: !!geminiApiKey,
-              supabase: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
-            },
-            errors: [
-              !falApiKey && 'FAL_API_KEY not configured',
-              !geminiApiKey && 'GEMINI_API_KEY not configured',
-            ].filter(Boolean),
+            services,
+            errors,
+            renderingModel,
             timestamp: new Date().toISOString(),
           },
           { status: 503 }
         );
       }
 
-      // Could add more detailed health checks here
+      // All services healthy
       return NextResponse.json({
         healthy: true,
-        services: {
-          fal: true,
-          gemini: true,
-          supabase: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
-        },
+        services,
         errors: [],
+        renderingModel,
         timestamp: new Date().toISOString(),
         version: '0.1.0',
       });

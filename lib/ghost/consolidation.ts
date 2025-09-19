@@ -692,7 +692,13 @@ export function buildFlashPrompt(control: ControlBlock): string {
     '';
 
   return `
-Task: Create a professional studio product photo with invisible mannequin effect (ghost mannequin). No human body or model visible.
+Task: Using the provided reference images, create a professional studio product photo with invisible mannequin effect (ghost mannequin). Transform the flat-laid garment from the input images into a 3D ghost mannequin effect that shows exactly the same garment design, colors, patterns, and details. No human body or model visible.
+
+IMAGE REFERENCE INSTRUCTIONS:
+- Use the provided images as the ONLY source for garment design, colors, patterns, and details
+- Do NOT change or modify the garment's appearance, colors, or design elements
+- Maintain 100% visual consistency with the input garment
+- Transform the flat layout into dimensional ghost mannequin form while preserving all original details
 
 STRICT CONSTRAINTS:
 - Category: ${control.category_generic || 'unknown'}
@@ -723,6 +729,12 @@ SAFETY CONSTRAINTS:
 ${safetyText}${asymmetryText}${continuityText}
 
 CRITICAL: Follow all constraints exactly. Do not invent or add features not specified. Create realistic ghost mannequin effect showing garment structure without human form.
+
+IMAGE REFERENCE REMINDER:
+- ONLY use the garment shown in the provided reference images
+- Do NOT generate a different garment or change the design
+- Transform the EXACT SAME garment from flat to 3D ghost mannequin
+- Preserve ALL original colors, patterns, textures, and design elements from the reference images
   `.trim();
 }
 

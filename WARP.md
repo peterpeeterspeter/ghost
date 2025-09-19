@@ -9,7 +9,7 @@ This is an **AI-powered Ghost Mannequin Pipeline** built with Next.js 14 and Typ
 1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from flatlay images
 2. **Garment Analysis** - Gemini 2.5 Pro analyzes garment structure with structured JSON output
 3. **Enrichment Analysis** - Gemini 2.5 Pro performs focused analysis of rendering-critical attributes (colors, fabrics, construction details)
-4. **Ghost Mannequin Generation** - Gemini 2.5 Flash creates the final ghost mannequin effect using both base and enrichment analysis
+4. **Ghost Mannequin Generation** - Freepik Gemini 2.5 Flash or FAL Seedream creates the final ghost mannequin effect using consolidated analysis
 
 ## Architecture
 
@@ -19,6 +19,7 @@ This is an **AI-powered Ghost Mannequin Pipeline** built with Next.js 14 and Typ
 - **Pipeline Orchestrator**: `lib/ghost/pipeline.ts` - `GhostMannequinPipeline` class manages the entire workflow with state tracking and timeout handling
 - **FAL.AI Integration**: `lib/ghost/fal.ts` - Background removal using Bria 2.0 model
 - **Gemini Integration**: `lib/ghost/gemini.ts` - Structured analysis and image generation
+- **Freepik Integration**: `lib/ghost/freepik.ts` - Ghost mannequin generation using Gemini 2.5 Flash
 - **Type System**: `types/ghost.ts` - Comprehensive TypeScript definitions with Zod schemas
 
 ### Pipeline Flow
@@ -96,6 +97,7 @@ curl -X POST http://localhost:3000/api/ghost \
 # Essential API keys
 FAL_API_KEY=your_fal_api_key_here          # Get from https://fal.ai/dashboard
 GEMINI_API_KEY=your_gemini_api_key_here    # Get from https://aistudio.google.com/app/apikey
+FREEPIK_API_KEY=your_freepik_api_key_here  # Get from https://freepik.com/api
 
 # Optional Supabase storage
 SUPABASE_URL=https://your-project.supabase.co
@@ -194,3 +196,77 @@ const enrichment = await analyzeGarmentEnrichment(cleanedImageUrl, enrichmentSes
 import { processGhostMannequin } from '@/lib/ghost/pipeline';
 const result = await processGhostMannequin(request, options);
 ```
+
+## Freepik Gemini 2.5 Flash Integration
+
+### Overview
+The pipeline supports Freepik's Gemini 2.5 Flash API ("Nano Banana") as the primary rendering engine for ghost mannequin generation. This integration provides:
+
+- **High-quality ghost mannequin effects** with proper 3D garment structure
+- **Multi-reference image support** (up to 3 images per request)
+- **Production-ready outputs** despite "preview" naming
+- **Cost-effective processing** for commercial applications
+
+### Key Features
+- **Reference Image Processing**: Uses cleaned FAL storage URLs directly (avoids 40MB+ payloads)
+- **Structured Prompting**: Combines garment analysis data with explicit image reference instructions
+- **Content Policy Compliance**: Automatic handling of appropriate reference images
+- **Error Recovery**: Comprehensive error handling with detailed logging
+
+### Usage
+```typescript
+import { generateImageWithFreepikGemini } from '@/lib/ghost/freepik';
+
+const result = await generateImageWithFreepikGemini(
+  controlBlockPrompt,  // Detailed prompt with garment specifications
+  flatlayImageUrl,     // Cleaned flatlay image URL
+  onModelImageUrl      // Optional on-model reference (must comply with content policies)
+);
+```
+
+### Content Policy Considerations
+**Important**: Freepik's content moderation system may reject on-model reference images that show human features, even in legitimate commercial contexts:
+
+- ✅ **Acceptable**: Flatlay garments, ghost mannequin forms, fabric close-ups
+- ⚠️ **May Fail**: Images showing hands, arms, or any human body parts
+- ❌ **Will Fail**: Any images with faces, torso, or perceived inappropriate content
+
+### Workarounds for Content Policy Issues
+1. **Single Image Mode**: Use only flatlay images when on-model references are flagged
+2. **Crop References**: Remove human features from on-model images before processing
+3. **Alternative Models**: Fall back to FAL Seedream for sensitive content
+
+### API Configuration
+```bash
+# Required in .env.local
+FREEPIK_API_KEY=your_freepik_api_key_here
+
+# Optional rendering model selection
+DEFAULT_RENDERING_MODEL=freepik-gemini  # or 'seedream'
+```
+
+### Debugging Freepik Integration
+```bash
+# Test Freepik API directly
+curl -X POST http://localhost:3000/api/test-freepik \
+  -H "Content-Type: application/json" \
+  -d '{"imageUrl1": "https://example.com/flatlay.jpg", "imageUrl2": "https://example.com/reference.jpg"}'
+
+# Enable detailed Freepik logging
+ENABLE_PIPELINE_LOGGING=true
+LOG_LEVEL=debug
+```
+
+### Error Handling
+The integration includes comprehensive error detection:
+
+- **Content Policy Violations**: Tasks fail with `FAILED` status
+- **API Rate Limits**: Automatic retry with exponential backoff
+- **Image Accessibility**: Validation of FAL storage URL accessibility
+- **Timeout Management**: Configurable timeouts for long-running tasks
+
+### Performance Notes
+- **Processing Time**: Typically 20-30 seconds per image
+- **Payload Size**: ~2KB using URLs vs 40MB+ with base64
+- **Rate Limits**: 5 requests per minute (check current limits in API headers)
+- **Cost**: More affordable than Google Gemini for commercial use
