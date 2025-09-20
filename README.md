@@ -9,7 +9,8 @@ This system orchestrates multiple AI services in a sophisticated four-stage pipe
 1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from product images
 2. **Garment Analysis** - Gemini 2.5 Pro performs comprehensive structural analysis
 3. **Enrichment Analysis** - Gemini 2.5 Pro extracts rendering-critical attributes
-4. **Ghost Mannequin Generation** - Choose between Gemini 2.5 Flash or FAL.AI Seedream 4.0
+4. **Dynamic Prompt Generation** - Gemini 2.5 Pro creates contextual, analysis-specific prompts
+5. **Ghost Mannequin Generation** - Choose between Gemini 2.5 Flash or FAL.AI Seedream 4.0
 
 ## 🏗️ Architecture
 
@@ -26,9 +27,11 @@ This system orchestrates multiple AI services in a sophisticated four-stage pipe
 ```
 GhostRequest → Background Removal → Base Analysis → Enrichment Analysis 
     ↓
+JSON Consolidation → Dynamic Prompt Generation (Gemini Pro 2.5)
+    ↓
 Ghost Mannequin Generation:
-├── Gemini Flash 2.5 (Default)
-└── FAL.AI Seedream 4.0 (Alternative)
+├── Gemini Flash 2.5 (Content filter issues - see docs/FLASH_CONTENT_ISSUES.md)
+└── FAL.AI Seedream 4.0 (Recommended)
     ↓
 GhostResult
 ```
@@ -56,19 +59,21 @@ Each stage has configurable timeouts, error handling, and performance metrics tr
 
 ### Rendering Models
 
-| Model | Provider | Strengths | Best For |
-|-------|----------|-----------|----------|
-| **Gemini Flash 2.5** | Google | Fast, reliable, cost-effective | General use, high volume |
-| **Seedream 4.0** | FAL.AI | Advanced image editing, precise control | Complex garments, premium quality |
+| Model | Provider | Status | Best For |
+|-------|----------|--------|----------|
+| **Gemini Flash 2.5** | Freepik/Google | ⚠️ Content filter issues | Currently unavailable |
+| **Seedream 4.0** | FAL.AI | ✅ Fully operational | All use cases (recommended) |
 
 ### Model Configuration
 
 **Environment Variable**:
 ```bash
 # Choose rendering model
-RENDERING_MODEL=gemini-flash  # Default: fast & reliable
-RENDERING_MODEL=seedream      # Premium: advanced quality
+RENDERING_MODEL=seedream      # Recommended: fully operational
+RENDERING_MODEL=gemini-flash  # Currently experiencing issues
 ```
+
+**Current Recommendation**: Use `seedream` as the primary model due to Gemini Flash 2.5 content filtering issues. See `docs/FLASH_CONTENT_ISSUES.md` for details.
 
 **Automatic Fallback**: If the primary model fails, the system automatically attempts the alternative model for maximum reliability.
 
@@ -193,6 +198,16 @@ interface EnrichmentJSON {
 
 ## 🤖 AI Prompts
 
+### Dynamic Prompt Generation
+The system now uses **AI-powered dynamic prompt generation** instead of static templates:
+- **Service**: `lib/ghost/prompt-generator.ts`
+- **Model**: Gemini Pro 2.5 for contextual prompt creation
+- **Input**: Consolidated garment analysis + enrichment data
+- **Output**: 2200-2500 character narrative prompts tailored to specific garments
+- **Benefits**: Avoids content filter issues, improves generation quality
+
+⚠️ **Content Filter Mitigation**: Dynamic prompts automatically avoid prohibited terms like "ghost mannequin," "invisible person," and "hollow" that trigger safety filters in Flash 2.5.
+
 ### Base Analysis Prompt
 The system uses a comprehensive 2000+ word prompt that instructs Gemini Pro to:
 - Perform exhaustive label detection with OCR and spatial mapping
@@ -252,8 +267,9 @@ cp .env.example .env.local
 FAL_API_KEY=your_fal_api_key_here          # Get from https://fal.ai/dashboard
 GEMINI_API_KEY=your_gemini_api_key_here    # Get from https://aistudio.google.com/app/apikey
 
-# Rendering model selection (default: gemini-flash)
-RENDERING_MODEL=gemini-flash  # or 'seedream'
+# Rendering model selection (default: seedream due to Flash issues)
+RENDERING_MODEL=seedream      # Recommended: fully operational
+# RENDERING_MODEL=gemini-flash  # Currently experiencing content filter issues
 
 # Optional Supabase storage
 SUPABASE_URL=https://your-project.supabase.co
@@ -263,6 +279,8 @@ SUPABASE_ANON_KEY=your_supabase_anon_key_here
 TIMEOUT_BACKGROUND_REMOVAL=30000  # 30 seconds
 TIMEOUT_ANALYSIS=90000           # 90 seconds  
 TIMEOUT_ENRICHMENT=120000        # 120 seconds
+TIMEOUT_CONSOLIDATION=30000      # 30 seconds
+TIMEOUT_PROMPT_GENERATION=60000  # 60 seconds
 TIMEOUT_RENDERING=180000         # 180 seconds
 ```
 
@@ -318,13 +336,15 @@ curl http://localhost:3000/api/ghost?action=health
 ## 📊 Performance Metrics
 
 ### Typical Processing Times
-- **Background Removal**: 2-5 seconds per image
-- **Base Analysis**: 15-30 seconds
-- **Enrichment Analysis**: 15-25 seconds  
+- **Background Removal**: 9-16 seconds per image
+- **Base Analysis**: 35-60 seconds
+- **Enrichment Analysis**: 30-45 seconds
+- **JSON Consolidation**: 2-5 seconds
+- **Dynamic Prompt Generation**: 15-25 seconds
 - **Ghost Mannequin Generation**: 
-  - Gemini Flash 2.5: 10-20 seconds
+  - Gemini Flash 2.5: Currently unavailable (content filter issues)
   - Seedream 4.0: 15-30 seconds
-- **Total Pipeline**: 45-90 seconds end-to-end
+- **Total Pipeline**: 90-180 seconds end-to-end
 
 ### Quality Features
 - Professional-grade ghost mannequin effects
@@ -339,7 +359,9 @@ The system includes comprehensive error handling with specific error codes:
 
 - `BACKGROUND_REMOVAL_FAILED` - FAL.AI processing issues
 - `ANALYSIS_FAILED` - Gemini analysis errors
-- `ENRICHMENT_FAILED` - Enrichment analysis issues  
+- `ENRICHMENT_FAILED` - Enrichment analysis issues
+- `CONSOLIDATION_FAILED` - JSON consolidation problems
+- `PROMPT_GENERATION_FAILED` - Dynamic prompt generation issues
 - `RENDERING_FAILED` - Ghost mannequin generation problems
 - `STAGE_TIMEOUT` - Processing timeout exceeded
 - `CLIENT_NOT_CONFIGURED` - Missing API keys
@@ -368,8 +390,13 @@ ghost-mannequin-pipeline/
 ├── lib/ghost/
 │   ├── pipeline.ts            # Pipeline orchestrator
 │   ├── fal.ts                # FAL.AI integration
-│   └── gemini.ts             # Gemini AI integration
+│   ├── gemini.ts             # Gemini AI integration
+│   ├── freepik.ts            # Freepik API integration
+│   ├── consolidation.ts      # JSON consolidation
+│   └── prompt-generator.ts   # Dynamic prompt generation
 ├── types/ghost.ts             # TypeScript definitions
+├── docs/
+│   └── FLASH_CONTENT_ISSUES.md # Gemini Flash content filter documentation
 ├── components/                # UI components
 ├── Input/                     # Test images and samples
 ├── test-*.js                  # Testing scripts
