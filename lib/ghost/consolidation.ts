@@ -659,9 +659,41 @@ export function compileControlBlock(facts: FactsV3): ControlBlock {
 }
 
 /**
- * Generic control block prompt builder (used for Gemini)
+ * Dynamic Flash 2.5 prompt builder using Gemini Pro 2.5 for intelligent integration
+ * This replaces the static template approach with AI-powered data weaving
  */
-export function buildFlashPrompt(control: ControlBlock): string {
+export async function buildDynamicFlashPrompt(
+  facts: FactsV3, 
+  control: ControlBlock, 
+  sessionId: string
+): Promise<string> {
+  try {
+    // Import and use the new dynamic prompt generator
+    const { generateDynamicPrompt, configurePromptGenerator } = await import('./prompt-generator');
+    
+    // Configure with Gemini API key (same as analysis)
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      configurePromptGenerator(apiKey);
+      const result = await generateDynamicPrompt(facts, control, sessionId);
+      console.log(`🎯 Generated dynamic prompt in ${result.processingTime}ms`);
+      return result.prompt;
+    }
+    
+    // Fallback to static if no API key
+    console.warn('⚠️ No Gemini API key available, using static prompt builder');
+    return buildStaticFlashPrompt(control);
+    
+  } catch (error) {
+    console.warn('⚠️ Dynamic prompt generation failed, using static fallback:', error);
+    return buildStaticFlashPrompt(control);
+  }
+}
+
+/**
+ * Legacy static prompt builder (used as fallback)
+ */
+export function buildStaticFlashPrompt(control: ControlBlock): string {
   // Build component requirements safely
   const requiredText = control.required_components?.length ? 
     `REQUIRED components (must include): ${control.required_components.join(", ")}` : 
@@ -736,6 +768,14 @@ IMAGE REFERENCE REMINDER:
 - Transform the EXACT SAME garment from flat to 3D ghost mannequin
 - Preserve ALL original colors, patterns, textures, and design elements from the reference images
   `.trim();
+}
+
+/**
+ * Legacy alias for backwards compatibility
+ */
+export function buildFlashPrompt(control: ControlBlock): string {
+  console.warn('⚠️ buildFlashPrompt is deprecated, use buildDynamicFlashPrompt or buildStaticFlashPrompt');
+  return buildStaticFlashPrompt(control);
 }
 
 /**

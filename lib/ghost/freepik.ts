@@ -23,31 +23,77 @@ interface FreepikTaskStatusResponse {
 }
 
 /**
- * Prepare image for Freepik API - use URLs directly when possible to avoid large payloads
- * According to Freepik docs, they support both URLs and base64
+ * Prepare image for Freepik API - convert to base64 or use URLs directly
+ * Freepik accepts both base64 encoded images and publicly accessible URLs
+ * For large images, URLs are preferred to avoid payload size limits
  */
-async function prepareImageForFreepik(imageInput: string): Promise<string> {
+async function prepareImageForFreepik(imageInput: string, useDirectUrls: boolean = true): Promise<string> {
   console.log(`🔄 Preparing image for Freepik: ${imageInput.substring(0, 100)}...`);
   console.log(`📏 Input length: ${imageInput.length}`);
+  
+  // Maximum recommended base64 size per image to avoid payload limits
+  const MAX_BASE64_SIZE_MB = 8; // Conservative limit for multiple images
   
   if (imageInput.startsWith('data:image/')) {
     console.log('📦 Processing data URI - extracting base64 part');
     const base64Data = imageInput.split(',')[1];
     const sizeInMB = (base64Data.length * 0.75) / (1024 * 1024);
     console.log(`📦 Base64 size: ${sizeInMB.toFixed(2)} MB`);
+    
+    if (sizeInMB > MAX_BASE64_SIZE_MB) {
+      console.warn(`⚠️ Image size (${sizeInMB.toFixed(2)} MB) exceeds recommended limit (${MAX_BASE64_SIZE_MB} MB)`);
+      console.warn('⚠️ Consider using image compression or smaller source images');
+      // Still proceed but warn about potential failures
+    }
+    
     console.log(`📦 Base64 preview: ${base64Data.substring(0, 50)}...`);
     return base64Data;
   } else if (imageInput.startsWith('http://') || imageInput.startsWith('https://')) {
-    console.log('🌐 Using URL directly (avoids large payload)');
-    console.log(`🌐 URL: ${imageInput}`);
-    
-    // Use URL directly instead of converting to base64 - this avoids the 41MB payload issue
-    return imageInput;
+    if (useDirectUrls) {
+      console.log('🌐 Using URL directly (avoids payload size limits)');
+      console.log(`🌐 URL: ${imageInput}`);
+      return imageInput;
+    } else {
+      console.log('🌐 Converting URL to base64 (as requested)');
+      console.log(`🌐 URL: ${imageInput}`);
+      
+      try {
+        // Download the image and convert to base64
+        const response = await fetch(imageInput);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+        
+        const buffer = await response.arrayBuffer();
+        const base64Data = Buffer.from(buffer).toString('base64');
+        const sizeInMB = (base64Data.length * 0.75) / (1024 * 1024);
+        
+        console.log(`🔄 URL converted to base64: ${sizeInMB.toFixed(2)} MB`);
+        
+        if (sizeInMB > MAX_BASE64_SIZE_MB) {
+          console.warn(`⚠️ Image size (${sizeInMB.toFixed(2)} MB) exceeds recommended limit (${MAX_BASE64_SIZE_MB} MB)`);
+          console.warn('⚠️ Large images may cause Freepik API failures due to payload size limits');
+          console.warn('⚠️ Consider implementing image compression or resizing before Freepik processing');
+        }
+        
+        console.log(`📦 Base64 preview: ${base64Data.substring(0, 50)}...`);
+        
+        return base64Data;
+      } catch (error) {
+        console.error('❌ Failed to convert URL to base64:', error);
+        throw new Error(`Failed to prepare image for Freepik: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
   } else {
     // Assume it's already base64
     console.log('📝 Assuming input is base64 format');
     const sizeInMB = (imageInput.length * 0.75) / (1024 * 1024);
     console.log(`📝 Base64 size: ${sizeInMB.toFixed(2)} MB`);
+    
+    if (sizeInMB > MAX_BASE64_SIZE_MB) {
+      console.warn(`⚠️ Image size (${sizeInMB.toFixed(2)} MB) exceeds recommended limit (${MAX_BASE64_SIZE_MB} MB)`);
+    }
+    
     console.log(`📝 Base64 preview: ${imageInput.substring(0, 50)}...`);
     return imageInput;
   }
@@ -62,12 +108,15 @@ async function createGeminiTask(
   referenceImage: string | undefined,
   apiKey: string
 ): Promise<string> {
+  // Check if we should use direct URLs (preferred for large images)
+  const useDirectUrls = process.env.USE_DIRECT_URLS_FOR_FREEPIK === 'true';
+  
   // Prepare images array
-  const images: string[] = [await prepareImageForFreepik(inputImage)];
+  const images: string[] = [await prepareImageForFreepik(inputImage, useDirectUrls)];
   
   // Add reference image if provided
   if (referenceImage) {
-    images.push(await prepareImageForFreepik(referenceImage));
+    images.push(await prepareImageForFreepik(referenceImage, useDirectUrls));
   }
 
   // Use the correct parameter structure for Gemini 2.5 Flash with image references

@@ -11,7 +11,8 @@ import {
 } from '@/types/ghost';
 import { 
   consolidateAnalyses, 
-  buildFlashPrompt, 
+  buildDynamicFlashPrompt,
+  buildStaticFlashPrompt,
   buildSeeDreamPrompt,
   qaLoop,
   type ConsolidationOutput,
@@ -225,14 +226,22 @@ export class GhostMannequinPipeline {
         let promptToUse: string;
         if (this.options.renderingModel === 'seedream') {
           promptToUse = buildSeeDreamPrompt(consolidation.control_block, consolidation.facts_v3);
+          this.log('Using SeeDream 4.0 optimized prompt format');
         } else {
-          // Use Flash prompt for both freepik-gemini and gemini-flash
-          promptToUse = buildFlashPrompt(consolidation.control_block);
+          // Use dynamic Flash 2.5 prompt with Gemini Pro 2.5 integration
+          try {
+            this.log('Using Gemini Flash prompt format');
+            promptToUse = await buildDynamicFlashPrompt(
+              consolidation.facts_v3, 
+              consolidation.control_block, 
+              this.state.sessionId
+            );
+            this.log('🎯 Generated dynamic Flash 2.5 prompt with FactsV3 integration');
+          } catch (error) {
+            this.log('⚠️ Dynamic prompt generation failed, using static fallback');
+            promptToUse = buildStaticFlashPrompt(consolidation.control_block);
+          }
         }
-          
-        // Log the generated prompt type
-        const promptType = this.options.renderingModel === 'seedream' ? 'SeeDream 4.0 optimized' : 'Gemini Flash';
-        this.log(`Using ${promptType} prompt format`);
         
         // Use Control Block approach instead of raw analysis data
         const result = await this.executeWithTimeout(

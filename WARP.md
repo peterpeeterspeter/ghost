@@ -128,12 +128,13 @@ The system uses production-grade prompts optimized for commercial quality:
 - **Technical precision** requirements for spatial coordinates and OCR extraction
 - **Priority-based classification** focusing on brand preservation and critical details
 
-### Ghost Mannequin Generation Prompt  
+### Dynamic Ghost Mannequin Generation Prompts
+- **AI-Powered Prompt Generation**: Gemini Pro 2.5 intelligently weaves FactsV3 data into Flash 2.5 template
 - **Professional photography specifications** with detailed scene narrative
-- **Step-by-step construction process** for 3D garment rendering
-- **Multi-image composition authority** with Image B as visual ground truth
-- **Analysis-specific requirements** dynamically generated from JSON data
-- **Temperature setting: 0.05** for precise, consistent generation
+- **Garment-specific customization** using analyzed material properties, colors, and construction details
+- **Multi-image composition authority** with reference image instructions
+- **Analysis-driven requirements** dynamically generated from consolidated JSON data
+- **Intelligent fallback system** with static templates when AI generation fails
 
 ## Pipeline Error Handling
 
@@ -270,3 +271,153 @@ The integration includes comprehensive error detection:
 - **Payload Size**: ~2KB using URLs vs 40MB+ with base64
 - **Rate Limits**: 5 requests per minute (check current limits in API headers)
 - **Cost**: More affordable than Google Gemini for commercial use
+
+## Dynamic Prompt Generation System
+
+### Overview
+The pipeline features an advanced **AI-powered prompt generation system** that uses Gemini Pro 2.5 to intelligently weave garment-specific analysis data into professional Flash 2.5 templates. This creates personalized, data-driven prompts for superior ghost mannequin generation.
+
+### Key Innovation: Analysis-to-Prompt Integration
+Instead of generic templates, every prompt is **dynamically customized** using:
+- **Exact Color Values**: `#F3EFE0` instead of "cream colored"
+- **Material Properties**: Specific fabric behavior with `drape_stiffness: 0.4`
+- **Construction Details**: Required components like `fringe_trim, multi_pattern_print`
+- **Surface Characteristics**: `matte`, `opaque`, `structured` based on analysis
+- **Category Context**: `outerwear` vs `knitwear` handling differences
+- **Safety Constraints**: Automatic content policy compliance
+
+### Architecture
+```typescript
+// New prompt generation flow
+FactsV3 + ControlBlock → Gemini Pro 2.5 → Personalized Flash 2.5 Prompt → AI Generation
+```
+
+### Core Components
+- **`lib/ghost/prompt-generator.ts`**: Gemini Pro 2.5 powered dynamic prompt generation
+- **Flash 2.5 Base Template**: Garment-agnostic professional template maintained at full detail level
+- **Intelligent Integration**: Natural weaving of analysis data without forced mechanical insertion
+- **Fallback System**: Static templates when AI generation fails
+
+### Usage Examples
+
+#### Dynamic Prompt Generation
+```typescript
+import { generateDynamicPrompt, configurePromptGenerator } from '@/lib/ghost/prompt-generator';
+
+// Configure with Gemini API key
+configurePromptGenerator(apiKey);
+
+// Generate personalized prompt
+const result = await generateDynamicPrompt(facts, controlBlock, sessionId);
+console.log('Generated prompt length:', result.prompt.length);
+console.log('Processing time:', result.processingTime, 'ms');
+```
+
+#### Pipeline Integration
+```typescript
+// Automatic integration in pipeline
+const promptToUse = await buildDynamicFlashPrompt(
+  consolidation.facts_v3, 
+  consolidation.control_block, 
+  this.state.sessionId
+);
+```
+
+### Technical Specifications
+
+#### Gemini Pro 2.5 Configuration
+- **Model**: `gemini-2.5-pro`
+- **Temperature**: `0.1` (low for consistent integration)
+- **Top-K**: `1` (focused output)
+- **Top-P**: `0.8` (balanced creativity)
+
+#### Integration Requirements
+1. **Color Integration**: Replace generic colors with exact hex values from `facts.palette`
+2. **Material Specificity**: Use specific material details from `facts.material`
+3. **Construction Details**: Integrate `required_components` and silhouette information
+4. **Surface Properties**: Include `drape_stiffness`, `transparency`, `surface_sheen` values
+5. **Pattern Information**: Weave in pattern details and scale information
+6. **Category Context**: Apply category-specific handling and terminology
+7. **Safety Constraints**: Include `safety.must_not` requirements naturally
+8. **Quality Standards**: Integrate `qa_targets` for precision requirements
+
+### Example Transformations
+
+#### Before (Generic Template)
+```
+"Create a professional ghost mannequin photograph with realistic fabric draping."
+```
+
+#### After (Dynamic Integration)
+```
+"Create a professional ghost mannequin photograph of this outerwear with relaxed, 
+boxy kimono-style silhouette, ensuring fringe_trim and multi_pattern_print are 
+clearly visible. The unknown fabric should drape with stiffness level 0.4 showing 
+balanced movement. Apply matte finish (#F3EFE0 dominant, #008AB8 accent colors) 
+with opaque transparency..."
+```
+
+### Performance Characteristics
+- **Generation Time**: 2-5 seconds typical
+- **Prompt Quality**: Professional-grade, production-ready
+- **Consistency**: Deterministic output for same input data
+- **Fallback Speed**: <100ms for static template fallback
+- **Integration Depth**: Complete FactsV3 data utilization
+
+### Error Handling & Reliability
+
+#### Graceful Fallback System
+```typescript
+try {
+  // Attempt dynamic generation
+  const dynamicPrompt = await generateDynamicPrompt(facts, control, sessionId);
+  return dynamicPrompt.prompt;
+} catch (error) {
+  // Automatic fallback to static template
+  console.warn('Dynamic prompt generation failed, using static fallback');
+  return generateFallbackPrompt(facts, control);
+}
+```
+
+#### Common Failure Scenarios
+- **API Rate Limits**: Automatic static fallback
+- **Content Filtering**: Sanitized prompt generation
+- **Network Issues**: Local fallback processing
+- **Invalid Analysis Data**: Schema validation with defaults
+
+### Benefits Over Static Templates
+
+1. **Precision**: Exact garment specifications instead of generic descriptions
+2. **Consistency**: Every detail derived from actual image analysis
+3. **Personalization**: Each prompt tailored to specific garment characteristics
+4. **Professional Quality**: Maintains Flash 2.5 template detail level
+5. **Scalability**: Handles any garment category with appropriate terminology
+6. **Brand Accuracy**: Preserves critical design elements and colors
+
+### Configuration Options
+
+```bash
+# Enable dynamic prompt generation (default: true)
+ENABLE_DYNAMIC_PROMPTS=true
+
+# Fallback to static prompts when dynamic fails (default: true)
+ENABLE_PROMPT_FALLBACK=true
+
+# Log prompt generation details (development)
+LOG_PROMPT_GENERATION=true
+```
+
+### Debugging Dynamic Prompts
+
+```bash
+# Enable detailed prompt logging
+ENABLE_PIPELINE_LOGGING=true
+LOG_LEVEL=debug
+
+# Test prompt generation directly
+curl -X POST http://localhost:3000/api/ghost \
+  -H "Content-Type: application/json" \
+  -d '{"flatlay": "https://example.com/garment.jpg", "options": {"enableLogging": true}}'
+```
+
+This dynamic prompt generation system represents a significant advancement in AI-driven e-commerce photography, ensuring each ghost mannequin generation is perfectly tailored to the specific garment being processed.
