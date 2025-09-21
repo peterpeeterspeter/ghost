@@ -55,6 +55,7 @@ interface PipelineState {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   startTime: number;
   currentStage: ProcessingStage | null;
+  originalRequest?: GhostRequest;  // Store original request for access to uncleaned images
   stageResults: {
     backgroundRemovalFlatlay?: BackgroundRemovalResult;
     backgroundRemovalOnModel?: BackgroundRemovalResult;
@@ -134,6 +135,7 @@ export class GhostMannequinPipeline {
   async process(request: GhostRequest): Promise<GhostResult> {
     try {
       this.state.status = 'processing';
+      this.state.originalRequest = request;  // Store for later access
       this.log('Starting ghost mannequin pipeline processing...');
 
       // Validate request
@@ -149,15 +151,12 @@ export class GhostMannequinPipeline {
         );
         this.state.stageResults.backgroundRemovalFlatlay = flatlayResult;
         
-        // Stage 1b: Background Removal - On-Model (if provided)
+        // Stage 1b: Background Removal - On-Model (DISABLED for debugging Freepik)
         if (request.onModel) {
-          this.log('Stage 1b: Background removal - On-model image');
-          const onModelResult = await this.executeWithTimeout(
-            removeBackground(request.onModel),
-            this.options.timeouts!.backgroundRemoval!,
-            'background_removal'
-          );
-          this.state.stageResults.backgroundRemovalOnModel = onModelResult;
+          this.log('Stage 1b: SKIP background removal - Using original on-model image');
+          console.log('🧪 DEBUG: Skipping on-model background removal to simplify Freepik payload');
+          // Store the original on-model image without processing
+          // this.state.stageResults.backgroundRemovalOnModel = onModelResult;
         }
         
         return flatlayResult;
@@ -462,6 +461,8 @@ export class GhostMannequinPipeline {
   ): Promise<GhostMannequinResult> {
     const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
     const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
+    // Get original on-model image (uncleaned) for Freepik debugging
+    const originalOnModel = this.state.originalRequest?.onModel;
     
     // Log the consolidated data for debugging
     this.log('Control Block Data:');
@@ -480,12 +481,12 @@ export class GhostMannequinPipeline {
       );
     } else {
       // Use Freepik's Gemini 2.5 Flash for both freepik-gemini and legacy gemini-flash
-      // Freepik has less restrictive content policies
+      // DEBUG: Pass original on-model image (uncleaned) since we disabled cleaning
       return await generateGhostMannequinWithControlBlockGemini(
         cleanedGarmentDetail,
         controlBlockPrompt,
         consolidation,
-        cleanedOnModel
+        originalOnModel  // Use original uncleaned on-model image
       );
     }
   }

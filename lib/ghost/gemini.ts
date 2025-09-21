@@ -1029,10 +1029,12 @@ export async function generateGhostMannequinWithControlBlockGemini(
     const { generateImageWithFreepikGemini } = await import('./freepik');
     
     // Generate image using Freepik's Gemini 2.5 Flash API
+    // Pass original on-model image (not cleaned, since we disabled cleaning)
+    console.log('🧪 DEBUG: Using cleaned flatlay + original on-model (uncleaned)');
     const result = await generateImageWithFreepikGemini(
       controlBlockPrompt,
-      flatlayImage,
-      originalImage
+      flatlayImage,     // Cleaned flatlay from FAL
+      originalImage     // Original on-model (uncleaned)
     );
     
     return {
