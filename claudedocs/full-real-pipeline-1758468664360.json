@@ -1,0 +1,95 @@
+{
+  "sessionId": "real_1758468567636",
+  "timestamp": "2025-09-21T15:31:04.358Z",
+  "totalProcessingTime": 96722,
+  "stagesSummary": {
+    "total": 3,
+    "successful": 3,
+    "successRate": "100.0%"
+  },
+  "stageResults": {
+    "Background Removal (BiRefNet)": {
+      "success": true,
+      "result": {
+        "cleanedImageUrl": "https://v3b.fal.media/files/b/penguin/Q06ZW4Z2ixvalHT6BsLrR_763d6e224b944e658b2fc4682c0dbf78.png",
+        "fileSize": 5769139,
+        "contentType": "image/png"
+      },
+      "processingTime": 32959
+    },
+    "Garment Analysis (Gemini 1.5 Flash)": {
+      "success": true,
+      "result": {
+        "analysis": {
+          "garment_category": "jacket",
+          "closure_type": "button",
+          "neckline_style": "collared",
+          "sleeve_configuration": "long",
+          "color_analysis": {
+            "primary_color": "light blue",
+            "hex_estimate": "#A7C0D0",
+            "pattern": "solid"
+          },
+          "fabric_properties": {
+            "weight": "medium",
+            "texture": "textured",
+            "structure": "woven"
+          },
+          "style_assessment": {
+            "formality": "casual",
+            "fit": "oversized",
+            "season": "spring/fall"
+          },
+          "quality_indicators": {
+            "construction_quality": "good",
+            "detail_visibility": "clear"
+          },
+          "confidence_score": 0.9
+        },
+        "rawResponse": "```json\n{\n  \"garment_category\": \"jacket\",\n  \"closure_type\": \"button\",\n  \"neckline_style\": \"collared\",\n  \"sleeve_configuration\": \"long\",\n  \"color_analysis\": {\n    \"primary_color\": \"light blue\",\n    \"hex_estimate\": \"#A7C0D0\",\n    \"pattern\": \"solid\"\n  },\n  \"fabric_properties\": {\n    \"weight\": \"medium\",\n    \"texture\": \"textured\",\n    \"structure\": \"woven\"\n  },\n  \"style_assessment\": {\n    \"formality\": \"casual\",\n    \"fit\": \"oversized\",\n    \"season\": \"spring/fall\"\n  },\n  \"quality_indicators\": {\n    \"construction_quality\": \"good\",\n    \"detail_visibility\": \"clear\"\n  },\n  \"confidence_score\": 0.9\n}\n```",
+        "processingModel": "gemini-1.5-flash"
+      },
+      "processingTime": 34284
+    },
+    "Ghost Mannequin Generation (Gemini)": {
+      "success": true,
+      "result": {
+        "renderingInstructions": "## Ghost Mannequin Effect: Oversized Light Blue Denim Jacket\n\nThis specification outlines the creation of a professional ghost mannequin effect for a light blue, oversized, casual denim jacket.  The goal is to showcase the garment's drape and details without the distraction of a model.\n\n**1. 3D Dimensional Form Creation:**\n\n* **Method:**  Utilize a high-resolution image of the jacket on a model (provided).  Precisely mask the jacket from the background and model using advanced selection tools (e.g., pen tool, refine edge).\n* **Form Construction:** Create a 3D mannequin form that closely matches the jacket's oversized fit and dimensions.  This form should be invisible in the final image.  Consider using a 3D modeling software or a pre-existing 3D model of the desired form.  The form's dimensions should accurately reflect the size of the jacket.\n\n\n**2. Natural Fabric Draping Simulation:**\n\n* **Placement:**  Carefully position the masked jacket onto the 3D mannequin form, ensuring natural folds and creases are maintained.  Pay close attention to the oversized fit, allowing for ample fabric drape around the shoulders, sleeves, and body.\n* **Refinement:**  Manually adjust the jacket's position and drape on the form using digital masking and warping tools to create a realistic appearance.  Address any unnatural stretching or distortion.  Focus on maintaining the natural texture and appearance of the denim.\n\n**3. Professional Lighting Setup:**\n\n* **Lighting Style:** Employ a soft, diffused lighting setup to mimic professional product photography. Avoid harsh shadows that would detract from the garment's details.\n* **Light Placement:**  Use multiple light sources to evenly illuminate all aspects of the jacket, highlighting the color and texture of the denim.  A softbox or umbrella lighting setup is recommended to create a natural and consistent light on the jacket.\n* **Color Correction:**  Ensure color accuracy is maintained throughout the process.  Utilize color correction tools to ensure the final image displays the true light blue shade of the jacket accurately.\n\n**4. Quality Enhancement Steps:**\n\n* **Sharpness and Clarity:**  Enhance the overall image sharpness and clarity using sharpening filters, adjusting the contrast to emphasize the fabric's details.\n* **Noise Reduction:** Minimize any noise or grain in the image to achieve a polished, professional look.\n* **Final Adjustments:**  Perform final color balancing and tonal adjustments for a consistent and appealing look. This could include minor adjustments to the overall brightness, contrast, and saturation.  Ensure the final image has a high resolution suitable for online catalogs or e-commerce platforms.\n\n\nThe final result should be a high-quality ghost mannequin image of the oversized light blue denim jacket, showcasing its style, fit, and details with realistic fabric drape and professional lighting.\n",
+        "sourceImage": "https://v3b.fal.media/files/b/penguin/Q06ZW4Z2ixvalHT6BsLrR_763d6e224b944e658b2fc4682c0dbf78.png",
+        "analysisUsed": {
+          "garment_category": "jacket",
+          "closure_type": "button",
+          "neckline_style": "collared",
+          "sleeve_configuration": "long",
+          "color_analysis": {
+            "primary_color": "light blue",
+            "hex_estimate": "#A7C0D0",
+            "pattern": "solid"
+          },
+          "fabric_properties": {
+            "weight": "medium",
+            "texture": "textured",
+            "structure": "woven"
+          },
+          "style_assessment": {
+            "formality": "casual",
+            "fit": "oversized",
+            "season": "spring/fall"
+          },
+          "quality_indicators": {
+            "construction_quality": "good",
+            "detail_visibility": "clear"
+          },
+          "confidence_score": 0.9
+        },
+        "note": "This stage generates rendering instructions. Full implementation would use image generation models."
+      },
+      "processingTime": 29464
+    }
+  },
+  "performance": {
+    "averageStageTime": 32240.666666666668,
+    "fastestStage": 29464,
+    "slowestStage": 34284
+  }
+}

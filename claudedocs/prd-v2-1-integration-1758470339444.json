@@ -1,0 +1,249 @@
+{
+  "sessionId": "prd_v21_1758470319259",
+  "timestamp": "2025-09-21T15:58:59.444Z",
+  "totalProcessingTime": 20185,
+  "stagesSummary": {
+    "total": 11,
+    "successful": 11,
+    "successRate": "100.0%"
+  },
+  "stageResults": {
+    "abProcessing": {
+      "success": true,
+      "result": {
+        "inputMode": "dual_input",
+        "aProcessed": {
+          "personMaskUrl": "https://mock-storage.example.com/masks/person_mask.png",
+          "personlessUrl": "https://mock-storage.example.com/processed/a_personless.png",
+          "skinAreaPercentage": 0.08,
+          "safetyPreScrubApplied": true
+        },
+        "bProcessed": {
+          "cleanUrl": "https://mock-storage.example.com/cleaned/b_clean.png",
+          "analysisReady": true
+        },
+        "processingDecisions": {
+          "routeToFlash": true,
+          "routeToFallback": false,
+          "reasonCode": "low_skin_safe_flash_8.0pct"
+        }
+      },
+      "processingTime": 1502
+    },
+    "baseAnalysis": {
+      "success": true,
+      "result": {
+        "garment_category": "jacket",
+        "closure_type": "button",
+        "neckline_style": "crew",
+        "sleeve_configuration": "long",
+        "fabric_properties": {
+          "structure": "woven",
+          "weight": "medium"
+        }
+      },
+      "processingTime": 1202
+    },
+    "segmentation": {
+      "success": true,
+      "result": {
+        "maskUrl": "https://mock-storage.example.com/masks/segmentation.png",
+        "qualityMetrics": {
+          "maskCompleteness": 0.98,
+          "edgeSmoothness": 0.96,
+          "geometricConsistency": 0.94,
+          "cavitySymmetry": 0.97
+        }
+      },
+      "processingTime": 2001
+    },
+    "cropGeneration": {
+      "success": true,
+      "result": {
+        "crops": [
+          {
+            "region": "neck",
+            "imageUrl": "https://mock-storage.example.com/crops/neck.png"
+          },
+          {
+            "region": "sleeve_left",
+            "imageUrl": "https://mock-storage.example.com/crops/sleeve_left.png"
+          },
+          {
+            "region": "sleeve_right",
+            "imageUrl": "https://mock-storage.example.com/crops/sleeve_right.png"
+          },
+          {
+            "region": "hem",
+            "imageUrl": "https://mock-storage.example.com/crops/hem.png"
+          },
+          {
+            "region": "placket",
+            "imageUrl": "https://mock-storage.example.com/crops/placket.png"
+          }
+        ]
+      },
+      "processingTime": 820
+    },
+    "partAnalysis": {
+      "success": true,
+      "result": {
+        "regionAnalysis": {
+          "neck": {
+            "confidence": 0.94
+          },
+          "sleeve_left": {
+            "confidence": 0.91
+          },
+          "sleeve_right": {
+            "confidence": 0.93
+          },
+          "hem": {
+            "confidence": 0.96
+          },
+          "placket": {
+            "confidence": 0.89
+          }
+        },
+        "overallConfidence": 0.93
+      },
+      "processingTime": 2503
+    },
+    "onModelProportions": {
+      "success": true,
+      "result": {
+        "success": true,
+        "inputSource": "on_model",
+        "proportionMetrics": {
+          "shoulderWidthRatio": 0.285,
+          "torsoLengthRatio": 0.575,
+          "sleeveLengthRatio": 0.445,
+          "fitType": "regular"
+        }
+      },
+      "processingTime": 1603
+    },
+    "maskRefinement": {
+      "success": true,
+      "result": {
+        "refinedMaskUrl": "https://mock-storage.example.com/masks/refined.png",
+        "refinementMetrics": {
+          "proportionScore": 0.94,
+          "symmetryScore": 0.96,
+          "edgeQuality": 0.93,
+          "overallImprovement": 0.15
+        }
+      },
+      "processingTime": 1800
+    },
+    "jsonConsolidation": {
+      "success": true,
+      "result": {
+        "consolidatedData": {
+          "baseAnalysis": {},
+          "partAnalysis": {},
+          "proportions": {},
+          "segmentation": {}
+        },
+        "qaIterations": 2
+      },
+      "processingTime": 1001
+    },
+    "flashAPIWithMSACM": {
+      "success": true,
+      "result": {
+        "msacmResult": {
+          "multiScaleData": [
+            {
+              "scaleLevel": 1,
+              "textureMap": "https://mock-storage.example.com/msacm/1x.png"
+            },
+            {
+              "scaleLevel": 2,
+              "textureMap": "https://mock-storage.example.com/msacm/2x.png"
+            },
+            {
+              "scaleLevel": 4,
+              "textureMap": "https://mock-storage.example.com/msacm/4x.png"
+            },
+            {
+              "scaleLevel": 8,
+              "textureMap": "https://mock-storage.example.com/msacm/8x.png"
+            }
+          ],
+          "unifiedAppearanceSpec": {
+            "qualityMetrics": {
+              "textureAccuracy": 0.95,
+              "structuralConsistency": 0.92,
+              "lightingRealism": 0.88,
+              "overallCoherence": 0.9
+            }
+          },
+          "renderingInstructions": {
+            "fabricFoldInstructions": "Natural woven fabric draping with medium weight characteristics"
+          }
+        },
+        "flashResult": {
+          "success": true,
+          "ghostMannequinUrl": "https://flash-api.example.com/generated/ghost_mannequin.png",
+          "transportOptimizations": {
+            "silhouetteOptimized": true,
+            "referenceOptimized": true
+          },
+          "retryAttempted": false,
+          "fallbackTriggered": false
+        }
+      },
+      "processingTime": 4506
+    },
+    "boundedRetryRouting": {
+      "success": true,
+      "result": {
+        "route": "flash",
+        "success": true,
+        "attempt": 1,
+        "fallbackTriggered": false,
+        "finalResult": true
+      },
+      "processingTime": 1202
+    },
+    "qualityAssurance": {
+      "success": true,
+      "result": {
+        "overallScore": 0.94,
+        "commercialAcceptability": true,
+        "qualityDimensions": [
+          {
+            "name": "Visual Quality",
+            "passed": true,
+            "score": 0.96
+          },
+          {
+            "name": "Geometric Accuracy",
+            "passed": true,
+            "score": 0.93
+          },
+          {
+            "name": "Technical Compliance",
+            "passed": true,
+            "score": 0.95
+          },
+          {
+            "name": "Commercial Standards",
+            "passed": true,
+            "score": 0.92
+          }
+        ]
+      },
+      "processingTime": 2001
+    }
+  },
+  "prdCompliance": {
+    "abProcessingImplemented": true,
+    "flashAPIWithGuardrails": true,
+    "multiScaleAppearanceControl": true,
+    "boundedRetryRouting": true,
+    "onModelProportions": true,
+    "comprehensiveQA": true
+  }
+}

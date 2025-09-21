@@ -1,0 +1,509 @@
+{
+  "timestamp": "2025-09-21T10:01:21.422Z",
+  "testConfig": {
+    "testImages": {
+      "onModel": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800",
+      "flatlay": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800"
+    },
+    "expectedTimes": {
+      "safetyPreScrub": 2000,
+      "backgroundRemoval": 10000,
+      "segmentation": 5000
+    },
+    "qualityThresholds": {
+      "skinDetectionAccuracy": 0.95,
+      "edgeVariance": 2,
+      "segmentationCompleteness": 0.95
+    }
+  },
+  "results": {
+    "safetyPreScrub": {
+      "passed": true,
+      "processingTime": 1502,
+      "result": {
+        "humanMaskUrl": "https://mock-storage.example.com/masks/a_mask_test.png",
+        "personlessImageUrl": "https://mock-storage.example.com/cleaned/a_personless_test.png",
+        "safetyMetrics": {
+          "skinAreaPercentage": 25.3,
+          "regionsDetected": [
+            "face",
+            "hands",
+            "neck"
+          ],
+          "edgeErosionApplied": 3,
+          "processingTime": 1500,
+          "safetyThresholdExceeded": false
+        },
+        "recommendedAction": "proceed",
+        "processingTime": 1500
+      }
+    },
+    "enhancedBackgroundRemoval": {
+      "passed": true,
+      "singleProcessingTime": 8003,
+      "batchProcessingTime": 12002,
+      "results": {
+        "single": {
+          "cleanedImageUrl": "https://mock-storage.example.com/cleaned/birefnet_result_test.png",
+          "processingTime": 8000
+        },
+        "batch": [
+          {
+            "cleanedImageUrl": "https://mock-storage.example.com/cleaned/batch_1_test.png",
+            "processingTime": 7800
+          },
+          {
+            "cleanedImageUrl": "https://mock-storage.example.com/cleaned/batch_2_test.png",
+            "processingTime": 8200
+          }
+        ]
+      }
+    },
+    "advancedSegmentation": {
+      "passed": true,
+      "processingTime": 4004,
+      "result": {
+        "maskUrl": "https://mock-storage.example.com/masks/segmentation_test.png",
+        "segmentationData": {
+          "garmentBoundary": [
+            [
+              0.1,
+              0.1
+            ],
+            [
+              0.9,
+              0.1
+            ],
+            [
+              0.9,
+              0.9
+            ],
+            [
+              0.1,
+              0.9
+            ]
+          ],
+          "neckCavity": [
+            [
+              0.35,
+              0.1
+            ],
+            [
+              0.65,
+              0.1
+            ],
+            [
+              0.65,
+              0.25
+            ],
+            [
+              0.35,
+              0.25
+            ]
+          ],
+          "sleeveOpenings": [
+            [
+              0.05,
+              0.15
+            ],
+            [
+              0.25,
+              0.15
+            ],
+            [
+              0.25,
+              0.4
+            ],
+            [
+              0.05,
+              0.4
+            ],
+            [
+              0.75,
+              0.15
+            ],
+            [
+              0.95,
+              0.15
+            ],
+            [
+              0.95,
+              0.4
+            ],
+            [
+              0.75,
+              0.4
+            ]
+          ],
+          "hemBoundary": [
+            [
+              0.1,
+              0.85
+            ],
+            [
+              0.9,
+              0.85
+            ],
+            [
+              0.9,
+              0.9
+            ],
+            [
+              0.1,
+              0.9
+            ]
+          ]
+        },
+        "qualityMetrics": {
+          "maskCompleteness": 0.985,
+          "edgeSmoothness": 0.962,
+          "geometricConsistency": 0.943,
+          "cavitySymmetry": 0.971
+        },
+        "cropBoundaries": {
+          "neck": [
+            0.2,
+            0,
+            0.8,
+            0.25
+          ],
+          "sleeves": {
+            "left": [
+              0,
+              0.1,
+              0.3,
+              0.5
+            ],
+            "right": [
+              0.7,
+              0.1,
+              1,
+              0.5
+            ]
+          },
+          "hem": [
+            0.1,
+            0.8,
+            0.9,
+            1
+          ],
+          "placket": [
+            0.4,
+            0.2,
+            0.6,
+            0.8
+          ]
+        },
+        "processingTime": 4000
+      }
+    },
+    "cropGeneration": {
+      "passed": true,
+      "processingTime": 2504,
+      "result": {
+        "crops": [
+          {
+            "region": "neck",
+            "imageUrl": "https://mock-storage.example.com/crops/neck_test.png",
+            "boundaries": {
+              "x": 0.25,
+              "y": 0,
+              "width": 0.5,
+              "height": 0.3
+            },
+            "confidence": 0.92,
+            "metadata": {
+              "originalDimensions": {
+                "width": 1024,
+                "height": 1024
+              },
+              "cropDimensions": {
+                "width": 512,
+                "height": 307
+              },
+              "features": [
+                "neckline_edge",
+                "collar_detail",
+                "fabric_texture"
+              ],
+              "analysisHints": [
+                "analyze_neckline_shape",
+                "detect_collar_type"
+              ]
+            }
+          },
+          {
+            "region": "sleeve_left",
+            "imageUrl": "https://mock-storage.example.com/crops/sleeve_left_test.png",
+            "boundaries": {
+              "x": 0,
+              "y": 0.1,
+              "width": 0.3,
+              "height": 0.4
+            },
+            "confidence": 0.88,
+            "metadata": {
+              "originalDimensions": {
+                "width": 1024,
+                "height": 1024
+              },
+              "cropDimensions": {
+                "width": 307,
+                "height": 410
+              },
+              "features": [
+                "sleeve_opening",
+                "fabric_drape",
+                "seam_line"
+              ],
+              "analysisHints": [
+                "analyze_sleeve_opening",
+                "detect_cuff_type"
+              ]
+            }
+          },
+          {
+            "region": "sleeve_right",
+            "imageUrl": "https://mock-storage.example.com/crops/sleeve_right_test.png",
+            "boundaries": {
+              "x": 0.7,
+              "y": 0.1,
+              "width": 0.3,
+              "height": 0.4
+            },
+            "confidence": 0.87,
+            "metadata": {
+              "originalDimensions": {
+                "width": 1024,
+                "height": 1024
+              },
+              "cropDimensions": {
+                "width": 307,
+                "height": 410
+              },
+              "features": [
+                "sleeve_opening",
+                "fabric_drape",
+                "seam_line"
+              ],
+              "analysisHints": [
+                "analyze_sleeve_opening",
+                "detect_cuff_type"
+              ]
+            }
+          },
+          {
+            "region": "hem",
+            "imageUrl": "https://mock-storage.example.com/crops/hem_test.png",
+            "boundaries": {
+              "x": 0.1,
+              "y": 0.75,
+              "width": 0.8,
+              "height": 0.25
+            },
+            "confidence": 0.91,
+            "metadata": {
+              "originalDimensions": {
+                "width": 1024,
+                "height": 1024
+              },
+              "cropDimensions": {
+                "width": 819,
+                "height": 256
+              },
+              "features": [
+                "hem_edge",
+                "fabric_weight",
+                "bottom_seam"
+              ],
+              "analysisHints": [
+                "analyze_hem_type",
+                "detect_length_style"
+              ]
+            }
+          },
+          {
+            "region": "placket",
+            "imageUrl": "https://mock-storage.example.com/crops/placket_test.png",
+            "boundaries": {
+              "x": 0.35,
+              "y": 0.15,
+              "width": 0.3,
+              "height": 0.7
+            },
+            "confidence": 0.85,
+            "metadata": {
+              "originalDimensions": {
+                "width": 1024,
+                "height": 1024
+              },
+              "cropDimensions": {
+                "width": 307,
+                "height": 717
+              },
+              "features": [
+                "button_line",
+                "closure_detail",
+                "fabric_fold"
+              ],
+              "analysisHints": [
+                "analyze_closure_alignment",
+                "detect_button_spacing"
+              ]
+            }
+          }
+        ],
+        "processingTime": 2500,
+        "qualityMetrics": {
+          "totalCropsGenerated": 5,
+          "averageConfidence": 0.886,
+          "regionsWithHighConfidence": 4
+        }
+      }
+    },
+    "partWiseAnalysis": {
+      "passed": true,
+      "processingTime": 3502,
+      "result": {
+        "regionAnalysis": {
+          "neck": {
+            "necklineShape": "crew",
+            "collarType": "none",
+            "drapeQuality": {
+              "naturalness": 0.92,
+              "smoothness": 0.89,
+              "symmetry": 0.94
+            },
+            "measurements": {
+              "necklineWidth": 0.25,
+              "necklineDepth": 0.15
+            },
+            "qualityMetrics": {
+              "edgeCleanness": 0.91,
+              "shapeConsistency": 0.88,
+              "confidence": 0.9
+            }
+          },
+          "sleeve_left": {
+            "openingShape": "circular",
+            "cuffType": "none",
+            "fabricBehavior": {
+              "drapeNaturalness": 0.87,
+              "foldPattern": "natural",
+              "wrinklePresence": 0.15
+            },
+            "measurements": {
+              "openingDiameter": 0.12,
+              "armholeDepth": 0.18
+            },
+            "qualityMetrics": {
+              "symmetryScore": 0.93,
+              "fabricFit": 0.89,
+              "confidence": 0.88
+            }
+          },
+          "sleeve_right": {
+            "openingShape": "circular",
+            "cuffType": "none",
+            "fabricBehavior": {
+              "drapeNaturalness": 0.87,
+              "foldPattern": "natural",
+              "wrinklePresence": 0.15
+            },
+            "measurements": {
+              "openingDiameter": 0.12,
+              "armholeDepth": 0.18
+            },
+            "qualityMetrics": {
+              "symmetryScore": 0.91,
+              "fabricFit": 0.89,
+              "confidence": 0.88
+            }
+          },
+          "hem": {
+            "edgeQuality": {
+              "cleanness": 0.94,
+              "straightness": 0.91,
+              "consistency": 0.89
+            },
+            "lengthAssessment": {
+              "evenness": 0.92,
+              "appropriateLength": true,
+              "lengthVariation": 0.02
+            },
+            "drapePattern": {
+              "naturalness": 0.9,
+              "heaviness": "medium",
+              "flowDirection": "straight"
+            },
+            "qualityMetrics": {
+              "overallAppearance": 0.91,
+              "manufacturingQuality": 0.93,
+              "confidence": 0.89
+            }
+          },
+          "placket": {
+            "closureAlignment": {
+              "verticalAlignment": 0.95,
+              "buttonSpacing": 0.92,
+              "edgeParallel": 0.94
+            },
+            "buttonPlacement": {
+              "positionAccuracy": 0.91,
+              "buttonholeQuality": 0.89,
+              "symmetry": 0.93
+            },
+            "fabricHandling": {
+              "layerAlignment": 0.9,
+              "fabricSmoothness": 0.88,
+              "bulkiness": 0.15
+            },
+            "qualityMetrics": {
+              "overallCraftsmanship": 0.91,
+              "functionalQuality": 0.9,
+              "confidence": 0.87
+            }
+          }
+        },
+        "overallMetrics": {
+          "totalRegionsAnalyzed": 5,
+          "averageConfidence": 0.884,
+          "highQualityRegions": 4,
+          "criticalIssuesFound": []
+        },
+        "processingTime": 3500
+      }
+    },
+    "pipelineIntegration": {
+      "passed": true,
+      "testResults": [
+        {
+          "name": "Safety → Background Removal",
+          "passed": true
+        },
+        {
+          "name": "Background Removal → Segmentation",
+          "passed": true
+        },
+        {
+          "name": "Segmentation → Crop Generation",
+          "passed": true
+        },
+        {
+          "name": "Crop Generation → Part-wise Analysis",
+          "passed": true
+        },
+        {
+          "name": "Full Enhanced Pipeline (Stages 0-5)",
+          "passed": true,
+          "processingTime": 31513
+        }
+      ]
+    }
+  },
+  "summary": {
+    "totalTests": 6,
+    "passedTests": 6,
+    "successRate": "100.0%"
+  }
+}

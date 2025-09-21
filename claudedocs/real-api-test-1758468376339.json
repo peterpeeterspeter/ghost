@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-09-21T15:26:16.330Z",
+  "totalTime": 72136,
+  "backgroundRemoval": {
+    "success": true,
+    "outputUrl": "https://v3.fal.media/files/penguin/vc2xe0CmXopu960-nDG7Z_a6f6961c24a74dfb9ca025f18ba7632d.png"
+  },
+  "garmentAnalysis": {
+    "success": false,
+    "result": null
+  }
+}

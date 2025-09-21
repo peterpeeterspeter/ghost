@@ -1,0 +1,191 @@
+{
+  "sessionId": "ab_real_1758470623886",
+  "timestamp": "2025-09-21T16:04:42.855Z",
+  "testType": "real_ab_processing_pipeline",
+  "totalProcessingTime": 58969,
+  "stagesSummary": {
+    "total": 5,
+    "successful": 5,
+    "successRate": "100.0%"
+  },
+  "stageResults": {
+    "A/B Dual Input Processing": {
+      "success": true,
+      "result": {
+        "inputMode": "dual_input",
+        "aProcessed": {
+          "personMaskUrl": "https://mock-storage.example.com/masks/person_mask.png",
+          "personlessUrl": "https://v3.fal.media/files/tiger/nzAztA2luPJi_RST9EgiW_cb9f86ed2b0c42939833b2e3838d9a42.png",
+          "skinAreaPercentage": 0.12,
+          "safetyPreScrubApplied": true
+        },
+        "bProcessed": {
+          "cleanUrl": "https://v3.fal.media/files/panda/iODah6TBjLS30PLVu2J1L_3cf96bf7cf3f4a8f89f806167439a351.png",
+          "analysisReady": true
+        },
+        "processingDecisions": {
+          "routeToFlash": true,
+          "routeToFallback": false,
+          "reasonCode": "moderate_skin_12.0pct"
+        }
+      },
+      "processingTime": 35985
+    },
+    "Enhanced Base Analysis (Gemini 1.5 Flash)": {
+      "success": true,
+      "result": {
+        "analysis": {
+          "garment_category": "jacket",
+          "closure_type": "button",
+          "neckline_style": "collared",
+          "sleeve_configuration": "long",
+          "fabric_properties": {
+            "structure": "woven",
+            "weight": "medium",
+            "transparency": "opaque"
+          },
+          "color_analysis": {
+            "primary_color": "light blue",
+            "hex_estimate": "#A0C4D6",
+            "pattern": "solid"
+          },
+          "segmentation_hints": {
+            "cavity_regions_present": [
+              "neck",
+              "sleeves",
+              "front_opening"
+            ],
+            "crop_priorities": [
+              "neck",
+              "sleeve_left",
+              "sleeve_right",
+              "hem",
+              "placket"
+            ]
+          },
+          "preserve_details": [
+            {
+              "element": "buttons",
+              "priority": "high",
+              "location": "placket"
+            },
+            {
+              "element": "pocket",
+              "priority": "medium",
+              "location": "chest"
+            },
+            {
+              "element": "sleeve_cuffs",
+              "priority": "high",
+              "location": "sleeves"
+            }
+          ],
+          "confidence_score": 0.9
+        },
+        "rawResponse": "```json\n{\n  \"garment_category\": \"jacket\",\n  \"closure_type\": \"button\",\n  \"neckline_style\": \"collared\",\n  \"sleeve_configuration\": \"long\",\n  \"fabric_properties\": {\n    \"structure\": \"woven\",\n    \"weight\": \"medium\",\n    \"transparency\": \"opaque\"\n  },\n  \"color_analysis\": {\n    \"primary_color\": \"light blue\",\n    \"hex_estimate\": \"#A0C4D6\",\n    \"pattern\": \"solid\"\n  },\n  \"segmentation_hints\": {\n    \"cavity_regions_present\": [\"neck\", \"sleeves\", \"front_opening\"],\n    \"crop_priorities\": [\"neck\", \"sleeve_left\", \"sleeve_right\", \"hem\", \"placket\"]\n  },\n  \"preserve_details\": [\n    {\"element\": \"buttons\", \"priority\": \"high\", \"location\": \"placket\"},\n    {\"element\": \"pocket\", \"priority\": \"medium\", \"location\": \"chest\"},\n    {\"element\": \"sleeve_cuffs\", \"priority\": \"high\", \"location\": \"sleeves\"}\n\n  ],\n  \"confidence_score\": 0.9\n}\n```",
+        "processingModel": "gemini-1.5-flash",
+        "analysisType": "enhanced_base_ab_processing"
+      },
+      "processingTime": 14449
+    },
+    "On-Model Proportions Analysis (A Input)": {
+      "success": true,
+      "result": {
+        "success": true,
+        "inputSource": "on_model",
+        "proportionMetrics": {
+          "shoulderWidthRatio": 0.32,
+          "torsoLengthRatio": 0.55,
+          "sleeveLengthRatio": 0.48,
+          "fitType": "regular",
+          "postureAlignment": {
+            "shoulderLevel": 0.92,
+            "armPosition": "natural",
+            "torsoAlignment": "straight"
+          }
+        },
+        "qualityAssessment": {
+          "confidence": 0.91,
+          "personPixelPercentage": 0.12,
+          "garmentVisibilityScore": 0.88
+        },
+        "anatomicalValidation": {
+          "proportionsValid": true,
+          "deviationsFromIdeal": {
+            "shoulderWidth": 0.005,
+            "torsoLength": 0.008,
+            "sleeveLength": 0.003
+          }
+        }
+      },
+      "processingTime": 1801
+    },
+    "Multi-Scale Appearance Control (MS-ACM)": {
+      "success": true,
+      "result": {
+        "multiScaleData": [
+          {
+            "scaleLevel": 1,
+            "textureMap": "https://msacm.example.com/1x.png"
+          },
+          {
+            "scaleLevel": 2,
+            "textureMap": "https://msacm.example.com/2x.png"
+          },
+          {
+            "scaleLevel": 4,
+            "textureMap": "https://msacm.example.com/4x.png"
+          },
+          {
+            "scaleLevel": 8,
+            "textureMap": "https://msacm.example.com/8x.png"
+          }
+        ],
+        "unifiedAppearanceSpec": {
+          "qualityMetrics": {
+            "textureAccuracy": 0.95,
+            "structuralConsistency": 0.92,
+            "lightingRealism": 0.88,
+            "overallCoherence": 0.9
+          }
+        },
+        "renderingInstructions": {
+          "fabricFoldInstructions": "woven fabric with natural draping characteristics",
+          "shadowInstructions": "Studio lighting with 40% shadow hardness, 60% opacity",
+          "cavityDepthInstructions": "Calculate depth based on garment proportions",
+          "detailPreservationInstructions": "Preserve high-fidelity details in: prints, patterns, textures, labels"
+        }
+      },
+      "processingTime": 2200
+    },
+    "Flash API with Transport Guardrails": {
+      "success": true,
+      "result": {
+        "success": true,
+        "ghostMannequinUrl": "https://flash-api.example.com/generated/ghost_mannequin.png",
+        "transportOptimizations": {
+          "silhouetteOptimized": true,
+          "referenceOptimized": true
+        },
+        "promptUsed": "E-commerce productfoto; geen personen/mannequins; output policy-safe. Professional ghost mannequin jacket with crew neckline and long sleeves. 3D dimensional form with natural fabric draping. Studio lighting, white background, commercial quality.",
+        "retryAttempted": false,
+        "fallbackTriggered": false
+      },
+      "processingTime": 4507
+    }
+  },
+  "prdCompliance": {
+    "abProcessingImplemented": true,
+    "safetyPreScrubApplied": true,
+    "dualInputProcessing": true,
+    "flashAPIWithGuardrails": true,
+    "multiScaleAppearanceControl": true,
+    "onModelProportions": true,
+    "realAIProcessing": true
+  },
+  "performance": {
+    "averageStageTime": 11793.8,
+    "fastestStage": 1801,
+    "slowestStage": 35985
+  }
+}

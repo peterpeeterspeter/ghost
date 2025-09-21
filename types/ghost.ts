@@ -3,24 +3,81 @@ import { z } from 'zod';
 // Base types
 export type ImageInput = string; // base64 or signed URL
 
-// Request types
+// Request types for v2.1 A/B Processing
 export interface GhostRequest {
+  // B = Flatlay (truth for color/pattern/texture)
   flatlay: ImageInput;
+  // A = On-model (proportions/pose, human pixels auto-masked)
   onModel?: ImageInput;
   options?: {
     preserveLabels?: boolean;
     outputSize?: '1024x1024' | '2048x2048';
     backgroundColor?: 'white' | 'transparent';
+    // v2.1 A/B processing options
+    inputMode?: 'flatlay_only' | 'dual_input' | 'auto_detect';
+    safetyPreScrub?: {
+      enabled?: boolean;
+      skinDetectionThreshold?: number; // 0-1, default 0.5
+      edgeErosionPixels?: number; // default 2-3px
+    };
+    flashImageGeneration?: {
+      enabled?: boolean;
+      transportGuardrails?: {
+        maxImageSize?: number; // default 2048px
+        maxFileSize?: number; // default 8MB
+        jpegQuality?: number; // default 86
+      };
+      boundedRetry?: boolean; // default true
+    };
   };
 }
 
-// Comprehensive Analysis JSON Schema (for Gemini Pro structured output)
+// A/B Processing Result
+export interface ABProcessingResult {
+  inputMode: 'flatlay_only' | 'dual_input';
+  aProcessed?: {
+    personMaskUrl?: string;
+    personlessUrl?: string;
+    skinAreaPercentage?: number;
+    safetyPreScrubApplied: boolean;
+  };
+  bProcessed: {
+    cleanUrl: string;
+    analysisReady: boolean;
+  };
+  processingDecisions: {
+    routeToFlash: boolean;
+    routeToFallback: boolean;
+    reasonCode: string;
+  };
+}
+
+// Enhanced Analysis JSON Schema v2.1 (for Gemini Pro structured output)
 export const AnalysisJSONSchema = z.object({
   type: z.literal('garment_analysis'),
   meta: z.object({
-    schema_version: z.literal('4.1'),
+    schema_version: z.literal('4.2'), // Updated for v2.1
     session_id: z.string(),
+    processing_stage: z.literal('base_analysis').optional(),
+    safety_pre_scrub_applied: z.boolean().optional(),
   }),
+  // Enhanced garment categorization for v2.1
+  garment_category: z.enum(['shirt', 'dress', 'pants', 'jacket', 'accessory', 'top', 'bottom', 'outerwear']).optional(),
+  closure_type: z.enum(['button', 'zip', 'pullover', 'wrap', 'tie', 'snap', 'none']).optional(),
+  neckline_style: z.enum(['crew', 'v_neck', 'scoop', 'high_neck', 'off_shoulder', 'boat', 'square', 'halter']).optional(),
+  sleeve_configuration: z.enum(['short', 'long', '3_quarter', 'sleeveless', 'cap', 'tank']).optional(),
+  fabric_properties: z.object({
+    weight: z.enum(['light', 'medium', 'heavy']).optional(),
+    structure: z.enum(['woven', 'knit', 'non_woven']).optional(),
+    stretch: z.enum(['none', 'low', 'medium', 'high']).optional(),
+    transparency: z.enum(['opaque', 'semi_opaque', 'translucent', 'sheer']).optional(),
+  }).optional(),
+  // Segmentation planning for advanced pipeline stages
+  segmentation_hints: z.object({
+    primary_boundary_complexity: z.enum(['simple', 'moderate', 'complex']).optional(),
+    cavity_regions_present: z.array(z.enum(['neck', 'sleeves', 'front_opening', 'armholes'])).optional(),
+    crop_priorities: z.array(z.enum(['neck', 'sleeve_left', 'sleeve_right', 'hem', 'placket'])).optional(),
+  }).optional(),
   labels_found: z.array(z.object({
     type: z.enum(['brand', 'size', 'care', 'composition', 'origin', 'price', 'security_tag', 'rfid', 'other']),
     location: z.string(),
@@ -459,6 +516,151 @@ export const EnrichmentJSONSchemaObject = {
 };
 
 export type EnrichmentJSON = z.infer<typeof EnrichmentJSONSchema>;
+// v2.1 Enhanced Pipeline Stage Result Types
+
+export interface SafetyPreScrubResult {
+  humanMaskUrl?: string;
+  personlessImageUrl: string;
+  onModelPersonlessUrl?: string;
+  safetyMetrics: {
+    skinAreaPercentage: number;
+    regionsDetected: string[];
+    edgeErosionApplied: number;
+    processingTime: number;
+    safetyThresholdExceeded: boolean;
+  };
+  recommendedAction: 'proceed' | 'manual_review' | 'block';
+  processingTime: number;
+}
+
+export interface SegmentationResult {
+  maskUrl: string;
+  segmentationData: {
+    garmentBoundary: number[][];
+    neckCavity?: number[][];
+    sleeveOpenings?: number[][];
+    hemBoundary?: number[][];
+    [key: string]: number[][] | undefined;
+  };
+  qualityMetrics: {
+    maskCompleteness: number;
+    edgeSmoothness: number;
+    geometricConsistency: number;
+    cavitySymmetry?: number;
+  };
+  cropBoundaries?: {
+    neck?: number[];
+    sleeves?: {
+      left: number[];
+      right: number[];
+    };
+    hem?: number[];
+    placket?: number[];
+    [key: string]: number[] | { left: number[]; right: number[] } | undefined;
+  };
+  processingTime: number;
+}
+
+export interface CropResult {
+  region: 'neck' | 'sleeve_left' | 'sleeve_right' | 'hem' | 'placket';
+  imageUrl: string;
+  boundaries: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  confidence: number;
+  metadata: {
+    originalDimensions: { width: number; height: number };
+    cropDimensions: { width: number; height: number };
+    features: string[];
+    analysisHints: string[];
+  };
+}
+
+export interface CropGenerationResult {
+  crops: CropResult[];
+  processingTime: number;
+  qualityMetrics: {
+    totalCropsGenerated: number;
+    averageConfidence: number;
+    regionsWithHighConfidence: number;
+  };
+}
+
+export interface PartAnalysisResult {
+  regionAnalysis: {
+    [region: string]: {
+      qualityMetrics: {
+        confidence: number;
+        [key: string]: any;
+      };
+      [key: string]: any;
+    };
+  };
+  overallMetrics: {
+    totalRegionsAnalyzed: number;
+    averageConfidence: number;
+    highQualityRegions: number;
+    criticalIssuesFound: string[];
+  };
+  processingTime: number;
+}
+
+export interface MaskRefinementResult {
+  refinedMaskUrl: string; // Final refined mask
+  refinementMetrics: {
+    proportionScore: number; // 0-1 anatomical accuracy
+    symmetryScore: number; // 0-1 bilateral symmetry
+    edgeQuality: number; // 0-1 edge smoothness
+    overallImprovement: number; // 0-1 improvement from original
+  };
+  anatomicalValidation: {
+    neckProportions: { valid: boolean; score: number; adjustments: string[] };
+    shoulderAlignment: { valid: boolean; score: number; adjustments: string[] };
+    sleeveSymmetry: { valid: boolean; score: number; adjustments: string[] };
+    hemConsistency: { valid: boolean; score: number; adjustments: string[] };
+  };
+  appliedCorrections: {
+    proportionAdjustments: string[];
+    symmetryCorrections: string[];
+    edgeRefinements: string[];
+    qualityImprovements: string[];
+  };
+  confidenceScore: number; // overall confidence in refinement
+  processingTime: number;
+}
+
+export interface QualityAssessmentResult {
+  overallScore: number; // 0-1 overall quality score
+  commercialAcceptability: boolean;
+  qualityDimensions: {
+    visual: { score: number; issues: string[] };
+    geometric: { score: number; issues: string[] };
+    technical: { score: number; issues: string[] };
+    commercial: { score: number; issues: string[] };
+  };
+  commercialValidation: {
+    acceptabilityScore: number;
+    passesCommercialStandards: boolean;
+    brandComplianceLevel: string; // 'excellent' | 'good' | 'acceptable' | 'poor'
+    marketReadiness: boolean;
+  };
+  technicalValidation: {
+    colorAccuracyDeltaE: number;
+    edgeQualityScore: number;
+    geometricConsistency: number;
+    passesQualityGates: boolean;
+  };
+  issues: {
+    critical: string[]; // issues that require immediate attention
+    warnings: string[]; // issues that should be addressed
+    recommendations: string[]; // suggestions for improvement
+  };
+  recommendations: string[];
+  processingTime: number;
+}
 
 // Pipeline stage results
 export interface BackgroundRemovalResult {
@@ -482,6 +684,28 @@ export interface GhostMannequinResult {
   processingTime: number;
 }
 
+// v2.1 Drop-in Integration Types
+export type MaskPolygon = { 
+  name: "garment" | "neck" | "sleeve_l" | "sleeve_r" | "hem" | "placket"; 
+  pts: [number, number][]; 
+  isHole?: boolean; 
+};
+
+export type MaskArtifacts = {
+  a_personless_url?: string;
+  a_skin_mask_url?: string;
+  b_clean_url: string;
+  refined_silhouette_url: string;
+  polygons: MaskPolygon[];
+  metrics: { 
+    skin_pct?: number; 
+    symmetry: number; 
+    edge_roughness_px: number; 
+    shoulder_width_ratio: number; 
+    neck_inner_ratio: number; 
+  };
+};
+
 // Final response type
 export interface GhostResult {
   sessionId: string;
@@ -493,16 +717,23 @@ export interface GhostResult {
   metrics: {
     processingTime: string;
     stageTimings: {
+      safetyPreScrub?: number;
       backgroundRemoval: number;
       analysis: number;
+      segmentation?: number;
+      cropGeneration?: number;
+      partAnalysis?: number;
       enrichment: number;
+      maskRefinement?: number;
+      consolidation?: number;
       rendering: number;
+      qualityAssurance?: number;
     };
   };
   error?: {
     message: string;
     code: string;
-    stage: 'background_removal' | 'analysis' | 'enrichment' | 'rendering';
+    stage: ProcessingStage;
   };
 }
 
@@ -595,7 +826,7 @@ export class GhostPipelineError extends Error {
   constructor(
     message: string,
     public code: string,
-    public stage: 'background_removal' | 'analysis' | 'enrichment' | 'rendering',
+    public stage: ProcessingStage,
     public cause?: Error
   ) {
     super(message);
@@ -604,7 +835,23 @@ export class GhostPipelineError extends Error {
 }
 
 // Utility types
-export type ProcessingStage = 'background_removal' | 'analysis' | 'enrichment' | 'consolidation' | 'rendering' | 'qa';
+export type ProcessingStage = 
+  | 'safety_prescrub' 
+  | 'background_removal' 
+  | 'analysis' 
+  | 'segmentation'
+  | 'crop_generation' 
+  | 'part_analysis'
+  | 'enrichment' 
+  | 'mask_refinement'
+  | 'consolidation' 
+  | 'rendering' 
+  | 'quality_assurance'
+  | 'qa'
+  // v2.1 stages
+  | 'ab_processing'
+  | 'preprocessing'
+  | 'generation';
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 // Constants
