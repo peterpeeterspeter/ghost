@@ -10,9 +10,9 @@ export function configurePromptGenerator(apiKey: string): void {
 }
 
 // Balanced Flash 2.5 Template - Clear dimensional guidance with narrative flow
-const FLASH_25_BASE_TEMPLATE = `Create a professional studio photograph showing a garment transformed from its flat layout into a dimensional display form against a pristine white background. The garment should appear naturally structured and fitted, creating volume and shape while maintaining the exact colors, patterns, and design details from the reference images. 
+const FLASH_25_BASE_TEMPLATE = `Create a professional studio photograph showing a garment transformed from its flat layout into a dimensional display form against a pristine white background. The garment should appear as if worn by a transparent form, creating natural volume and structure while maintaining the exact colors, patterns, and design details from the reference images. 
 
-The dimensional effect shows the garment floating naturally with proper fit and drape, displaying how the fabric moves and falls when given three-dimensional form. Soft, even studio lighting illuminates the garment's texture and construction without harsh shadows. The final image should look like a professional product photograph suitable for e-commerce, showing the garment's true shape and proportions as it would appear when worn, with only the dimensional garment form visible.
+The dimensional effect shows the garment floating naturally with proper fit and drape, displaying how the fabric moves and falls when given body volume. Soft, even studio lighting illuminates the garment's texture and construction without harsh shadows. The final image should look like a professional product photograph suitable for e-commerce, showing the garment's true shape and proportions as it would appear when worn, but without any visible model or mannequin - only the dimensional garment form itself.
 
 Most importantly: Transform the flat reference image into this three-dimensional presentation while preserving every original color, pattern, and design element exactly as shown in the source material.
 
@@ -174,11 +174,11 @@ function generateFallbackPrompt(facts: FactsV3, controlBlock: ControlBlock): str
   const accentColorName = hexToColorName(accentColor);
   const drapeDescription = drapeStiffness < 0.3 ? 'flowing and soft' : drapeStiffness > 0.7 ? 'structured and crisp' : 'naturally balanced';
 
-  return `Create a professional studio photograph showing a ${category} transformed from its flat layout into a dimensional display form against a pristine white background. The ${silhouette} garment should appear naturally structured and fitted, creating volume and shape while showcasing its authentic ${dominantColorName} tones with ${accentColorName} accents. 
+  return `Create a professional studio photograph showing a ${category} transformed from its flat layout into a dimensional display form against a pristine white background. The ${silhouette} garment should appear as if worn by a transparent form, creating natural volume and structure while showcasing its authentic ${dominantColorName} tones with ${accentColorName} accents. 
 
-The ${material} fabric displays a ${drapeDescription} drape with ${surfaceSheen} finish, highlighting important details like ${requiredComponents}. The dimensional effect shows the garment floating naturally with proper fit and drape, displaying how the fabric moves and falls when given three-dimensional form. 
+The ${material} fabric displays a ${drapeDescription} drape with ${surfaceSheen} finish, highlighting important details like ${requiredComponents}. The dimensional effect shows the garment floating naturally with proper fit and drape, displaying how the fabric moves and falls when given body volume. 
 
-Most importantly: Transform the flat reference image into this three-dimensional presentation while preserving every original color, pattern, and design element exactly as shown in the source material. The result should look like a professional product photograph suitable for e-commerce, showing the garment's true shape as it would appear when worn, with only the dimensional garment form visible.
+Most importantly: Transform the flat reference image into this three-dimensional presentation while preserving every original color, pattern, and design element exactly as shown in the source material. The result should look like a professional product photograph suitable for e-commerce, showing the garment's true shape as it would appear when worn, but without any visible model - only the dimensional garment form itself.
 
 IMPORTANT LABEL HANDLING: If there are any visible brand labels, care labels, size tags, or text elements in the reference image, copy them identically in the same position and orientation on the dimensional garment form. Maintain perfect text clarity and readability.`;
 }
