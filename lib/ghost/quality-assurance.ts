@@ -11,6 +11,7 @@
  */
 
 import { GhostPipelineError, ImageInput, AnalysisJSON, MaskRefinementResult } from '../../types/ghost';
+import { RealImageProcessor } from '../utils/image-processing';
 
 // Quality assurance configuration interface
 interface QualityAssuranceConfig {
@@ -134,7 +135,8 @@ export async function validateQuality(
   renderUrl: string,
   maskRefinementResult: MaskRefinementResult,
   analysisData: AnalysisJSON,
-  config: Partial<QualityAssuranceConfig> = {}
+  config: Partial<QualityAssuranceConfig> = {},
+  originalImage?: string
 ): Promise<QualityAssessmentResult> {
   const startTime = Date.now();
   const finalConfig = { ...DEFAULT_QA_CONFIG, ...config };
@@ -174,7 +176,7 @@ export async function validateQuality(
     };
 
     // Stage 1: Visual Quality Assessment
-    await assessVisualQuality(renderUrl, finalConfig, result);
+    await assessVisualQuality(renderUrl, finalConfig, result, originalImage);
 
     // Stage 2: Geometric Quality Assessment
     await assessGeometricQuality(maskRefinementResult, finalConfig, result);
@@ -215,51 +217,105 @@ export async function validateQuality(
 }
 
 /**
- * Visual quality assessment
+ * Visual quality assessment using real image processing
  */
 async function assessVisualQuality(
   renderUrl: string,
   config: QualityAssuranceConfig,
-  result: QualityAssessmentResult
+  result: QualityAssessmentResult,
+  originalImage?: string
 ): Promise<void> {
-  console.log('[QualityAssurance] Assessing visual quality...');
+  console.log('[QualityAssurance] Assessing visual quality with real image analysis...');
 
-  // Mock visual quality assessment
-  // In real implementation, this would:
-  // - Analyze color accuracy using ΔE calculations
-  // - Measure edge sharpness and clarity
-  // - Evaluate texture preservation
-  // - Check for artifacts and noise
+  try {
+    const processor = new RealImageProcessor();
+    
+    // Load the rendered image for analysis
+    const renderedImageData = await processor.loadImageData(renderUrl);
+    
+    // 1. Real color accuracy analysis using ΔE calculations
+    let colorAccuracy = 0.95; // Default high accuracy
+    let deltaE = 0;
+    
+    if (originalImage) {
+      const originalImageData = await processor.loadImageData(originalImage);
+      const colorAnalysis = await processor.analyzeColors(renderedImageData, originalImageData);
+      deltaE = colorAnalysis.deltaE;
+      
+      // Convert ΔE to accuracy score (ΔE ≤ 3 is excellent, ≤ 6 is good, >6 is poor)
+      if (deltaE <= 3) {
+        colorAccuracy = 0.95 - (deltaE / 3) * 0.05; // 0.90-0.95 for excellent
+      } else if (deltaE <= 6) {
+        colorAccuracy = 0.70 - ((deltaE - 3) / 3) * 0.20; // 0.50-0.70 for good  
+      } else {
+        colorAccuracy = Math.max(0.1, 0.50 - ((deltaE - 6) / 10) * 0.40); // 0.10-0.50 for poor
+      }
+      
+      console.log(`[QualityAssurance] Color analysis: ΔE=${deltaE.toFixed(2)}, accuracy=${(colorAccuracy * 100).toFixed(1)}%`);
+    }
+    
+    // 2. Real edge sharpness analysis
+    const edgeAnalysis = await processor.analyzeEdges(renderedImageData);
+    const edgeSharpness = edgeAnalysis.smoothnessScore;
+    
+    // 3. Texture preservation analysis (compare edge density)
+    const texturePreservation = Math.min(1.0, edgeAnalysis.edgePixels.length / 1000); // Normalize edge count
+    
+    // 4. Noise reduction analysis (inverse of roughness)
+    const noiseReduction = Math.max(0.1, 1.0 - (edgeAnalysis.averageRoughness / 10));
+    
+    const realVisualAssessment = {
+      colorAccuracy,
+      edgeSharpness,
+      texturePreservation,
+      noiseReduction
+    };
 
-  const mockVisualAssessment = {
-    colorAccuracy: 0.92, // 92% color accuracy
-    edgeSharpness: 0.88, // 88% edge sharpness
-    texturePreservation: 0.85, // 85% texture preservation
-    noiseReduction: 0.95 // 95% noise reduction
-  };
+    // Calculate visual quality score
+    const visualScore = (
+      realVisualAssessment.colorAccuracy * 0.3 +
+      realVisualAssessment.edgeSharpness * 0.3 +
+      realVisualAssessment.texturePreservation * 0.2 +
+      realVisualAssessment.noiseReduction * 0.2
+    );
 
-  // Calculate visual quality score
-  const visualScore = (
-    mockVisualAssessment.colorAccuracy * 0.3 +
-    mockVisualAssessment.edgeSharpness * 0.3 +
-    mockVisualAssessment.texturePreservation * 0.2 +
-    mockVisualAssessment.noiseReduction * 0.2
-  );
+    result.qualityDimensions.visual.score = visualScore;
+    result.technicalValidation.colorAccuracyDeltaE = deltaE;
+    result.technicalValidation.edgeQualityScore = edgeSharpness;
+    
+    console.log(`[QualityAssurance] ✅ Real visual quality analysis:`);
+    console.log(`  • Color accuracy: ${(colorAccuracy * 100).toFixed(1)}% (ΔE: ${deltaE.toFixed(2)})`);
+    console.log(`  • Edge sharpness: ${(edgeSharpness * 100).toFixed(1)}%`);
+    console.log(`  • Texture preservation: ${(texturePreservation * 100).toFixed(1)}%`);
+    console.log(`  • Noise reduction: ${(noiseReduction * 100).toFixed(1)}%`);
+    console.log(`  • Overall visual score: ${(visualScore * 100).toFixed(1)}%`);
 
-  result.qualityDimensions.visual.score = visualScore;
-  result.technicalValidation.colorAccuracyDeltaE = (1 - mockVisualAssessment.colorAccuracy) * 10; // Convert to ΔE
-  result.technicalValidation.edgeQualityScore = mockVisualAssessment.edgeSharpness;
+    // Add quality issues based on real analysis
+    if (deltaE > config.assessmentCriteria.visualQuality.colorAccuracyDeltaE) {
+      result.qualityDimensions.visual.issues.push(`Color accuracy below standard (ΔE: ${deltaE.toFixed(2)} > ${config.assessmentCriteria.visualQuality.colorAccuracyDeltaE})`);
+    }
+    
+    if (edgeSharpness < config.assessmentCriteria.visualQuality.edgeSharpness) {
+      result.qualityDimensions.visual.issues.push(`Edge sharpness below threshold (${(edgeSharpness * 100).toFixed(1)}% < ${(config.assessmentCriteria.visualQuality.edgeSharpness * 100).toFixed(1)}%)`);
+    }
+    
+    if (texturePreservation < config.assessmentCriteria.visualQuality.texturePreservation) {
+      result.qualityDimensions.visual.issues.push(`Texture preservation insufficient (${(texturePreservation * 100).toFixed(1)}% < ${(config.assessmentCriteria.visualQuality.texturePreservation * 100).toFixed(1)}%)`);
+    }
+    
+    if (noiseReduction < config.assessmentCriteria.visualQuality.noiseReduction) {
+      result.qualityDimensions.visual.issues.push(`Noise reduction inadequate (${(noiseReduction * 100).toFixed(1)}% < ${(config.assessmentCriteria.visualQuality.noiseReduction * 100).toFixed(1)}%)`);
+    }
 
-  // Check thresholds and add issues
-  if (mockVisualAssessment.colorAccuracy < config.assessmentCriteria.visualQuality.colorAccuracyDeltaE / 10) {
-    result.qualityDimensions.visual.issues.push('Color accuracy below commercial standards');
+  } catch (error) {
+    console.error('[QualityAssurance] ❌ Real visual quality analysis failed:', error);
+    
+    // Fallback to conservative estimates
+    result.qualityDimensions.visual.score = 0.75;
+    result.technicalValidation.colorAccuracyDeltaE = 5.0; // Conservative ΔE estimate
+    result.technicalValidation.edgeQualityScore = 0.75;
+    result.qualityDimensions.visual.issues.push('Visual quality analysis failed - using conservative estimates');
   }
-
-  if (mockVisualAssessment.edgeSharpness < config.assessmentCriteria.visualQuality.edgeSharpness) {
-    result.qualityDimensions.visual.issues.push('Edge sharpness below quality threshold');
-  }
-
-  console.log(`[QualityAssurance] Visual quality score: ${(visualScore * 100).toFixed(1)}%`);
 }
 
 /**

@@ -100,3 +100,4 @@ temp/
 # Local development files
 *.local
 .env.development
+.env

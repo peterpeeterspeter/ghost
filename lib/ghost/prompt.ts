@@ -28,14 +28,17 @@ const COMMON_GUARDRAILS = `
 Pure white background (#FFFFFF). Even, soft, shadow-free studio lighting.
 No props, bodies, faces, or mannequins. Perfect bilateral symmetry.
 Derive silhouette and edges from the structure image; copy all visual details from the flatlay.
-Keep inner cavities hollow unless the flatlay shows visible inner fabric or binding.
+Show interior lining, patterns, or fabric details exactly as they appear in the flatlay image.
+If the flatlay shows the garment open revealing interior details, display the ghost mannequin open with those details visible.
 `;
 
 // A/B processing specific instructions
 const AB_PROCESSING_INSTRUCTIONS = [
   "Use Image B for all colors, textures, prints, labels and edge finishes.",
   "Use Image A only to estimate global scale; ignore its local folds/pose.",
-  "Keep neckline and sleeves hollow unless inner fabric is visible in B.",
+  "If Image B shows the garment open with interior lining/fabric visible, display it open with the interior details visible.",
+  "If Image B shows interior fabric, patterns, or lining, include these interior details in the ghost mannequin.",
+  "Keep neckline and sleeves hollow only if no interior fabric is shown in Image B.",
   "Pure white background (#FFFFFF). No props, models, or mannequins."
 ];
 

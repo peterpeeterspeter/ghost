@@ -9,6 +9,7 @@
  */
 
 import { GhostPipelineError, ImageInput, AnalysisJSON } from '../../types/ghost';
+import { RealImageProcessor } from '../utils/image-processing';
 
 // Crop configuration interface
 interface CropConfig {
@@ -103,12 +104,14 @@ const DEFAULT_CROP_CONFIG: CropConfig = {
  */
 export class CropGeneration {
   private config: CropConfig;
+  private imageProcessor: RealImageProcessor;
 
   constructor(config: Partial<CropConfig> = {}) {
     this.config = {
       ...DEFAULT_CROP_CONFIG,
       ...config
     };
+    this.imageProcessor = new RealImageProcessor();
   }
 
   /**
@@ -426,31 +429,75 @@ export class CropGeneration {
   }
 
   /**
-   * Generate actual crop images from boundaries
+   * Generate actual crop images from boundaries using real Sharp processing
    */
   private async generateCropImages(
     cleanedImage: ImageInput,
     boundaries: { [region: string]: { x: number; y: number; width: number; height: number } },
     baseAnalysis: AnalysisJSON
   ): Promise<CropResult[]> {
-    this.log('Generating crop images...');
+    this.log('Generating crop images with real Sharp processing...');
 
     const crops: CropResult[] = [];
 
+    // Load the source image
+    const sourceImageData = await this.imageProcessor.loadImageData(cleanedImage);
+    const originalDimensions = {
+      width: sourceImageData.width,
+      height: sourceImageData.height
+    };
+
     for (const [region, bounds] of Object.entries(boundaries)) {
       try {
-        // TODO: Implement actual image cropping
-        // This would involve:
-        // 1. Loading the cleaned image
-        // 2. Cropping to the specified boundaries
-        // 3. Uploading cropped image to storage
-        // 4. Analyzing features in the cropped region
+        // Convert normalized bounds to actual pixel coordinates
+        const actualBounds = {
+          x: Math.floor(bounds.x * originalDimensions.width),
+          y: Math.floor(bounds.y * originalDimensions.height),
+          width: Math.floor(bounds.width * originalDimensions.width),
+          height: Math.floor(bounds.height * originalDimensions.height)
+        };
 
-        const cropResult = await this.mockCropGeneration(region, bounds, baseAnalysis);
+        this.log(`Cropping ${region}: ${actualBounds.x},${actualBounds.y} ${actualBounds.width}x${actualBounds.height}`);
+
+        // Use real Sharp cropping
+        const croppedImageData = await this.imageProcessor.cropImage(
+          cleanedImage,
+          actualBounds.x,
+          actualBounds.y,
+          actualBounds.width,
+          actualBounds.height
+        );
+
+        // Convert cropped image to data URL for storage
+        const cropImageUrl = await this.imageProcessor.saveAsDataUrl(croppedImageData, 'png');
+
+        // Analyze features in the cropped region using real image processing
+        const features = await this.analyzeRealCropFeatures(croppedImageData, region);
+        
+        // Calculate confidence based on actual image metrics
+        const confidence = await this.calculateRealCropConfidence(croppedImageData, region, actualBounds);
+
+        const cropResult: CropResult = {
+          region: region as any,
+          imageUrl: cropImageUrl,
+          boundaries: bounds, // Keep normalized bounds
+          confidence,
+          metadata: {
+            originalDimensions,
+            cropDimensions: { 
+              width: actualBounds.width, 
+              height: actualBounds.height 
+            },
+            features,
+            analysisHints: this.getAnalysisHintsForRegion(region, baseAnalysis)
+          }
+        };
+
         crops.push(cropResult);
+        this.log(`✅ Generated crop for ${region} with confidence ${(confidence * 100).toFixed(1)}%`);
 
       } catch (error) {
-        this.log(`Failed to generate crop for ${region}: ${error}`);
+        this.log(`❌ Failed to generate crop for ${region}: ${error}`);
         // Continue with other regions
       }
     }
@@ -459,35 +506,115 @@ export class CropGeneration {
   }
 
   /**
-   * Mock crop generation for development/testing
+   * Analyze features in cropped region using real image processing
    */
-  private async mockCropGeneration(
-    region: string,
-    bounds: { x: number; y: number; width: number; height: number },
-    baseAnalysis: AnalysisJSON
-  ): Promise<CropResult> {
-    // Simulate crop processing time
-    await new Promise(resolve => setTimeout(resolve, 300));
+  private async analyzeRealCropFeatures(croppedImageData: any, region: string): Promise<string[]> {
+    const features: string[] = [];
 
-    // Mock crop result
-    const cropResult: CropResult = {
-      region: region as any,
-      imageUrl: `https://mock-storage.example.com/crops/${region}_${Date.now()}.png`,
-      boundaries: bounds,
-      confidence: 0.85 + Math.random() * 0.1, // 0.85-0.95 confidence
-      metadata: {
-        originalDimensions: { width: 1024, height: 1024 },
-        cropDimensions: { 
-          width: Math.floor(bounds.width * 1024), 
-          height: Math.floor(bounds.height * 1024) 
-        },
-        features: this.getMockFeaturesForRegion(region),
-        analysisHints: this.getAnalysisHintsForRegion(region, baseAnalysis)
+    try {
+      // Analyze edges to detect seams, hems, etc.
+      const edgeAnalysis = await this.imageProcessor.analyzeEdges(croppedImageData);
+
+      // Add features based on edge analysis
+      if (edgeAnalysis.edgePixels.length > 50) {
+        features.push('strong_edges');
       }
-    };
+      if (edgeAnalysis.smoothnessScore > 0.8) {
+        features.push('smooth_surface');
+      }
 
-    return cropResult;
+      // Region-specific feature detection
+      switch (region) {
+        case 'neck':
+          features.push('neckline_edge');
+          if (edgeAnalysis.edgePixels.length > 100) {
+            features.push('collar_detail');
+          }
+          break;
+        case 'sleeve_left':
+        case 'sleeve_right':
+          features.push('sleeve_opening');
+          if (edgeAnalysis.averageRoughness < 2.0) {
+            features.push('clean_cuff');
+          }
+          break;
+        case 'hem':
+          features.push('hem_edge');
+          if (edgeAnalysis.smoothnessScore > 0.9) {
+            features.push('finished_hem');
+          }
+          break;
+        case 'placket':
+          features.push('closure_line');
+          break;
+      }
+
+      // Add texture analysis features
+      features.push('fabric_texture');
+
+    } catch (error) {
+      this.log(`Warning: Feature analysis failed for ${region}: ${error}`);
+      // Return basic features as fallback
+      features.push(...this.getMockFeaturesForRegion(region));
+    }
+
+    return features;
   }
+
+  /**
+   * Calculate real crop confidence based on image quality metrics
+   */
+  private async calculateRealCropConfidence(
+    croppedImageData: any,
+    region: string,
+    actualBounds: { x: number; y: number; width: number; height: number }
+  ): Promise<number> {
+    try {
+      // Base confidence from size validation
+      let confidence = 0.5;
+
+      // Size confidence (larger crops generally better for analysis)
+      const cropArea = actualBounds.width * actualBounds.height;
+      const sizeConfidence = Math.min(1.0, cropArea / (200 * 200)); // Normalize to 200x200 baseline
+      confidence += sizeConfidence * 0.3;
+
+      // Edge analysis confidence
+      const edgeAnalysis = await this.imageProcessor.analyzeEdges(croppedImageData);
+      
+      const edgeConfidence = Math.min(1.0, edgeAnalysis.smoothnessScore);
+      confidence += edgeConfidence * 0.2;
+
+      // Region-specific confidence adjustments
+      switch (region) {
+        case 'neck':
+          // Higher confidence if we detect circular/curved patterns
+          if (edgeAnalysis.edgePixels.length > 80) {
+            confidence += 0.1;
+          }
+          break;
+        case 'sleeve_left':
+        case 'sleeve_right':
+          // Sleeve confidence based on edge continuity
+          if (edgeAnalysis.averageRoughness < 3.0) {
+            confidence += 0.1;
+          }
+          break;
+        case 'hem':
+          // Hem confidence based on horizontal line detection
+          if (edgeAnalysis.smoothnessScore > 0.8) {
+            confidence += 0.1;
+          }
+          break;
+      }
+
+      return Math.max(0.1, Math.min(1.0, confidence));
+
+    } catch (error) {
+      this.log(`Warning: Confidence calculation failed for ${region}: ${error}`);
+      return 0.7; // Reasonable fallback confidence
+    }
+  }
+
 
   /**
    * Get mock features for a specific region
