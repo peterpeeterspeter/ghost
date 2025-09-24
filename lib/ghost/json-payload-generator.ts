@@ -390,6 +390,25 @@ export function generateFlashJsonPayload(
     // Generate structured ghost mannequin prompt (the working JSON structure)
     const structuredPrompt = generateStructuredGhostMannequinPrompt(flashFacts, flashControl);
     
+    // Generate the expert AI prompt that interprets JSON
+    const expertAIPrompt = `You are an expert AI image generation engine specializing in photorealistic, Amazon-compliant e-commerce apparel photography. Your sole function is to interpret the provided JSON object and render a single, flawless product image that strictly adheres to every specified parameter.
+
+**Your directives are:**
+1.  **Parse the JSON:** Analyze every field in the provided JSON schema. Each field is a direct command.
+2.  **Ghost Mannequin Execution:** The \`effect: "ghost_mannequin"\` and \`form: "invisible_human_silhouette"\` mean you must render the garment as if worn by an invisible person, giving it shape and volume without showing any part of a mannequin or model.
+3.  **Crucial View Angles:** Pay close attention to the \`view_angle\`.
+    *   If \`"interior_neckline_shot"\` is specified, you must generate a view of the *inside back and shoulder area* of the garment, including the brand tag if requested. This shot is vital for post-production.
+    *   For all other angles, maintain perfect consistency in lighting, color, and fabric texture.
+4.  **Platform Compliance is Mandatory:** The \`TechnicalAndPlatformSpecs\` are non-negotiable.
+    *   **Framing:** The garment MUST occupy the \`frame_fill_percentage\` of the total image area against the specified \`background\`.
+    *   **Lighting:** The \`lighting\` must be soft and even, completely eliminating harsh shadows on the product and background.
+    *   **Negative Constraints:** You are forbidden from rendering any elements listed in \`negative_constraints\`.
+5.  **Styling is Key:** The \`Styling\` category dictates the final look. A \`"perfectly_fitted_no_bunching"\` garment must be smooth and well-defined. Sleeve drape must be exactly as specified.
+
+Your output must be a single, high-resolution, commercially ready image that looks like it was taken in a professional photo studio. Do not add any commentary.
+
+**JSON SPECIFICATION:**\n${JSON.stringify(structuredPrompt, null, 2)}`;
+    
     // Build complete payload
     const payload: FlashImagePromptPayload = {
       type: "flash_image_prompt_payload_v1",
@@ -399,7 +418,7 @@ export function generateFlashJsonPayload(
       },
       images: imageReferences,
       prompt_block: {
-        base_prompt: JSON.stringify(structuredPrompt, null, 2),
+        base_prompt: expertAIPrompt,
         language: "en"
       },
       facts_v3: flashFacts,

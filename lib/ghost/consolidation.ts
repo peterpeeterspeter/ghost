@@ -21,7 +21,10 @@ export const PaletteSchemaLoose = z.object({
   trim_hex:     HexLoose,
   pattern_hexes: z
     .preprocess((v) => (Array.isArray(v) ? v : []), z.array(Hex).default([])),
-  region_hints: z.record(z.array(z.string())).optional(),
+  region_hints: z.preprocess(
+    (v) => normalizeRegionHints(v),
+    z.record(z.array(z.string()))
+  ).optional(),
 });
 
 /** accept object OR array OR null and coerce to { must_not: [...] } */
@@ -195,6 +198,27 @@ function normalizeSafety(s: any): { must_not: string[] } {
   if (Array.isArray(s)) return { must_not: s };
   if (s && Array.isArray(s.must_not)) return { must_not: s.must_not };
   return { must_not: [] };
+}
+
+function normalizeRegionHints(hints: any): Record<string, string[]> {
+  if (!hints || typeof hints !== 'object') return {};
+  
+  const normalized: Record<string, string[]> = {};
+  
+  for (const [key, value] of Object.entries(hints)) {
+    if (Array.isArray(value)) {
+      // Already an array of strings
+      normalized[key] = value.filter(v => typeof v === 'string');
+    } else if (typeof value === 'string') {
+      // Convert comma-separated string to array
+      normalized[key] = value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    } else {
+      // Skip invalid values
+      continue;
+    }
+  }
+  
+  return normalized;
 }
 
 export function normalizeFacts(f: FactsV3): FactsV3 {
@@ -498,7 +522,7 @@ Provide your consolidated output in this exact JSON format:
           ? rawPalette.pattern_hexes.filter((h: any) => typeof h === 'string' && /^#[0-9A-Fa-f]{6}$/.test(h)) 
           : [],
         region_hints: (typeof rawPalette.region_hints === 'object' && rawPalette.region_hints) 
-          ? rawPalette.region_hints : {}
+          ? normalizeRegionHints(rawPalette.region_hints) : {}
       };
       
       // Try to preserve other fields
@@ -670,19 +694,36 @@ export async function buildDynamicFlashPrompt(
   useExpertPrompt?: boolean
 ): Promise<string> {
   try {
-    console.log(`🎯 Building ${useStructuredPrompt ? 'structured' : 'dynamic'} prompt...`);
+    console.log(`🎯 Building ${useStructuredPrompt ? 'Amazon-Ready Structured' : 'dynamic'} prompt...`);
     
     // If structured prompts are requested, use that approach
     if (useStructuredPrompt) {
-      const promptType = useExpertPrompt ? 'expert AI' : 'structured';
-      console.log(`📊 Using ${promptType} prompt approach (inspired by clockmaker test: 70% vs 0% success)`);
+      const promptType = useExpertPrompt ? 'Expert AI Command' : 'Hybrid Structured';
+      console.log(`🚀 STRUCTURED PROMPT ACTIVATED: ${promptType} approach`);
+      console.log(`📊 Based on clockmaker test insights: 70% structured vs 0% narrative success rate`);
+      console.log(`🎯 Amazon marketplace compliance: 32+ structured fields, 85% frame fill, shadowless lighting`);
+      
       const { generateHybridStructuredPrompt } = await import('./structured-prompt-generator');
+      const startTime = Date.now();
       const prompt = generateHybridStructuredPrompt(facts, control, useExpertPrompt);
-      console.log(`✅ ${promptType} prompt generated (${prompt.length} chars)`);
+      const processingTime = Date.now() - startTime;
+      
+      console.log(`✅ ${promptType} prompt generated successfully`);
+      console.log(`   📏 Prompt length: ${prompt.length} characters`);
+      console.log(`   ⚡ Processing time: ${processingTime}ms`);
+      console.log(`   🏷️  Features: JSON structure + narrative + Amazon compliance`);
+      
+      // Count structured elements for validation
+      const structuredElementCount = (prompt.match(/#[0-9A-Fa-f]{6}/g) || []).length + 
+                                    (prompt.match(/\d+\.\d+/g) || []).length + 
+                                    (prompt.match(/\{[^}]*\}/g) || []).length;
+      console.log(`   📊 Structured elements detected: ${structuredElementCount}`);
+      
       return prompt;
     }
     
-    // Import and use the new dynamic prompt generator
+    // Use legacy dynamic prompt generator (AI-powered narrative approach)
+    console.log('📝 Using legacy dynamic prompt approach (AI-generated narrative)');
     const { generateDynamicPrompt, configurePromptGenerator } = await import('./prompt-generator');
     
     // Configure with Gemini API key (same as analysis)
@@ -690,7 +731,9 @@ export async function buildDynamicFlashPrompt(
     if (apiKey) {
       configurePromptGenerator(apiKey);
       const result = await generateDynamicPrompt(facts, control, sessionId);
-      console.log(`🎯 Generated dynamic prompt in ${result.processingTime}ms`);
+      console.log(`🎯 Generated legacy dynamic prompt in ${result.processingTime}ms`);
+      console.log(`   📏 Prompt length: ${result.prompt.length} characters`);
+      console.log(`   🏷️  Features: AI-generated narrative (legacy approach)`);
       return result.prompt;
     }
     

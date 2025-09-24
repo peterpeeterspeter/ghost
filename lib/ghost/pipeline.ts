@@ -277,11 +277,16 @@ export class GhostMannequinPipeline {
           this.log(`Stage 5: Ghost mannequin generation - Using control block with ${this.options.renderingModel} model`);
           const consolidation = this.state.stageResults.consolidation!;
         
-        // Check rendering approach from environment
+        // Check if user requested structured prompts - this takes priority over environment settings
+        const userRequestedStructured = this.state.originalRequest?.options?.useStructuredPrompt;
         const renderingApproach = process.env.RENDERING_APPROACH || 'json';
-        this.log(`🎯 Rendering approach: ${renderingApproach}`);
         
-        if (renderingApproach === 'optimized') {
+        this.log(`🎯 Rendering approach: ${renderingApproach}`);
+        if (userRequestedStructured) {
+          this.log('🚀 User requested structured prompts - bypassing environment approach');
+        }
+        
+        if (!userRequestedStructured && renderingApproach === 'optimized') {
           // SIMPLE JSON OPTIMIZATION Approach (like jsonprompt.it)
           try {
             this.log('⚡ Using optimized JSON approach (analysis + enrichment → Flash)');
@@ -297,7 +302,7 @@ export class GhostMannequinPipeline {
             console.error('Optimized JSON error:', optimizedError);
             // Fall through to distilled approach
           }
-        } else if (renderingApproach === 'json') {
+        } else if (!userRequestedStructured && renderingApproach === 'json') {
           // COMPLEX JSON Payload Approach
           try {
             this.log('📦 Using JSON payload approach (structured data → Flash 2.5)');
@@ -315,9 +320,20 @@ export class GhostMannequinPipeline {
           }
         }
         
-        // Distilled Prompts Approach (fallback or explicit choice)
+        // Structured Prompts or Distilled Prompts Approach
         let promptToUse: string;
-        if (this.options.renderingModel === 'seedream') {
+        if (userRequestedStructured) {
+          // User explicitly requested structured prompts - use them directly
+          this.log('🎯 Using structured prompts approach (Amazon-ready with 32+ fields)');
+          promptToUse = await buildDynamicFlashPrompt(
+            consolidation.facts_v3, 
+            consolidation.control_block, 
+            this.state.sessionId,
+            this.state.originalRequest?.options?.useStructuredPrompt,
+            this.state.originalRequest?.options?.useExpertPrompt
+          );
+          this.log(`✅ Generated structured prompt: ${promptToUse.length} chars (Amazon compliance enabled)`);
+        } else if (this.options.renderingModel === 'seedream') {
           promptToUse = buildSeeDreamPrompt(consolidation.control_block, consolidation.facts_v3);
           this.log('Using SeeDream 4.0 optimized prompt format');
         } else {
@@ -328,8 +344,8 @@ export class GhostMannequinPipeline {
               consolidation.facts_v3, 
               consolidation.control_block, 
               this.state.sessionId,
-              this.request.options?.useStructuredPrompt,
-              this.request.options?.useExpertPrompt
+              this.state.originalRequest?.options?.useStructuredPrompt,
+              this.state.originalRequest?.options?.useExpertPrompt
             );
             this.log(`✅ Generated distilled Flash prompt: ${promptToUse.length} chars (optimized for rendering focus)`);
           } catch (error) {

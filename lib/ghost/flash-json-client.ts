@@ -43,10 +43,33 @@ export async function generateGhostMannequinWithJsonPayload(
     const jsonPrompt = JSON.stringify(payload, null, 2);
     console.log('📊 JSON payload preview:', jsonPrompt.substring(0, 200) + '...');
     
+    // Handle different image scenarios properly
+    let primaryImage: string;
+    let referenceImage: string | undefined;
+    
+    if (detailImage && onModelImage) {
+      // Two images: detail_B as primary, on_model_A as reference
+      primaryImage = detailImage.url;
+      referenceImage = onModelImage.url;
+      console.log('🖼️ Using two images: detail_B (primary) + on_model_A (reference)');
+    } else if (detailImage) {
+      // Only detail image: use it as primary, no reference
+      primaryImage = detailImage.url;
+      referenceImage = undefined;
+      console.log('🖼️ Using single image: detail_B only (no reference)');
+    } else if (onModelImage) {
+      // Only on-model image: use it as primary, no reference
+      primaryImage = onModelImage.url;
+      referenceImage = undefined;
+      console.log('🖼️ Using single image: on_model_A only (no reference)');
+    } else {
+      throw new Error('No images found in payload');
+    }
+    
     const result = await generateImageWithFreepikGeminiJson(
       jsonPrompt,
-      imageUrls[1], // detail_B (primary)
-      imageUrls[0]  // on_model_A (optional)
+      primaryImage,
+      referenceImage
     );
     
     const processingTime = Date.now() - startTime;
