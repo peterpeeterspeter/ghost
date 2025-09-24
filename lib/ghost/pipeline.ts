@@ -30,8 +30,8 @@ import {
 } from './gemini';
 import { 
   configureAiStudioClient,
-  generateGhostMannequinWithAiStudio,
-  generateGhostMannequinWithAiStudioSimple 
+  generateGhostMannequinWithStructuredJSON,
+  generateGhostMannequinWithAiStudio
 } from './ai-studio';
 
 // Configuration interface
@@ -84,7 +84,7 @@ export class GhostMannequinPipeline {
   constructor(options: PipelineOptions) {
     this.options = {
       enableLogging: true,
-      renderingModel: 'freepik-gemini', // Default to Freepik Gemini (AI Studio available as alternative)
+      renderingModel: 'ai-studio', // Default to AI Studio Gemini 2.5 Flash Image
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
@@ -93,7 +93,7 @@ export class GhostMannequinPipeline {
         rendering: 180000,        // 180 seconds (increased for ghost mannequin generation)
         qa: 60000,                // 60 seconds for QA analysis
       },
-      enableQaLoop: true,
+      enableQaLoop: false,
       maxQaIterations: 2,
       ...options,
     };
@@ -311,9 +311,9 @@ export class GhostMannequinPipeline {
         } else if (!userRequestedStructured && renderingApproach === 'json') {
           // COMPLEX JSON Payload Approach
           try {
-            this.log('📦 Using JSON payload approach (structured data → Flash 2.5)');
+            this.log(`📦 Using JSON payload approach (structured data → ${this.options.renderingModel})`);
             const result = await this.executeWithTimeout(
-              this.generateWithJsonPayload(consolidation),
+              this.generateWithJsonPayload(consolidation, this.options.renderingModel),
               this.options.timeouts!.rendering!,
               'rendering'
             );
@@ -622,7 +622,8 @@ export class GhostMannequinPipeline {
    * Generate with JSON payload approach (COMPLEX)
    */
   private async generateWithJsonPayload(
-    consolidation: ConsolidationOutput
+    consolidation: ConsolidationOutput,
+    renderingModel?: 'freepik-gemini' | 'gemini-flash' | 'seedream' | 'ai-studio'
   ): Promise<GhostMannequinResult> {
     const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
     const originalOnModel = this.state.originalRequest?.onModel;
@@ -652,7 +653,7 @@ export class GhostMannequinPipeline {
       this.log(`✅ JSON payload validated successfully`);
       
       // Generate with JSON payload
-      const result = await generateGhostMannequinWithJsonPayload(jsonPayload);
+      const result = await generateGhostMannequinWithJsonPayload(jsonPayload, renderingModel as 'freepik-gemini' | 'ai-studio');
       this.log(`✅ JSON payload generation completed`);
       
       return result;
@@ -664,7 +665,7 @@ export class GhostMannequinPipeline {
   }
 
   /**
-   * Generate ghost mannequin using Control Block approach (LEGACY/FALLBACK)
+   * Generate ghost mannequin using Control Block approach
    * @param controlBlockPrompt - Optimized prompt from Control Block
    * @param consolidation - Consolidation output with Facts_v3
    */
@@ -679,14 +680,15 @@ export class GhostMannequinPipeline {
     
     // Log the consolidated data for debugging
     this.log('Control Block Data:');
-    this.log(`Facts V3: ${JSON.stringify(consolidation.facts_v3, null, 2)}`);
-    this.log(`Control Block: ${JSON.stringify(consolidation.control_block, null, 2)}`);
+    this.log(`Facts V3: ${Object.keys(consolidation.facts_v3).length} fields`);
+    this.log(`Control Block: ${Object.keys(consolidation.control_block).length} fields`);
     this.log(`Conflicts Resolved: ${consolidation.conflicts_found.length}`);
-    this.log(`Generated Prompt: ${controlBlockPrompt}`);
+    this.log(`Prompt Length: ${controlBlockPrompt.length} characters`);
     
-    // Use Control Block-enhanced generation based on selected model
+    // Use selected rendering model
     switch (this.options.renderingModel) {
       case 'seedream':
+        this.log('🎯 Using FAL Seedream 4.0 renderer');
         return await generateGhostMannequinWithControlBlock(
           cleanedGarmentDetail,
           controlBlockPrompt,
@@ -695,20 +697,21 @@ export class GhostMannequinPipeline {
         );
       
       case 'ai-studio':
-        // AI Studio uses direct consolidation data instead of prompt-based approach
-        this.log('🎯 Using AI Studio direct consolidation approach (bypassing control block)');
-        return await generateGhostMannequinWithAiStudio(
+        // AI Studio uses OPTIMAL direct JSON approach (no text conversion)
+        this.log('🎯 Using AI Studio with direct JSON payload (OPTIMAL)');
+        return await generateGhostMannequinWithStructuredJSON(
           cleanedGarmentDetail,
-          consolidation,
-          originalOnModel, // Use original on-model image
-          this.state.sessionId
+          consolidation.facts_v3,    // Direct JSON from Gemini Pro analysis
+          consolidation.control_block, // Direct JSON from consolidation
+          originalOnModel,           // Use original on-model image
+          { sessionId: this.state.sessionId }
         );
       
       case 'freepik-gemini':
       case 'gemini-flash':
       default:
         // Use Freepik's Gemini 2.5 Flash for both freepik-gemini and legacy gemini-flash
-        // DEBUG: Pass original on-model image (uncleaned) since we disabled cleaning
+        this.log('🎯 Using Freepik Gemini 2.5 Flash renderer');
         return await generateGhostMannequinWithControlBlockGemini(
           cleanedGarmentDetail,
           controlBlockPrompt,

@@ -3,21 +3,45 @@ import type { GhostMannequinResult } from '@/types/ghost';
 import { GhostPipelineError } from '@/types/ghost';
 
 /**
- * Send JSON payload to Gemini Flash 2.5 via Freepik API
+ * Send JSON payload to Gemini Flash 2.5 via Freepik API or AI Studio
  * This replaces the distilled prompt approach with structured JSON
  */
 export async function generateGhostMannequinWithJsonPayload(
-  payload: FlashImagePromptPayload
+  payload: FlashImagePromptPayload,
+  renderingModel?: 'freepik-gemini' | 'ai-studio'
 ): Promise<GhostMannequinResult> {
   const startTime = Date.now();
   
   try {
-    console.log('🚀 Starting JSON payload generation with Freepik Gemini Flash 2.5...');
+    console.log(`🚀 Starting JSON payload generation with ${renderingModel || 'freepik-gemini'}...`);
     console.log(`📦 Payload size: ${JSON.stringify(payload).length} characters`);
     console.log(`🖼️ Reference images: ${payload.images.length}`);
     console.log(`📋 Template length: ${payload.prompt_block.base_prompt.length} characters`);
     
-    // Import Freepik integration
+    // Route to AI Studio if specified, otherwise use Freepik
+    if (renderingModel === 'ai-studio') {
+      console.log('🎯 Routing JSON payload to AI Studio Gemini 2.5 Flash Image...');
+      const { generateGhostMannequinWithStructuredJSON } = await import('./ai-studio');
+      
+      // Extract images for AI Studio
+      const detailImage = payload.images.find(img => img.role === "detail_B");
+      const onModelImage = payload.images.find(img => img.role === "on_model_A");
+      
+      if (!detailImage) {
+        throw new Error('No detail_B image found in payload for AI Studio');
+      }
+      
+      return await generateGhostMannequinWithStructuredJSON(
+        detailImage.url,
+        payload.facts_v3,
+        payload.control_block,
+        onModelImage?.url,
+        { sessionId: payload.meta.session_id }
+      );
+    }
+    
+    // Default to Freepik integration
+    console.log('🎯 Routing JSON payload to Freepik Gemini Flash 2.5...');
     const { generateImageWithFreepikGeminiJson } = await import('./freepik');
     
     // Convert payload images to format expected by Freepik client

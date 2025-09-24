@@ -73,13 +73,166 @@ function getImageMimeType(imageInput: string): string {
  * @param consolidation - Complete consolidation output with FactsV3 and ControlBlock
  * @param originalImage - Optional on-model reference image
  * @param sessionId - Session ID for tracking
+ * @param options - Generation options including structured prompt settings
  * @returns Promise with rendered image URL and processing time
+ */
+/**
+ * Generate ghost mannequin using AI Studio with direct JSON payload (OPTIMAL)
+ * Passes structured FactsV3 + ControlBlock data directly as JSON to Flash Image
+ */
+export async function generateGhostMannequinWithStructuredJSON(
+  flatlayImage: string,
+  factsV3: any,
+  controlBlock: any,
+  originalImage?: string,
+  options?: { sessionId?: string }
+): Promise<GhostMannequinResult> {
+  const startTime = Date.now();
+  
+  if (!genAI) {
+    throw new GhostPipelineError(
+      'AI Studio client not configured. Call configureAiStudioClient first.',
+      'CLIENT_NOT_CONFIGURED',
+      'rendering'
+    );
+  }
+
+  try {
+    console.log('🎯 AI Studio: Using direct JSON payload approach (OPTIMAL)');
+    console.log(`📊 FactsV3 fields: ${Object.keys(factsV3).length}`);
+    console.log(`📝 ControlBlock fields: ${Object.keys(controlBlock).length}`);
+    
+    // Step 1: Create structured JSON prompt
+    const jsonPrompt = `You are a professional e-commerce product photographer specializing in ghost mannequin photography. Create a photorealistic ghost mannequin image based on the provided JSON specifications and reference images.
+
+Your task: Generate a professional ghost mannequin photograph that shows the garment as if worn by an invisible person, giving it proper shape and volume.
+
+JSON SPECIFICATIONS:
+${JSON.stringify({ facts_v3: factsV3, control_block: controlBlock }, null, 2)}
+
+Key Requirements:
+1. Use the exact colors specified in facts_v3.palette
+2. Preserve all required_components from facts_v3
+3. Apply the material properties (drape_stiffness, transparency, surface_sheen)
+4. Follow control_block lighting and shadow preferences
+5. Maintain hollow_regions as specified
+6. Use professional studio lighting against pure white background
+
+Generate a single high-resolution, commercially ready image.`;
+
+    console.log(`📏 JSON prompt length: ${jsonPrompt.length} characters`);
+    console.log('🔍 JSON structure preserved for Flash Image processing');
+
+    // Step 2: Configure Gemini 2.5 Flash Image model
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash-image-preview",
+      generationConfig: {
+        temperature: 0.05, // Very low for precision
+      },
+    });
+
+    // Step 3: Prepare images
+    console.log('🖼️ Preparing images for AI Studio...');
+    const flatlayData = await prepareImageForAiStudio(flatlayImage);
+    const flatlayMimeType = getImageMimeType(flatlayImage);
+    
+    // Build content parts with JSON + images
+    const contentParts: any[] = [
+      { text: jsonPrompt },
+      { text: "Reference Image - Garment Details (colors, patterns, construction):" },
+      {
+        inlineData: {
+          data: flatlayData,
+          mimeType: flatlayMimeType,
+        },
+      },
+    ];
+
+    // Add original image if provided
+    if (originalImage) {
+      console.log('📸 Adding shape reference image...');
+      const originalData = await prepareImageForAiStudio(originalImage);
+      const originalMimeType = getImageMimeType(originalImage);
+      
+      contentParts.push({ text: "Shape Reference - Dimensional proportions:" });
+      contentParts.push({
+        inlineData: {
+          data: originalData,
+          mimeType: originalMimeType,
+        },
+      });
+    }
+
+    console.log(`🚀 Calling AI Studio with structured JSON + ${contentParts.length} parts...`);
+    
+    // Step 4: Generate
+    const result = await model.generateContent(contentParts);
+    const response = await result.response;
+    
+    console.log('✅ AI Studio JSON generation completed!');
+    
+    // Step 5: Extract generated image
+    const candidates = response.candidates;
+    if (!candidates?.[0]?.content?.parts) {
+      throw new GhostPipelineError(
+        'AI Studio response contains no content',
+        'RENDERING_FAILED',
+        'rendering'
+      );
+    }
+
+    const imagePart = candidates[0].content.parts.find(part => 
+      part.inlineData?.mimeType?.startsWith('image/')
+    );
+
+    if (!imagePart?.inlineData) {
+      throw new GhostPipelineError(
+        'AI Studio did not generate an image',
+        'RENDERING_FAILED',
+        'rendering'
+      );
+    }
+
+    console.log('🎨 Generated image found! Processing...');
+    
+    // Convert to data URL and upload to FAL storage
+    const imageDataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+    const { uploadImageToFalStorage } = await import('./fal');
+    const renderUrl = await uploadImageToFalStorage(imageDataUrl);
+    
+    console.log('✅ Generated image uploaded to FAL storage:', renderUrl);
+    
+    const processingTime = Date.now() - startTime;
+    console.log(`🎯 AI Studio JSON generation completed in ${processingTime}ms`);
+    
+    return { renderUrl, processingTime };
+
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error('❌ AI Studio JSON generation failed:', error);
+    
+    if (error instanceof GhostPipelineError) {
+      throw error;
+    }
+    
+    throw new GhostPipelineError(
+      `AI Studio JSON generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'RENDERING_FAILED',
+      'rendering',
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Generate ghost mannequin using AI Studio (LEGACY - uses text prompts)
  */
 export async function generateGhostMannequinWithAiStudio(
   flatlayImage: string,
   consolidation: ConsolidationOutput,
   originalImage?: string,
-  sessionId?: string
+  sessionId?: string,
+  options?: { useStructuredPrompt?: boolean; useExpertPrompt?: boolean }
 ): Promise<GhostMannequinResult> {
   const startTime = Date.now();
   
@@ -96,13 +249,34 @@ export async function generateGhostMannequinWithAiStudio(
     console.log(`📊 FactsV3 fields: ${Object.keys(consolidation.facts_v3).length}`);
     console.log(`📝 ControlBlock fields: ${Object.keys(consolidation.control_block).length}`);
     
-    // Step 1: Generate dynamic prompt using FactsV3 and ControlBlock data
-    console.log('🔄 Generating dynamic prompt...');
-    const promptResult = await generateDynamicPrompt(
-      consolidation.facts_v3,
-      consolidation.control_block,
-      sessionId || 'ai-studio-gen'
-    );
+    // Step 1: Generate prompt using structured system if requested
+    let promptResult: { prompt: string; processingTime: number };
+    
+    if (options?.useStructuredPrompt) {
+      console.log('🎯 Using structured prompt system (Amazon compliance + expert directives)...');
+      const { buildDynamicFlashPrompt } = await import('./consolidation');
+      
+      const structuredPrompt = await buildDynamicFlashPrompt(
+        consolidation.facts_v3,
+        consolidation.control_block,
+        sessionId || 'ai-studio-gen',
+        options.useStructuredPrompt,
+        options.useExpertPrompt
+      );
+      
+      promptResult = {
+        prompt: structuredPrompt,
+        processingTime: 0
+      };
+      console.log('✅ Structured prompt with JSON specs + narrative + Amazon compliance ready');
+    } else {
+      console.log('🔄 Using standard dynamic prompt...');
+      promptResult = await generateDynamicPrompt(
+        consolidation.facts_v3,
+        consolidation.control_block,
+        sessionId || 'ai-studio-gen'
+      );
+    }
     
     console.log(`✅ Dynamic prompt generated in ${promptResult.processingTime}ms`);
     console.log(`📏 Prompt length: ${promptResult.prompt.length} characters`);
@@ -446,217 +620,4 @@ export function getAiStudioStatus(): {
       'Direct URL Image Input'
     ]
   };
-}
-
-/**
- * Enhanced AI Studio generation with structured JSON as separate input
- * @param flatlayImage - Clean flatlay image (base64 or URL)
- * @param analysisJSON - Raw analysis JSON object
- * @param enrichmentJSON - Raw enrichment JSON object
- * @param originalImage - Optional on-model reference image
- * @param sessionId - Session ID for tracking
- * @param options - Additional options for JSON and image handling
- */
-export async function generateGhostMannequinWithStructuredJSON(
-  flatlayImage: string,
-  analysisJSON: any,
-  enrichmentJSON: any,
-  originalImage?: string,
-  sessionId?: string,
-  options?: {
-    jsonInputMethod?: 'inline' | 'separate' | 'embedded'; // How to provide JSON
-    imageInputMethod?: 'base64' | 'url' | 'auto';          // How to provide images
-    useSimplePrompt?: boolean;                              // Use simple vs dynamic prompt
-  }
-): Promise<GhostMannequinResult> {
-  const startTime = Date.now();
-  
-  if (!genAI) {
-    throw new GhostPipelineError(
-      'AI Studio client not configured. Call configureAiStudioClient first.',
-      'CLIENT_NOT_CONFIGURED',
-      'rendering'
-    );
-  }
-
-  const opts = {
-    jsonInputMethod: 'separate',
-    imageInputMethod: 'auto',
-    useSimplePrompt: false,
-    ...options
-  };
-
-  try {
-    console.log('🎯 Starting AI Studio generation with structured JSON...');
-    console.log(`📊 JSON Input Method: ${opts.jsonInputMethod}`);
-    console.log(`🖼️ Image Input Method: ${opts.imageInputMethod}`);
-    
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-image-preview",
-      generationConfig: {
-        temperature: 0.05,
-      },
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-      ],
-    });
-
-    // Prepare base prompt
-    const basePrompt = opts.useSimplePrompt 
-      ? `Create a professional ghost mannequin image from this garment showing natural dimensional form against white background. Use the analysis data and reference images provided.`
-      : `Create professional e-commerce ghost mannequin photography showing this garment with perfect dimensional form against pristine white studio background.
-      
-This is invisible mannequin product photography where the garment displays natural fit and drape with no visible person, mannequin, or model. The garment appears filled with invisible human form, showing realistic volume and structure.
-      
-Use the provided analysis data for precise color matching, material properties, and construction details. Reference the images for visual accuracy while creating the 3D ghost mannequin effect.
-      
-Maintain any visible brand labels, care labels, or text elements with perfect clarity and readability.`;
-
-    const contentParts: any[] = [];
-    
-    // Add base prompt
-    contentParts.push({ text: basePrompt });
-    
-    // Handle JSON input based on method
-    switch (opts.jsonInputMethod) {
-      case 'separate':
-        // JSON as separate structured data parts
-        contentParts.push({
-          text: "Analysis Data (Garment structure, labels, construction details):"
-        });
-        contentParts.push({
-          inlineData: {
-            data: Buffer.from(JSON.stringify(analysisJSON, null, 2)).toString('base64'),
-            mimeType: 'application/json'
-          }
-        });
-        
-        contentParts.push({
-          text: "Enrichment Data (Colors, materials, rendering guidance):"
-        });
-        contentParts.push({
-          inlineData: {
-            data: Buffer.from(JSON.stringify(enrichmentJSON, null, 2)).toString('base64'),
-            mimeType: 'application/json'
-          }
-        });
-        break;
-        
-      case 'inline':
-        // JSON embedded in text
-        contentParts.push({
-          text: `Analysis Data: ${JSON.stringify(analysisJSON, null, 2)}`
-        });
-        contentParts.push({
-          text: `Enrichment Data: ${JSON.stringify(enrichmentJSON, null, 2)}`
-        });
-        break;
-        
-      case 'embedded':
-        // JSON embedded in main prompt
-        contentParts[0].text += `\n\nAnalysis Data: ${JSON.stringify(analysisJSON, null, 2)}\n\nEnrichment Data: ${JSON.stringify(enrichmentJSON, null, 2)}`;
-        break;
-    }
-    
-    // Handle image input based on method
-    const addImage = async (imageUrl: string, label: string) => {
-      contentParts.push({ text: label });
-      
-      switch (opts.imageInputMethod) {
-        case 'url':
-          // Try to pass URL directly (if supported)
-          contentParts.push({
-            text: `Image URL: ${imageUrl}`
-          });
-          break;
-          
-        case 'base64':
-        case 'auto':
-        default:
-          // Convert to base64 (current method)
-          const imageData = await prepareImageForAiStudio(imageUrl);
-          const mimeType = getImageMimeType(imageUrl);
-          contentParts.push({
-            inlineData: {
-              data: imageData,
-              mimeType: mimeType,
-            },
-          });
-          break;
-      }
-    };
-    
-    // Add flatlay image
-    await addImage(flatlayImage, "Primary Image (Main visual reference):");
-    
-    // Add original image if provided
-    if (originalImage) {
-      await addImage(originalImage, "Shape Reference (For proportions and fit):");
-    }
-    
-    console.log(`🚀 Calling AI Studio with ${contentParts.length} content parts...`);
-    console.log(`📄 Content structure:`);
-    contentParts.forEach((part, i) => {
-      if (part.text) {
-        console.log(`   ${i}: Text - ${part.text.length} chars`);
-      } else if (part.inlineData) {
-        console.log(`   ${i}: ${part.inlineData.mimeType} - ${part.inlineData.data.length} bytes`);
-      }
-    });
-    
-    const result = await model.generateContent(contentParts);
-    const response = await result.response;
-    
-    // Extract generated image (same logic as main function)
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0 && candidates[0].content?.parts) {
-      const imagePart = candidates[0].content.parts.find(part => 
-        part.inlineData?.mimeType?.startsWith('image/')
-      );
-      
-      if (imagePart?.inlineData) {
-        const imageDataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
-        const { uploadImageToFalStorage } = await import('./fal');
-        const renderUrl = await uploadImageToFalStorage(imageDataUrl);
-        
-        const processingTime = Date.now() - startTime;
-        console.log(`✅ Structured JSON generation completed in ${processingTime}ms`);
-        
-        return {
-          renderUrl,
-          processingTime,
-        };
-      }
-    }
-    
-    throw new GhostPipelineError(
-      'AI Studio structured JSON generation failed to produce image',
-      'RENDERING_FAILED',
-      'rendering'
-    );
-
-  } catch (error) {
-    console.error('❌ AI Studio structured JSON generation failed:', error);
-    throw error instanceof GhostPipelineError ? error : new GhostPipelineError(
-      `AI Studio structured JSON generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      'RENDERING_FAILED',
-      'rendering',
-      error instanceof Error ? error : undefined
-    );
-  }
 }

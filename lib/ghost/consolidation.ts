@@ -354,6 +354,47 @@ async function callGeminiProQA(payload: {
   const prompt = buildQAPrompt();
 
   try {
+    // Prepare image data for analysis - handle both data URLs and HTTP URLs
+    let imageData: string;
+    let mimeType: string = 'image/png'; // default
+    
+    if (payload.imageUrl.startsWith('data:')) {
+      // Handle data URL (base64)
+      const parts = payload.imageUrl.split(',');
+      if (parts.length === 2) {
+        imageData = parts[1];
+        // Extract mime type from data URL header
+        const headerMatch = parts[0].match(/data:([^;]+)/);
+        if (headerMatch) {
+          mimeType = headerMatch[1];
+        }
+      } else {
+        throw new Error('Invalid data URL format');
+      }
+    } else {
+      // Handle HTTP URL - fetch and convert to base64
+      console.log('📥 Fetching image from URL for QA analysis:', payload.imageUrl);
+      const response = await fetch(payload.imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      imageData = Buffer.from(arrayBuffer).toString('base64');
+      
+      // Determine mime type from response or URL extension
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.startsWith('image/')) {
+        mimeType = contentType;
+      } else if (payload.imageUrl.toLowerCase().includes('.png')) {
+        mimeType = 'image/png';
+      } else if (payload.imageUrl.toLowerCase().includes('.jpg') || payload.imageUrl.toLowerCase().includes('.jpeg')) {
+        mimeType = 'image/jpeg';
+      }
+    }
+    
+    console.log(`🔍 QA analysis with ${mimeType} image data (${Math.round(imageData.length / 1024)}KB)`);
+    
     const result = await model.generateContent([
       {
         text: prompt,
@@ -363,8 +404,8 @@ async function callGeminiProQA(payload: {
       },
       {
         inlineData: {
-          data: payload.imageUrl.split(',')[1], // Remove data:image/png;base64, prefix
-          mimeType: 'image/png',
+          data: imageData,
+          mimeType: mimeType,
         },
       },
     ]);

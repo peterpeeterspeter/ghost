@@ -116,7 +116,9 @@ export async function POST(request: NextRequest) {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_ANON_KEY,
       enableLogging: process.env.NODE_ENV === 'development',
-      renderingModel: (process.env.RENDERING_MODEL as 'gemini-flash' | 'seedream') || 'gemini-flash',
+      renderingModel: (body.options?.renderingModel as 'freepik-gemini' | 'gemini-flash' | 'seedream' | 'ai-studio') || 
+                     (process.env.RENDERING_MODEL as 'freepik-gemini' | 'gemini-flash' | 'seedream' | 'ai-studio') || 
+                     'ai-studio', // Default to AI Studio!
       timeouts: {
         backgroundRemoval: parseInt(process.env.TIMEOUT_BACKGROUND_REMOVAL || '30000'),
         analysis: parseInt(process.env.TIMEOUT_ANALYSIS || '90000'),
@@ -130,6 +132,9 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('Starting ghost mannequin pipeline processing...');
+    console.log(`🎯 DEBUG: Using renderingModel: ${pipelineOptions.renderingModel}`);
+    console.log(`📋 DEBUG: Request renderingModel: ${body.options?.renderingModel || 'not specified'}`);
+    console.log(`🌍 DEBUG: ENV RENDERING_MODEL: ${process.env.RENDERING_MODEL || 'not set'}`);
 
     // Process the request
     const result: GhostResult = await processGhostMannequin(ghostRequest, pipelineOptions);
