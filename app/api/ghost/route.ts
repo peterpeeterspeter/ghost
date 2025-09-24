@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
         preserveLabels: body.options?.preserveLabels ?? true,
         outputSize: body.options?.outputSize ?? '2048x2048',
         backgroundColor: body.options?.backgroundColor ?? 'white',
+        useStructuredPrompt: body.options?.useStructuredPrompt ?? false,
       },
     };
 

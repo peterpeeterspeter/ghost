@@ -11,6 +11,7 @@ export interface GhostRequest {
     preserveLabels?: boolean;
     outputSize?: '1024x1024' | '2048x2048';
     backgroundColor?: 'white' | 'transparent';
+    useStructuredPrompt?: boolean;
   };
 }
 

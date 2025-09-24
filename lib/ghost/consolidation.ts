@@ -665,9 +665,21 @@ export function compileControlBlock(facts: FactsV3): ControlBlock {
 export async function buildDynamicFlashPrompt(
   facts: FactsV3, 
   control: ControlBlock, 
-  sessionId: string
+  sessionId: string,
+  useStructuredPrompt?: boolean
 ): Promise<string> {
   try {
+    console.log(`🎯 Building ${useStructuredPrompt ? 'structured' : 'dynamic'} prompt...`);
+    
+    // If structured prompts are requested, use that approach
+    if (useStructuredPrompt) {
+      console.log('📊 Using structured prompt approach (inspired by clockmaker test: 70% vs 0% success)');
+      const { generateHybridStructuredPrompt } = await import('./structured-prompt-generator');
+      const prompt = generateHybridStructuredPrompt(facts, control);
+      console.log(`✅ Structured prompt generated (${prompt.length} chars)`);
+      return prompt;
+    }
+    
     // Import and use the new dynamic prompt generator
     const { generateDynamicPrompt, configurePromptGenerator } = await import('./prompt-generator');
     
@@ -685,7 +697,7 @@ export async function buildDynamicFlashPrompt(
     return buildStaticFlashPrompt(control);
     
   } catch (error) {
-    console.warn('⚠️ Dynamic prompt generation failed, using static fallback:', error);
+    console.warn(`⚠️ ${useStructuredPrompt ? 'Structured' : 'Dynamic'} prompt generation failed, using static fallback:`, error);
     return buildStaticFlashPrompt(control);
   }
 }
