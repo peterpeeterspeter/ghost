@@ -102,23 +102,33 @@ export async function generateGhostMannequinWithStructuredJSON(
     console.log(`📊 FactsV3 fields: ${Object.keys(factsV3).length}`);
     console.log(`📝 ControlBlock fields: ${Object.keys(controlBlock).length}`);
     
-    // Step 1: Create structured JSON prompt
-    const jsonPrompt = `You are a professional e-commerce product photographer specializing in ghost mannequin photography. Create a photorealistic ghost mannequin image based on the provided JSON specifications and reference images.
+    // Step 1: Create expert structured JSON prompt
+    const jsonPrompt = `You are an expert AI image generation engine specializing in photorealistic, Amazon-compliant e-commerce apparel photography. Your sole function is to interpret the provided JSON object and render a single, flawless product image that strictly adheres to every specified parameter.
 
-Your task: Generate a professional ghost mannequin photograph that shows the garment as if worn by an invisible person, giving it proper shape and volume.
+Your directives are:
+1. Parse the JSON: Analyze every field in the provided JSON schema. Each field is a direct command.
+2. Ghost Mannequin Execution: The effect: "ghost_mannequin" and form: "invisible_human_silhouette" mean you must render the garment as if worn by an invisible person, giving it shape and volume without showing any part of a mannequin or model.
+3. Crucial View Angles: The view must be straight-on frontal orthographic (0° yaw, 0° roll), not 3/4 or side-angled. Pay close attention to perspective requirements in the JSON.
+4. Platform Compliance is Mandatory: The TechnicalAndPlatformSpecs are non-negotiable.
+   * Framing: The garment MUST occupy the frame_fill_percentage of the total image area against the specified background.
+   * Lighting: The lighting must be soft and even, completely eliminating harsh shadows on the product and background.
+   * Negative Constraints: You are forbidden from rendering any elements listed in negative_constraints or safety.must_not.
+5. Styling is Key: The construction details dictate the final look. A garment must show proper fit, natural draping, and dimensional form.
+
+Your output must be a single, high-resolution, commercially ready image that looks like it was taken in a professional photo studio. Do not add any commentary.
 
 JSON SPECIFICATIONS:
 ${JSON.stringify({ facts_v3: factsV3, control_block: controlBlock }, null, 2)}
 
-Key Requirements:
-1. Use the exact colors specified in facts_v3.palette
-2. Preserve all required_components from facts_v3
-3. Apply the material properties (drape_stiffness, transparency, surface_sheen)
-4. Follow control_block lighting and shadow preferences
-5. Maintain hollow_regions as specified
-6. Use professional studio lighting against pure white background
-
-Generate a single high-resolution, commercially ready image.`;
+Critical Requirements:
+- Maintain exact color fidelity from facts_v3.palette (dominant_hex, accent_hex, trim_hex)
+- Preserve all required_components exactly as specified
+- Apply material properties: drape_stiffness, transparency, surface_sheen
+- Follow control_block lighting and shadow preferences precisely
+- Respect all safety constraints and negative constraints
+- Generate straight frontal orthographic view only (0° yaw, 0° roll)
+- Ensure professional studio lighting against pure white background
+- Maintain hollow regions as specified in control_block`;
 
     console.log(`📏 JSON prompt length: ${jsonPrompt.length} characters`);
     console.log('🔍 JSON structure preserved for Flash Image processing');
