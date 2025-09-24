@@ -28,6 +28,11 @@ import {
   generateGhostMannequinWithControlBlock,
   generateGhostMannequinWithControlBlockGemini 
 } from './gemini';
+import { 
+  configureAiStudioClient,
+  generateGhostMannequinWithAiStudio,
+  generateGhostMannequinWithAiStudioSimple 
+} from './ai-studio';
 
 // Configuration interface
 interface PipelineOptions {
@@ -36,7 +41,7 @@ interface PipelineOptions {
   supabaseUrl?: string;
   supabaseKey?: string;
   enableLogging?: boolean;
-  renderingModel?: 'freepik-gemini' | 'gemini-flash' | 'seedream'; // Simple model choice for rendering only
+  renderingModel?: 'freepik-gemini' | 'gemini-flash' | 'seedream' | 'ai-studio'; // Simple model choice for rendering only
   timeouts?: {
     backgroundRemoval?: number;
     analysis?: number;
@@ -79,7 +84,7 @@ export class GhostMannequinPipeline {
   constructor(options: PipelineOptions) {
     this.options = {
       enableLogging: true,
-      renderingModel: 'freepik-gemini', // Default to Freepik Gemini with less restrictive policies
+      renderingModel: 'freepik-gemini', // Default to Freepik Gemini (AI Studio available as alternative)
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
@@ -113,9 +118,10 @@ export class GhostMannequinPipeline {
     try {
       configureFalClient(this.options.falApiKey);
       configureGeminiClient(this.options.geminiApiKey);
+      configureAiStudioClient(this.options.geminiApiKey); // AI Studio uses same API key as Gemini
       
       if (this.options.enableLogging) {
-        console.log(`Pipeline ${this.state.sessionId} initialized`);
+        console.log(`Pipeline ${this.state.sessionId} initialized with ${this.options.renderingModel} renderer`);
       }
     } catch (error) {
       throw new GhostPipelineError(
@@ -678,23 +684,37 @@ export class GhostMannequinPipeline {
     this.log(`Conflicts Resolved: ${consolidation.conflicts_found.length}`);
     this.log(`Generated Prompt: ${controlBlockPrompt}`);
     
-    // Use Control Block-enhanced generation
-    if (this.options.renderingModel === 'seedream') {
-      return await generateGhostMannequinWithControlBlock(
-        cleanedGarmentDetail,
-        controlBlockPrompt,
-        consolidation,
-        cleanedOnModel
-      );
-    } else {
-      // Use Freepik's Gemini 2.5 Flash for both freepik-gemini and legacy gemini-flash
-      // DEBUG: Pass original on-model image (uncleaned) since we disabled cleaning
-      return await generateGhostMannequinWithControlBlockGemini(
-        cleanedGarmentDetail,
-        controlBlockPrompt,
-        consolidation,
-        originalOnModel  // Use original uncleaned on-model image
-      );
+    // Use Control Block-enhanced generation based on selected model
+    switch (this.options.renderingModel) {
+      case 'seedream':
+        return await generateGhostMannequinWithControlBlock(
+          cleanedGarmentDetail,
+          controlBlockPrompt,
+          consolidation,
+          cleanedOnModel
+        );
+      
+      case 'ai-studio':
+        // AI Studio uses direct consolidation data instead of prompt-based approach
+        this.log('🎯 Using AI Studio direct consolidation approach (bypassing control block)');
+        return await generateGhostMannequinWithAiStudio(
+          cleanedGarmentDetail,
+          consolidation,
+          originalOnModel, // Use original on-model image
+          this.state.sessionId
+        );
+      
+      case 'freepik-gemini':
+      case 'gemini-flash':
+      default:
+        // Use Freepik's Gemini 2.5 Flash for both freepik-gemini and legacy gemini-flash
+        // DEBUG: Pass original on-model image (uncleaned) since we disabled cleaning
+        return await generateGhostMannequinWithControlBlockGemini(
+          cleanedGarmentDetail,
+          controlBlockPrompt,
+          consolidation,
+          originalOnModel  // Use original uncleaned on-model image
+        );
     }
   }
 
@@ -779,6 +799,7 @@ export async function healthCheck(options: PipelineOptions): Promise<{
     fal: boolean;
     gemini: boolean;
     freepik: boolean;
+    aiStudio: boolean;
     supabase: boolean;
   };
   errors: string[];
@@ -788,6 +809,7 @@ export async function healthCheck(options: PipelineOptions): Promise<{
     fal: false,
     gemini: false,
     freepik: false,
+    aiStudio: false,
     supabase: false,
   };
 
@@ -807,6 +829,23 @@ export async function healthCheck(options: PipelineOptions): Promise<{
     services.gemini = true;
   } catch (error) {
     errors.push(`Gemini: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  // Test AI Studio (if using ai-studio model)
+  if (options.renderingModel === 'ai-studio') {
+    try {
+      const { checkAiStudioHealth } = await import('./ai-studio');
+      const aiStudioHealth = await checkAiStudioHealth();
+      if (aiStudioHealth.status === 'healthy') {
+        services.aiStudio = true;
+      } else {
+        errors.push(`AI Studio: ${aiStudioHealth.message}`);
+      }
+    } catch (error) {
+      errors.push(`AI Studio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  } else {
+    services.aiStudio = true; // Consider it healthy if not using AI Studio
   }
 
   // Test Freepik (if using freepik-gemini model)

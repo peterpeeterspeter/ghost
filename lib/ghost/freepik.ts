@@ -198,7 +198,7 @@ async function createGeminiTask(
 async function pollTaskCompletion(
   taskId: string,
   apiKey: string,
-  maxWaitTime: number = 180000, // 3 minutes
+  maxWaitTime: number = 300000, // 5 minutes
   pollInterval: number = 5000    // 5 seconds
 ): Promise<string> {
   const startTime = Date.now();
@@ -497,8 +497,8 @@ export async function generateImageWithFreepikGeminiJson(
     const taskId = await createGeminiTask(jsonPrompt, inputImage, referenceImage, apiKey);
     console.log('📋 Created Freepik JSON task:', taskId);
     
-    // Poll for completion
-    const imageUrl = await pollTaskCompletion(taskId, apiKey, 60000); // 60 seconds timeout
+    // Poll for completion - increased timeout for complex JSON payloads
+    const imageUrl = await pollTaskCompletion(taskId, apiKey, 300000); // 5 minutes timeout
     
     // Convert result to base64 format expected by pipeline
     const imageBase64 = await convertUrlToBase64(imageUrl);
