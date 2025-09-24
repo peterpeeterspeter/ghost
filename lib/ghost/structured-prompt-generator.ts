@@ -1,11 +1,19 @@
 /**
- * Structured Prompt Generator
+ * Amazon-Ready Structured Prompt Generator
  * 
  * Based on clockmaker test results showing 70% success rate with JSON structure
  * vs 0% success with narrative prompts for complex, detailed requirements.
  * 
- * This approach breaks down ghost mannequin requirements into discrete,
- * parseable components that AI models handle more reliably.
+ * Enhanced for Amazon marketplace compliance with 32+ structured fields:
+ * - Amazon technical standards (85% frame fill, shadowless lighting)
+ * - Prohibited elements (props, branding, watermarks, text)
+ * - Styling requirements (no bunching, proper fit, sleeve drape)
+ * - Color fidelity (critical accuracy for marketplace)
+ * - Multiple view angles (front, back, three-quarter, detail shots)
+ * 
+ * This approach breaks down Amazon's complex requirements into discrete,
+ * machine-readable components that AI models handle more reliably than
+ * narrative instructions.
  */
 
 import { FactsV3, ControlBlock } from '../../types/ghost';
@@ -14,13 +22,14 @@ export interface StructuredGhostPrompt {
   scene: {
     type: "professional_ecommerce_photography";
     effect: "ghost_mannequin";
-    background: "pure_white_studio";
-    lighting: "soft_professional_studio";
+    background: "pure_white" | "light_grey";
+    lighting: "soft_even_shadowless" | "soft_professional_studio";
   };
   garment: {
     category: string;
-    position: "front_view_centered";
+    view_angle: "front_centered" | "back_centered" | "three_quarter_left" | "three_quarter_right" | "detail_shot" | "flat_lay" | "interior_neckline_shot";
     form: "invisible_human_silhouette";
+    detail_shot_focus?: string;
   };
   colors: {
     dominant_hex: string;
@@ -41,18 +50,24 @@ export interface StructuredGhostPrompt {
     seam_visibility: "hidden" | "subtle" | "visible" | "decorative";
     edge_finishing: "raw" | "serged" | "bound" | "rolled" | "pinked";
   };
+  styling: {
+    garment_fit: "perfectly_fitted_no_bunching" | "tailored" | "relaxed";
+    sleeve_drape: "natural_at_sides" | "slightly_forward";
+  };
   quality_requirements: {
-    detail_sharpness: "soft" | "natural" | "sharp" | "ultra_sharp";
-    texture_emphasis: "minimize" | "subtle" | "enhance" | "maximize";
-    color_fidelity: "low" | "medium" | "high" | "critical";
+    detail_sharpness: "natural" | "sharp" | "ultra_sharp";
+    texture_emphasis: "subtle" | "enhance" | "maximize";
+    color_fidelity: "high" | "critical";
     market_tier: "budget" | "mid_range" | "premium" | "luxury";
   };
   technical_specs: {
-    resolution: "high_detail";
-    perspective: "straight_frontal";
+    resolution: "high_detail_4k";
+    perspective: "straight_frontal_orthographic";
     dimensional_form: true;
     no_visible_mannequin: true;
-    commercial_ready: true;
+    frame_fill_percentage: number;
+    negative_constraints: string[];
+    commercial_license_required: true;
   };
 }
 
@@ -64,13 +79,14 @@ export function buildStructuredPrompt(facts: FactsV3, controlBlock: ControlBlock
     scene: {
       type: "professional_ecommerce_photography",
       effect: "ghost_mannequin", 
-      background: "pure_white_studio",
-      lighting: "soft_professional_studio"
+      background: "pure_white", // Amazon prefers pure white (#FFFFFF)
+      lighting: "soft_even_shadowless" // Amazon prohibits harsh shadows
     },
     garment: {
       category: facts.category_generic || "garment",
-      position: "front_view_centered",
-      form: "invisible_human_silhouette"
+      view_angle: "front_centered", // Default to front view for Amazon
+      form: "invisible_human_silhouette",
+      detail_shot_focus: undefined // Only used when view_angle is "detail_shot"
     },
     colors: {
       dominant_hex: facts.palette?.dominant_hex || controlBlock.palette?.dominant_hex || "#CCCCCC",
@@ -91,18 +107,24 @@ export function buildStructuredPrompt(facts: FactsV3, controlBlock: ControlBlock
       seam_visibility: facts.seam_visibility || "subtle",
       edge_finishing: facts.edge_finishing || "serged"
     },
+    styling: {
+      garment_fit: "perfectly_fitted_no_bunching", // Amazon requirement for proper fit
+      sleeve_drape: "natural_at_sides" // Amazon guideline for sleeve positioning
+    },
     quality_requirements: {
-      detail_sharpness: facts.detail_sharpness || "natural",
+      detail_sharpness: "sharp", // Amazon requires high-resolution, sharp images
       texture_emphasis: facts.texture_emphasis || "subtle", 
-      color_fidelity: facts.color_fidelity_priority || "high",
+      color_fidelity: "critical", // Amazon demands accurate color representation
       market_tier: facts.price_tier || "mid_range"
     },
     technical_specs: {
-      resolution: "high_detail",
-      perspective: "straight_frontal",
+      resolution: "high_detail_4k", // Amazon prefers high resolution
+      perspective: "straight_frontal_orthographic", // Reduces perspective distortion
       dimensional_form: true,
       no_visible_mannequin: true,
-      commercial_ready: true
+      frame_fill_percentage: 85, // Amazon's 85% frame fill requirement
+      negative_constraints: ["props", "human_models", "branding", "watermarks", "text"], // Amazon prohibitions
+      commercial_license_required: true
     }
   };
 }
@@ -116,17 +138,18 @@ export function structuredPromptToText(structured: StructuredGhostPrompt): strin
 {
   "scene_type": "${structured.scene.type}",
   "effect": "${structured.scene.effect}",
-  "description": "Create a professional e-commerce product photograph featuring the ${structured.scene.effect} effect. The image shows only the garment displaying dimensional form with no visible person or mannequin.",
+  "description": "Create a professional Amazon-ready e-commerce product photograph featuring the ${structured.scene.effect} effect. The image shows only the garment displaying dimensional form with no visible person or mannequin.",
   
   "background": "${structured.scene.background}",
   "lighting": "${structured.scene.lighting}",
   
   "garment_specifications": {
     "category": "${structured.garment.category}",
-    "position": "${structured.garment.position}",
+    "view_angle": "${structured.garment.view_angle}",
     "form": "${structured.garment.form}",
     "silhouette": "${structured.construction.silhouette}",
-    "required_elements": ${JSON.stringify(structured.construction.required_visible_elements)}
+    "required_elements": ${JSON.stringify(structured.construction.required_visible_elements)},
+    ${structured.garment.detail_shot_focus ? `"detail_focus": "${structured.garment.detail_shot_focus}",` : ''}
   },
   
   "color_requirements": {
@@ -150,22 +173,29 @@ export function structuredPromptToText(structured: StructuredGhostPrompt): strin
     "edge_finish": "${structured.construction.edge_finishing}"
   },
   
+  "amazon_styling_requirements": {
+    "garment_fit": "${structured.styling.garment_fit}",
+    "sleeve_drape": "${structured.styling.sleeve_drape}"
+  },
+  
   "quality_standards": {
     "detail_level": "${structured.quality_requirements.detail_sharpness}",
     "texture_rendering": "${structured.quality_requirements.texture_emphasis}",
     "market_positioning": "${structured.quality_requirements.market_tier}",
-    "commercial_grade": ${structured.technical_specs.commercial_ready}
+    "commercial_license": ${structured.technical_specs.commercial_license_required}
   },
   
-  "technical_execution": {
+  "amazon_compliance": {
     "perspective": "${structured.technical_specs.perspective}",
     "dimensional_form": ${structured.technical_specs.dimensional_form},
     "invisible_support": ${structured.technical_specs.no_visible_mannequin},
-    "resolution": "${structured.technical_specs.resolution}"
+    "resolution": "${structured.technical_specs.resolution}",
+    "frame_fill_percentage": ${structured.technical_specs.frame_fill_percentage},
+    "negative_constraints": ${JSON.stringify(structured.technical_specs.negative_constraints)}
   }
 }
 
-Generate this professional ghost mannequin photograph according to the structured specifications above. The garment should appear filled with an invisible human form, showing natural drape and structure suitable for e-commerce display, with no visible person or mannequin present.`;
+Generate this professional Amazon-compliant ghost mannequin photograph according to the structured specifications above. The garment must fill at least ${structured.technical_specs.frame_fill_percentage}% of the frame, appear fitted without bunching, and strictly avoid: ${structured.technical_specs.negative_constraints.join(", ")}. Use pure white (#FFFFFF) background with shadowless lighting for optimal Amazon marketplace presentation.`;
 
   return prompt.trim();
 }
@@ -177,37 +207,52 @@ Generate this professional ghost mannequin photograph according to the structure
 export function generateHybridStructuredPrompt(facts: FactsV3, controlBlock: ControlBlock): string {
   const structured = buildStructuredPrompt(facts, controlBlock);
   
-  // Critical structured requirements (like your clockmaker test)
-  const criticalSpecs = `
-CRITICAL TECHNICAL REQUIREMENTS:
+  // Amazon-specific structured requirements (inspired by clockmaker test pattern)
+  const amazonSpecs = `
+AMAZON MARKETPLACE COMPLIANCE REQUIREMENTS:
 {
   "ghost_mannequin_effect": {
     "must_show": "garment with dimensional human form",
     "must_not_show": "visible person, mannequin, or human body parts",
     "effect_type": "invisible support creating natural garment shape"
   },
+  "amazon_technical_standards": {
+    "background": "${structured.scene.background} (#FFFFFF)",
+    "lighting": "${structured.scene.lighting}",
+    "view_angle": "${structured.garment.view_angle}",
+    "frame_fill": "${structured.technical_specs.frame_fill_percentage}% minimum",
+    "resolution": "${structured.technical_specs.resolution}",
+    "perspective": "${structured.technical_specs.perspective}"
+  },
   "color_precision": {
     "dominant_hex": "${structured.colors.dominant_hex}",
     ${structured.colors.accent_hex ? `"accent_hex": "${structured.colors.accent_hex}",` : ''}
-    "accuracy_level": "${structured.quality_requirements.color_fidelity}"
+    "accuracy_level": "${structured.quality_requirements.color_fidelity}",
+    "color_temperature": "${structured.colors.color_temperature}"
+  },
+  "amazon_styling_requirements": {
+    "garment_fit": "${structured.styling.garment_fit}",
+    "sleeve_drape": "${structured.styling.sleeve_drape}",
+    "detail_sharpness": "${structured.quality_requirements.detail_sharpness}"
   },
   "fabric_physics": {
     "drape_stiffness": ${structured.fabric.drape_stiffness},
     "surface_sheen": "${structured.fabric.surface_sheen}",
-    "drape_quality": "${structured.fabric.drape_quality}"
+    "drape_quality": "${structured.fabric.drape_quality}",
+    "material_type": "${structured.fabric.material}"
   },
-  "positioning": {
-    "view": "straight frontal perspective",
-    "centering": "perfectly centered in frame",
-    "form": "natural human proportions with invisible support"
-  }
+  "prohibited_elements": ${JSON.stringify(structured.technical_specs.negative_constraints)}
 }`;
 
-  // Natural narrative section for creativity
-  const narrative = `
-Create a professional e-commerce product photograph featuring this ${structured.garment.category} in a ghost mannequin style. The ${structured.fabric.material} garment appears filled with an invisible human silhouette, displaying the ${structured.construction.silhouette} naturally. The fabric demonstrates ${structured.fabric.drape_quality} drape characteristics with ${structured.fabric.surface_sheen} surface finish. Professional studio lighting illuminates the garment against a pure white background, ensuring the exact color values and ${structured.quality_requirements.market_tier}-tier commercial quality suitable for online retail.`;
+  // Amazon-focused narrative section
+  const amazonNarrative = `
+Create a professional Amazon marketplace-ready ghost mannequin photograph of this ${structured.garment.category}. The ${structured.fabric.material} garment must appear ${structured.styling.garment_fit.replace(/_/g, ' ')} without bunching, with sleeves draped ${structured.styling.sleeve_drape.replace(/_/g, ' ')}. Use ${structured.scene.lighting.replace(/_/g, ' ')} against a pure white (#FFFFFF) background. 
 
-  return `${criticalSpecs}\n\n${narrative}`;
+The garment should fill exactly ${structured.technical_specs.frame_fill_percentage}% of the frame with ${structured.quality_requirements.detail_sharpness} detail quality. Strictly avoid all prohibited elements: ${structured.technical_specs.negative_constraints.join(", ")}. 
+
+Ensure ${structured.quality_requirements.color_fidelity} color fidelity matching the exact hex values specified, with ${structured.fabric.surface_sheen.replace(/_/g, ' ')} surface finish and ${structured.fabric.drape_quality} drape characteristics suitable for ${structured.quality_requirements.market_tier}-tier Amazon marketplace standards.`;
+
+  return `${amazonSpecs}\n\n${amazonNarrative}`;
 }
 
 /**
