@@ -1022,7 +1022,9 @@ export async function generateGhostMannequinWithControlBlockGemini(
 ): Promise<GhostMannequinResult> {
   const startTime = Date.now();
   
-  console.log('Starting ghost mannequin generation with Freepik Gemini 2.5 Flash...');
+  console.log('🎯 Starting ghost mannequin generation with Freepik Gemini 2.5 Flash...');
+  console.log(`📏 Using distilled Flash prompt: ${controlBlockPrompt.length} chars (target: ~1,750 chars for 350 words)`);
+  console.log('🔍 Distilled prompt preview:', controlBlockPrompt.substring(0, 200) + '...');
   
   try {
     // Import Freepik service

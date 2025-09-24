@@ -1,0 +1,173 @@
+import type { FlashImagePromptPayload } from './json-payload-generator';
+import type { GhostMannequinResult } from '@/types/ghost';
+import { GhostPipelineError } from '@/types/ghost';
+
+/**
+ * Send JSON payload to Gemini Flash 2.5 via Freepik API
+ * This replaces the distilled prompt approach with structured JSON
+ */
+export async function generateGhostMannequinWithJsonPayload(
+  payload: FlashImagePromptPayload
+): Promise<GhostMannequinResult> {
+  const startTime = Date.now();
+  
+  try {
+    console.log('🚀 Starting JSON payload generation with Freepik Gemini Flash 2.5...');
+    console.log(`📦 Payload size: ${JSON.stringify(payload).length} characters`);
+    console.log(`🖼️ Reference images: ${payload.images.length}`);
+    console.log(`📋 Template length: ${payload.prompt_block.base_prompt.length} characters`);
+    
+    // Import Freepik integration
+    const { generateImageWithFreepikGeminiJson } = await import('./freepik');
+    
+    // Convert payload images to format expected by Freepik client
+    const imageUrls: string[] = [];
+    
+    // Add images in correct order (on-model first, then detail)
+    const onModelImage = payload.images.find(img => img.role === "on_model_A");
+    const detailImage = payload.images.find(img => img.role === "detail_B");
+    
+    if (onModelImage) {
+      imageUrls.push(onModelImage.url);
+    }
+    if (detailImage) {
+      imageUrls.push(detailImage.url);
+    }
+    
+    console.log('🎯 Sending JSON payload to Freepik Gemini Flash 2.5...');
+    console.log(`📋 Images order: ${imageUrls.length} images`);
+    if (onModelImage) console.log(`  - on_model_A: ${onModelImage.url.substring(0, 50)}...`);
+    if (detailImage) console.log(`  - detail_B: ${detailImage.url.substring(0, 50)}...`);
+    
+    // Send JSON payload as the prompt text
+    const jsonPrompt = JSON.stringify(payload, null, 2);
+    console.log('📊 JSON payload preview:', jsonPrompt.substring(0, 200) + '...');
+    
+    const result = await generateImageWithFreepikGeminiJson(
+      jsonPrompt,
+      imageUrls[1], // detail_B (primary)
+      imageUrls[0]  // on_model_A (optional)
+    );
+    
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ JSON payload generation completed in ${processingTime}ms`);
+    
+    return {
+      renderUrl: result.imageBase64,
+      processingTime: result.processingTime,
+    };
+    
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error('❌ JSON payload generation failed:', error);
+    
+    // Re-throw if already a GhostPipelineError
+    if (error instanceof GhostPipelineError) {
+      throw error;
+    }
+    
+    throw new GhostPipelineError(
+      `JSON payload generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'JSON_RENDERING_FAILED',
+      'rendering',
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Fallback generation using distilled prompts if JSON approach fails
+ */
+export async function fallbackToDistilledPrompts(
+  flatlayImage: string,
+  consolidation: any, // ConsolidationOutput type
+  originalImage?: string
+): Promise<GhostMannequinResult> {
+  console.log('🔄 JSON approach failed, falling back to distilled prompts...');
+  
+  try {
+    // Import the existing distilled prompt approach
+    const { generateGhostMannequinWithControlBlockGemini } = await import('./gemini');
+    const { buildDynamicFlashPrompt } = await import('./consolidation');
+    
+    // Generate distilled prompt
+    const distilledPrompt = await buildDynamicFlashPrompt(
+      consolidation.facts_v3,
+      consolidation.control_block,
+      consolidation.session_id
+    );
+    
+    console.log(`🔄 Using distilled prompt: ${distilledPrompt.length} chars`);
+    
+    // Use existing control block approach
+    return await generateGhostMannequinWithControlBlockGemini(
+      flatlayImage,
+      distilledPrompt,
+      consolidation,
+      originalImage
+    );
+    
+  } catch (fallbackError) {
+    console.error('❌ Distilled prompt fallback also failed:', fallbackError);
+    
+    throw new GhostPipelineError(
+      `Both JSON and distilled prompt approaches failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`,
+      'ALL_RENDERING_FAILED',
+      'rendering',
+      fallbackError instanceof Error ? fallbackError : undefined
+    );
+  }
+}
+
+/**
+ * Validate JSON payload before sending to ensure it meets schema requirements
+ */
+export function validateJsonPayload(payload: FlashImagePromptPayload): void {
+  // Basic validation
+  if (payload.type !== "flash_image_prompt_payload_v1") {
+    throw new Error(`Invalid payload type: ${payload.type}`);
+  }
+  
+  if (payload.meta.schema_version !== "1.0") {
+    throw new Error(`Invalid schema version: ${payload.meta.schema_version}`);
+  }
+  
+  if (!payload.meta.session_id) {
+    throw new Error('Missing session_id in payload meta');
+  }
+  
+  if (!payload.images || payload.images.length === 0) {
+    throw new Error('No images provided in payload');
+  }
+  
+  // Must have at least detail_B image
+  const hasDetailB = payload.images.some(img => img.role === "detail_B");
+  if (!hasDetailB) {
+    throw new Error('Missing required detail_B image in payload');
+  }
+  
+  if (!payload.prompt_block.base_prompt) {
+    throw new Error('Missing base_prompt in payload');
+  }
+  
+  if (!payload.facts_v3 || !payload.control_block) {
+    throw new Error('Missing facts_v3 or control_block in payload');
+  }
+  
+  // Validate required facts_v3 fields
+  if (!payload.facts_v3.category_generic) {
+    throw new Error('Missing category_generic in facts_v3');
+  }
+  
+  if (!payload.facts_v3.palette.dominant_hex) {
+    throw new Error('Missing dominant_hex in facts_v3.palette');
+  }
+  
+  // Validate hex color format
+  const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+  if (!hexPattern.test(payload.facts_v3.palette.dominant_hex)) {
+    throw new Error(`Invalid hex color format: ${payload.facts_v3.palette.dominant_hex}`);
+  }
+  
+  console.log('✅ JSON payload validation passed');
+}

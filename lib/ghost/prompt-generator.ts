@@ -16,6 +16,10 @@ const FLASH_25_BASE_TEMPLATE = `Create a professional three-dimensional ghost ma
 
 Imagine a high-end photography studio with perfect white cyclorama background and professional lighting equipment. In the center of this space, a garment floats in three-dimensional space, filled with the volume and shape of an invisible human body. The fabric drapes naturally with realistic weight and movement, showing natural creases and folds exactly as clothing would appear on a person. The garment maintains its authentic colors and patterns while displaying proper fit and dimensional form. This is captured with studio-quality photography equipment using an 85mm portrait lens with even, shadow-free lighting.
 
+## GHOST MANNEQUIN DEFINITION:
+
+This is professional e-commerce ghost mannequin photography - the garment displays perfect dimensional form with no visible person, mannequin, or model. The invisible mannequin effect shows how clothing appears when worn while maintaining complete transparency of the supporting form. This creates the ideal product photography for online retail, showing realistic fit and drape without any distracting human presence.
+
 ## MULTI-SOURCE DATA AUTHORITY:
 
 **Image B (Detail Source)** - Primary visual reference containing the absolute truth for all colors, patterns, textures, construction details, and material properties. Copy these elements with complete fidelity.
@@ -156,6 +160,10 @@ Apply market context from enrichment analysis:
 - **Style Longevity**: Consider presentation approach for trendy vs classic pieces
 - **Target Season**: Ensure styling and presentation appropriate for seasonal context
 
+## PROFESSIONAL NEGATIVE PROMPTING:
+
+Achieve the ghost mannequin effect through positive description rather than negative commands. Instead of "remove person" or "remove mannequin", describe the desired result: "professional e-commerce product photography showing the garment with dimensional form and invisible support". The image shows only the garment displaying natural fit and drape suitable for online retail presentation.
+
 Generate this professional three-dimensional ghost mannequin product photograph with complete integration of both structural analysis and enrichment specifications, ensuring technical excellence and commercial appropriateness.`;
 
 /**
@@ -192,25 +200,31 @@ export async function generateDynamicPrompt(
     const factsData = JSON.stringify(facts, null, 2);
     const controlData = JSON.stringify(controlBlock, null, 2);
 
-    const integrationPrompt = `You are a professional prompt composer for Gemini Flash Image 2.5.
-Take the complete base template (below) and the consolidated garment facts JSON.
-Weave the garment facts naturally into the template while keeping:
+    const integrationPrompt = `Act as a professional prompt writer. Using the master template as reference, create a focused 350-word prompt for Gemini Flash Image 2.5 that naturally integrates the garment facts.
 
-	• Preserve all constant photography instructions (studio lighting, white background, ghost-mannequin form).
-	• Keep narrative, avoid bullets or lists.
-	• Do not explain meta-steps, only return the ready-to-send Flash prompt text.
+Write in natural, flowing sentences - avoid bullets or lists. CRITICAL: Include these essential elements:
 
-CONSOLIDATED GARMENT FACTS JSON:
+• **Ghost Mannequin Definition**: Clearly state this is an "invisible mannequin" or "ghost mannequin" effect showing only the garment with dimensional form but no visible person or mannequin
+• **E-commerce Photography**: Emphasize this is professional product photography suitable for online retail
+• **Studio Setup**: Professional studio lighting and pure white background
+• **Frontal View Positioning**: Specify "direct front view", "centered positioning", "straight-on perspective" - the garment faces the camera head-on
+• **Dimensional Form**: The garment appears filled with invisible human form, showing natural drape and structure
+• **Garment Specifics**: Integrate the actual colors, materials, and construction details from the facts
+• **Quality Standards**: Professional, commercial-grade photography
+
+IMPORTANT NEGATIVE GUIDANCE: Instead of saying "remove person" or "remove mannequin", positively describe the desired result as "professional e-commerce ghost mannequin photography" and "garment displays dimensional form with no visible person or mannequin".
+
+GARMENT FACTS TO INTEGRATE:
 \`\`\`json
 ${factsData}
 \`\`\`
 
-BASE TEMPLATE:
+MASTER TEMPLATE (reference style, don't copy verbatim):
 ---
 ${FLASH_25_BASE_TEMPLATE}
 ---
 
-Return the complete Flash prompt with garment facts woven naturally into the template:`;
+Create a natural 350-word Flash prompt with embedded garment facts and clear ghost mannequin instructions:`;
 
     console.log('🔄 Calling Gemini Pro 2.5 for prompt integration...');
 
@@ -306,13 +320,15 @@ function generateFallbackPrompt(facts: FactsV3, controlBlock: ControlBlock): str
   const accentColorName = hexToColorName(accentColor);
   const drapeDescription = drapeStiffness < 0.3 ? 'flowing and soft' : drapeStiffness > 0.7 ? 'structured and crisp' : 'naturally balanced';
 
-  return `Create a professional studio photograph showing a ${category} transformed from its flat layout into a dimensional display form against a pristine white background. The ${silhouette} garment should appear as if worn by a transparent form, creating natural volume and structure while showcasing its authentic ${dominantColorName} tones with ${accentColorName} accents. 
+  return `Create professional e-commerce ghost mannequin photography showing a ${category} with perfect dimensional form against a pristine white studio background. This is invisible mannequin product photography where the ${silhouette} garment displays natural fit and drape with no visible person, mannequin, or model.
 
-The ${material} fabric displays a ${drapeDescription} drape with ${surfaceSheen} finish, highlighting important details like ${requiredComponents}. The dimensional effect shows the garment floating naturally with proper fit and drape, displaying how the fabric moves and falls when given body volume. 
+The garment appears filled with invisible human form, showing realistic volume and structure while showcasing authentic ${dominantColorName} tones with ${accentColorName} accents. The ${material} fabric displays ${drapeDescription} drape with ${surfaceSheen} finish, highlighting important construction details like ${requiredComponents}.
 
-Most importantly: Transform the flat reference image into this three-dimensional presentation while preserving every original color, pattern, and design element exactly as shown in the source material. The result should look like a professional product photograph suitable for e-commerce, showing the garment's true shape as it would appear when worn, but without any visible model - only the dimensional garment form itself.
+The ghost mannequin effect creates perfect e-commerce presentation - the garment floats naturally with proper dimensional form, displaying how the fabric moves and falls when worn, but with complete transparency of any supporting structure. This professional product photography shows the garment's true shape and fit suitable for online retail.
 
-IMPORTANT LABEL HANDLING: If there are any visible brand labels, care labels, size tags, or text elements in the reference image, copy them identically in the same position and orientation on the dimensional garment form. Maintain perfect text clarity and readability.`;
+Preserve every original color, pattern, and design element exactly as shown in the source material. The result demonstrates how the garment appears when worn while maintaining the clean, commercial presentation required for e-commerce platforms.
+
+IMPORTANT: If there are any visible brand labels, care labels, size tags, or text elements in the reference image, maintain them with perfect clarity and readability in their correct positions on the dimensional garment form.`;
 }
 
 /**

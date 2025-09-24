@@ -191,37 +191,131 @@ export class GhostMannequinPipeline {
         return result;
       });
 
-      // Stage 4: JSON Consolidation (Facts_v3 + Control Block)
+      // Stage 4: JSON Consolidation (Facts_v3 + Control Block) OR CCJ Processing
       await this.executeStage('consolidation', async () => {
-        this.log('Stage 4: JSON consolidation - Merging analysis data and resolving conflicts');
         const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
         const cleanedOnModel = this.state.stageResults.backgroundRemovalOnModel?.cleanedImageUrl;
         const analysis = this.state.stageResults.analysis!.analysis;
         const enrichmentData = this.state.stageResults.enrichment!.enrichment;
         
-        const result = await this.executeWithTimeout(
-          consolidateAnalyses(
-            analysis, 
-            enrichmentData, 
-            { 
-              cleanedImageUrl: cleanedGarmentDetail, 
-              onModelUrl: cleanedOnModel 
-            },
-            this.state.sessionId
-          ),
-          this.options.timeouts!.consolidation!,
-          'consolidation'
-        );
-        this.state.stageResults.consolidation = result;
-        return result;
+        // Check if CCJ pipeline is enabled
+        const { shouldUseCCJPipeline, getCCJIntegrationMode } = await import('./ccj-integration');
+        
+        if (shouldUseCCJPipeline()) {
+          this.log('Stage 4: CCJ Integration - Using two-tier JSON approach');
+          
+          const { integrateCCJWithExistingPipeline } = await import('./ccj-integration');
+          
+          const ccjResult = await this.executeWithTimeout(
+            integrateCCJWithExistingPipeline(
+              analysis,
+              enrichmentData,
+              {
+                cleanedImageUrl: cleanedGarmentDetail,
+                onModelUrl: this.state.originalRequest?.onModel // Use original uncleaned on-model
+              },
+              this.state.sessionId,
+              {
+                ...this.options,
+                mode: getCCJIntegrationMode(),
+                enableQA: this.options.enableQaLoop || false,
+                enableRetry: true,
+                fallbackToLegacy: true
+              }
+            ),
+            this.options.timeouts!.consolidation! + this.options.timeouts!.rendering!, // Combined timeout
+            'consolidation'
+          );
+          
+          // Store CCJ result in a way compatible with existing pipeline
+          const consolidationResult = {
+            facts_v3: ccjResult.legacy_compatible.facts_v3!,
+            control_block: ccjResult.legacy_compatible.control_block!,
+            conflicts_found: [],
+            processing_time: ccjResult.ccj_result.execution_time_ms,
+            session_id: this.state.sessionId,
+            ccj_metadata: ccjResult // Store full CCJ result for debugging
+          };
+          
+          this.state.stageResults.consolidation = consolidationResult;
+          
+          // If CCJ generated an image, store it as rendering result
+          if (ccjResult.ccj_result.generated_image_url) {
+            this.state.stageResults.rendering = {
+              renderUrl: ccjResult.ccj_result.generated_image_url,
+              processingTime: ccjResult.ccj_result.execution_time_ms
+            };
+            this.log('✅ CCJ pipeline completed consolidation + rendering in one step');
+          }
+          
+          return consolidationResult;
+        } else {
+          // Legacy consolidation path
+          this.log('Stage 4: JSON consolidation - Merging analysis data and resolving conflicts');
+          
+          const result = await this.executeWithTimeout(
+            consolidateAnalyses(
+              analysis, 
+              enrichmentData, 
+              { 
+                cleanedImageUrl: cleanedGarmentDetail, 
+                onModelUrl: cleanedOnModel 
+              },
+              this.state.sessionId
+            ),
+            this.options.timeouts!.consolidation!,
+            'consolidation'
+          );
+          this.state.stageResults.consolidation = result;
+          return result;
+        }
       });
 
-      // Stage 5: Ghost Mannequin Generation (Using Control Block)
-      await this.executeStage('rendering', async () => {
-        this.log(`Stage 5: Ghost mannequin generation - Using control block with ${this.options.renderingModel} model`);
-        const consolidation = this.state.stageResults.consolidation!;
+      // Stage 5: Ghost Mannequin Generation (Using Control Block) - Skip if CCJ handled it
+      if (!this.state.stageResults.rendering) {
+        await this.executeStage('rendering', async () => {
+          this.log(`Stage 5: Ghost mannequin generation - Using control block with ${this.options.renderingModel} model`);
+          const consolidation = this.state.stageResults.consolidation!;
         
-        // Choose prompt format based on rendering model
+        // Check rendering approach from environment
+        const renderingApproach = process.env.RENDERING_APPROACH || 'json';
+        this.log(`🎯 Rendering approach: ${renderingApproach}`);
+        
+        if (renderingApproach === 'optimized') {
+          // SIMPLE JSON OPTIMIZATION Approach (like jsonprompt.it)
+          try {
+            this.log('⚡ Using optimized JSON approach (analysis + enrichment → Flash)');
+            const result = await this.executeWithTimeout(
+              this.generateWithOptimizedJSON(consolidation),
+              this.options.timeouts!.rendering!,
+              'rendering'
+            );
+            this.state.stageResults.rendering = result;
+            return result;
+          } catch (optimizedError) {
+            this.log('⚠️ Optimized JSON approach failed, falling back to distilled prompts');
+            console.error('Optimized JSON error:', optimizedError);
+            // Fall through to distilled approach
+          }
+        } else if (renderingApproach === 'json') {
+          // COMPLEX JSON Payload Approach
+          try {
+            this.log('📦 Using JSON payload approach (structured data → Flash 2.5)');
+            const result = await this.executeWithTimeout(
+              this.generateWithJsonPayload(consolidation),
+              this.options.timeouts!.rendering!,
+              'rendering'
+            );
+            this.state.stageResults.rendering = result;
+            return result;
+          } catch (jsonError) {
+            this.log('⚠️ JSON payload approach failed, falling back to distilled prompts');
+            console.error('JSON approach error:', jsonError);
+            // Fall through to distilled approach
+          }
+        }
+        
+        // Distilled Prompts Approach (fallback or explicit choice)
         let promptToUse: string;
         if (this.options.renderingModel === 'seedream') {
           promptToUse = buildSeeDreamPrompt(consolidation.control_block, consolidation.facts_v3);
@@ -229,13 +323,13 @@ export class GhostMannequinPipeline {
         } else {
           // Use dynamic Flash 2.5 prompt with Gemini Pro 2.5 integration
           try {
-            this.log('Using Gemini Flash prompt format');
+            this.log('🎯 Using distilled Flash prompt approach (Pro 2.5 → Flash 2.5)');
             promptToUse = await buildDynamicFlashPrompt(
               consolidation.facts_v3, 
               consolidation.control_block, 
               this.state.sessionId
             );
-            this.log('🎯 Generated dynamic Flash 2.5 prompt with FactsV3 integration');
+            this.log(`✅ Generated distilled Flash prompt: ${promptToUse.length} chars (optimized for rendering focus)`);
           } catch (error) {
             this.log('⚠️ Dynamic prompt generation failed, using static fallback');
             promptToUse = buildStaticFlashPrompt(consolidation.control_block);
@@ -248,9 +342,12 @@ export class GhostMannequinPipeline {
           this.options.timeouts!.rendering!,
           'rendering'
         );
-        this.state.stageResults.rendering = result;
-        return result;
-      });
+          this.state.stageResults.rendering = result;
+          return result;
+        });
+      } else {
+        this.log('✅ Stage 5: Rendering skipped - CCJ pipeline already generated image');
+      }
 
       // Stage 6: QA Loop (Optional but recommended)
       if (this.options.enableQaLoop && this.state.stageResults.rendering) {
@@ -451,7 +548,99 @@ export class GhostMannequinPipeline {
   }
 
   /**
-   * Generate ghost mannequin using Control Block approach
+   * Generate with OPTIMIZED JSON approach (SIMPLE - like jsonprompt.it)
+   */
+  private async generateWithOptimizedJSON(
+    consolidation: ConsolidationOutput
+  ): Promise<GhostMannequinResult> {
+    const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
+    const originalOnModel = this.state.originalRequest?.onModel;
+    
+    // Get original analysis JSONs from pipeline state
+    const analysis = this.state.stageResults.analysis!.analysis;
+    const enrichment = this.state.stageResults.enrichment!.enrichment;
+    
+    this.log('Optimized JSON Generation:');
+    this.log(`Analysis: ${JSON.stringify(analysis).length} bytes`);
+    this.log(`Enrichment: ${JSON.stringify(enrichment).length} bytes`);
+    
+    try {
+      // Import the simple JSON optimizer
+      const { generateWithOptimizedJSON } = await import('./json-optimizer');
+      
+      // Generate with optimized approach (like jsonprompt.it)
+      const result = await generateWithOptimizedJSON(
+        analysis,
+        enrichment,
+        {
+          flatlayUrl: cleanedGarmentDetail,
+          onModelUrl: originalOnModel
+        },
+        this.state.sessionId
+      );
+      
+      this.log(`✅ Optimized JSON generation completed`);
+      this.log(`   Size reduction: ${result.optimization_info.reduction_pct}%`);
+      this.log(`   Prompt length: ${result.optimization_info.prompt_length} chars`);
+      
+      return {
+        renderUrl: result.generated_image_url || cleanedGarmentDetail,
+        processingTime: result.processing_time_ms
+      };
+      
+    } catch (error) {
+      this.log(`❌ Optimized JSON generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate with JSON payload approach (COMPLEX)
+   */
+  private async generateWithJsonPayload(
+    consolidation: ConsolidationOutput
+  ): Promise<GhostMannequinResult> {
+    const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
+    const originalOnModel = this.state.originalRequest?.onModel;
+    
+    this.log('JSON Payload Generation:');
+    this.log(`Facts V3 fields: ${Object.keys(consolidation.facts_v3).length}`);
+    this.log(`Control Block fields: ${Object.keys(consolidation.control_block).length}`);
+    
+    try {
+      // Import JSON payload functions
+      const { generateFlashJsonPayload } = await import('./json-payload-generator');
+      const { generateGhostMannequinWithJsonPayload, validateJsonPayload } = await import('./flash-json-client');
+      
+      // Generate JSON payload
+      const jsonPayload = generateFlashJsonPayload(
+        consolidation.facts_v3,
+        consolidation.control_block,
+        this.state.sessionId,
+        {
+          flatlayUrl: cleanedGarmentDetail,
+          onModelUrl: originalOnModel
+        }
+      );
+      
+      // Validate payload
+      validateJsonPayload(jsonPayload);
+      this.log(`✅ JSON payload validated successfully`);
+      
+      // Generate with JSON payload
+      const result = await generateGhostMannequinWithJsonPayload(jsonPayload);
+      this.log(`✅ JSON payload generation completed`);
+      
+      return result;
+      
+    } catch (error) {
+      this.log(`❌ JSON payload generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate ghost mannequin using Control Block approach (LEGACY/FALLBACK)
    * @param controlBlockPrompt - Optimized prompt from Control Block
    * @param consolidation - Consolidation output with Facts_v3
    */

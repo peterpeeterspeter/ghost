@@ -455,7 +455,69 @@ export async function generateImageWithFreepikGemini(
     }
     
     throw new GhostPipelineError(
-      `Freepik Gemini generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Freepik generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'RENDERING_FAILED',
+      'rendering',
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Generate ghost mannequin image using Freepik's Gemini 2.5 Flash API with JSON payload
+ * This version accepts a structured JSON payload as the prompt
+ * 
+ * @param jsonPrompt - The JSON payload as a string (stringified FlashImagePromptPayload)
+ * @param inputImage - The input image (cleaned flatlay or base64)
+ * @param referenceImage - Optional reference image (on-model or base64)
+ * @returns Promise<{ imageBase64: string; processingTime: number }>
+ */
+export async function generateImageWithFreepikGeminiJson(
+  jsonPrompt: string,
+  inputImage: string,
+  referenceImage?: string
+): Promise<{ imageBase64: string; processingTime: number }> {
+  const startTime = Date.now();
+  const apiKey = process.env.FREEPIK_API_KEY;
+  
+  if (!apiKey) {
+    throw new GhostPipelineError(
+      'Freepik API key not configured',
+      'CONFIGURATION_ERROR',
+      'rendering'
+    );
+  }
+
+  console.log('🚀 Starting Freepik Gemini 2.5 Flash JSON generation...');
+  console.log('📦 JSON payload length:', jsonPrompt.length);
+  console.log('🔍 JSON payload preview:', jsonPrompt.substring(0, 300) + '...');
+  
+  try {
+    // Create task with JSON payload as prompt
+    const taskId = await createGeminiTask(jsonPrompt, inputImage, referenceImage, apiKey);
+    console.log('📋 Created Freepik JSON task:', taskId);
+    
+    // Poll for completion
+    const imageUrl = await pollTaskCompletion(taskId, apiKey, 60000); // 60 seconds timeout
+    
+    // Convert result to base64 format expected by pipeline
+    const imageBase64 = await convertUrlToBase64(imageUrl);
+    
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ Freepik Gemini JSON generation completed in ${processingTime}ms`);
+    
+    return { imageBase64, processingTime };
+    
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error('❌ Freepik Gemini JSON generation failed:', error);
+    
+    if (error instanceof GhostPipelineError) {
+      throw error;
+    }
+    
+    throw new GhostPipelineError(
+      `Freepik Gemini JSON generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'RENDERING_FAILED',
       'rendering',
       error instanceof Error ? error : undefined
