@@ -130,6 +130,33 @@ export function buildStructuredPrompt(facts: FactsV3, controlBlock: ControlBlock
 }
 
 /**
+ * Expert AI system prompt for direct JSON interpretation
+ * More authoritative and directive than narrative approaches
+ */
+export function generateExpertAIPrompt(structured: StructuredGhostPrompt): string {
+  const expertPrompt = `You are an expert AI image generation engine specializing in photorealistic, Amazon-compliant e-commerce apparel photography. Your sole function is to interpret the provided JSON object and render a single, flawless product image that strictly adheres to every specified parameter.
+
+**Your directives are:**
+1.  **Parse the JSON:** Analyze every field in the provided JSON schema. Each field is a direct command.
+2.  **Ghost Mannequin Execution:** The \`effect: "ghost_mannequin"\` and \`form: "invisible_human_silhouette"\` mean you must render the garment as if worn by an invisible person, giving it shape and volume without showing any part of a mannequin or model.
+3.  **Crucial View Angles:** Pay close attention to the \`view_angle\`.
+    *   If \`"interior_neckline_shot"\` is specified, you must generate a view of the *inside back and shoulder area* of the garment, including the brand tag if requested. This shot is vital for post-production.
+    *   For all other angles, maintain perfect consistency in lighting, color, and fabric texture.
+4.  **Platform Compliance is Mandatory:** The \`TechnicalAndPlatformSpecs\` are non-negotiable.
+    *   **Framing:** The garment MUST occupy the \`frame_fill_percentage\` of the total image area against the specified \`background\`.
+    *   **Lighting:** The \`lighting\` must be soft and even, completely eliminating harsh shadows on the product and background.
+    *   **Negative Constraints:** You are forbidden from rendering any elements listed in \`negative_constraints\`.
+5.  **Styling is Key:** The \`Styling\` category dictates the final look. A \`"perfectly_fitted_no_bunching"\` garment must be smooth and well-defined. Sleeve drape must be exactly as specified.
+
+Your output must be a single, high-resolution, commercially ready image that looks like it was taken in a professional photo studio. Do not add any commentary.
+
+**JSON SPECIFICATION:**
+${JSON.stringify(structured, null, 2)}`;
+
+  return expertPrompt;
+}
+
+/**
  * Convert structured prompt to natural language for AI generation
  * Uses the clockmaker approach: structured data with narrative integration
  */
@@ -204,8 +231,17 @@ Generate this professional Amazon-compliant ghost mannequin photograph according
  * Hybrid approach: JSON structure with natural narrative sections
  * Combines the precision of structured data with the creativity of natural language
  */
-export function generateHybridStructuredPrompt(facts: FactsV3, controlBlock: ControlBlock): string {
+export function generateHybridStructuredPrompt(
+  facts: FactsV3, 
+  controlBlock: ControlBlock,
+  useExpertPrompt: boolean = false
+): string {
   const structured = buildStructuredPrompt(facts, controlBlock);
+  
+  // Use expert AI prompt if requested (more direct and authoritative)
+  if (useExpertPrompt) {
+    return generateExpertAIPrompt(structured);
+  }
   
   // Amazon-specific structured requirements (inspired by clockmaker test pattern)
   const amazonSpecs = `

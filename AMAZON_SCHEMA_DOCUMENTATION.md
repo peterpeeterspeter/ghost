@@ -85,7 +85,9 @@ Enhanced structured prompt schema specifically designed for Amazon marketplace c
 4. **Scalability**: Easy to add new Amazon requirements as fields
 5. **Quality Control**: Specific constraints prevent common rejection reasons
 
-## Usage
+## Usage Options
+
+### 1. **Standard Structured Prompt**
 ```json
 {
   "options": {
@@ -93,5 +95,34 @@ Enhanced structured prompt schema specifically designed for Amazon marketplace c
   }
 }
 ```
+Generates Amazon-compliant hybrid structured prompts with narrative sections.
 
-This triggers the Amazon-ready structured prompt generation instead of narrative approaches, ensuring marketplace compliance through discrete, parseable components.
+### 2. **Expert AI Prompt** (New)
+```json
+{
+  "options": {
+    "useStructuredPrompt": true,
+    "useExpertPrompt": true
+  }
+}
+```
+Generates direct, authoritative AI directives with pure JSON specification:
+- More command-like and directive
+- "You are an expert AI image generation engine..."
+- Direct JSON interpretation instructions
+- Zero narrative fluff, maximum precision
+
+## Expert AI Prompt Format
+```
+You are an expert AI image generation engine specializing in photorealistic, Amazon-compliant e-commerce apparel photography. Your sole function is to interpret the provided JSON object and render a single, flawless product image that strictly adheres to every specified parameter.
+
+**Your directives are:**
+1. **Parse the JSON:** Analyze every field in the provided JSON schema. Each field is a direct command.
+2. **Ghost Mannequin Execution:** The `effect: "ghost_mannequin"` means render as if worn by invisible person...
+3. **Platform Compliance is Mandatory:** The `TechnicalAndPlatformSpecs` are non-negotiable...
+
+**JSON SPECIFICATION:**
+{...complete 32-field Amazon schema...}
+```
+
+This expert approach provides **maximum structured control** following the clockmaker pattern of discrete, machine-readable components ensuring marketplace compliance.

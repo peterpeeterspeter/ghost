@@ -328,7 +328,8 @@ export class GhostMannequinPipeline {
               consolidation.facts_v3, 
               consolidation.control_block, 
               this.state.sessionId,
-              this.request.options?.useStructuredPrompt
+              this.request.options?.useStructuredPrompt,
+              this.request.options?.useExpertPrompt
             );
             this.log(`✅ Generated distilled Flash prompt: ${promptToUse.length} chars (optimized for rendering focus)`);
           } catch (error) {

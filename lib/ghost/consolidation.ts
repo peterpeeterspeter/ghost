@@ -666,17 +666,19 @@ export async function buildDynamicFlashPrompt(
   facts: FactsV3, 
   control: ControlBlock, 
   sessionId: string,
-  useStructuredPrompt?: boolean
+  useStructuredPrompt?: boolean,
+  useExpertPrompt?: boolean
 ): Promise<string> {
   try {
     console.log(`🎯 Building ${useStructuredPrompt ? 'structured' : 'dynamic'} prompt...`);
     
     // If structured prompts are requested, use that approach
     if (useStructuredPrompt) {
-      console.log('📊 Using structured prompt approach (inspired by clockmaker test: 70% vs 0% success)');
+      const promptType = useExpertPrompt ? 'expert AI' : 'structured';
+      console.log(`📊 Using ${promptType} prompt approach (inspired by clockmaker test: 70% vs 0% success)`);
       const { generateHybridStructuredPrompt } = await import('./structured-prompt-generator');
-      const prompt = generateHybridStructuredPrompt(facts, control);
-      console.log(`✅ Structured prompt generated (${prompt.length} chars)`);
+      const prompt = generateHybridStructuredPrompt(facts, control, useExpertPrompt);
+      console.log(`✅ ${promptType} prompt generated (${prompt.length} chars)`);
       return prompt;
     }
     
