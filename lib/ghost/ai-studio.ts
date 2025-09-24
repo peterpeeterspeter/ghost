@@ -441,7 +441,222 @@ export function getAiStudioStatus(): {
       'Multi-modal Input (Text + Images)',
       'Dynamic Prompt Integration',
       'FactsV3 Consolidation Support',
-      'Professional Ghost Mannequin Generation'
+      'Professional Ghost Mannequin Generation',
+      'Structured JSON Input',
+      'Direct URL Image Input'
     ]
   };
+}
+
+/**
+ * Enhanced AI Studio generation with structured JSON as separate input
+ * @param flatlayImage - Clean flatlay image (base64 or URL)
+ * @param analysisJSON - Raw analysis JSON object
+ * @param enrichmentJSON - Raw enrichment JSON object
+ * @param originalImage - Optional on-model reference image
+ * @param sessionId - Session ID for tracking
+ * @param options - Additional options for JSON and image handling
+ */
+export async function generateGhostMannequinWithStructuredJSON(
+  flatlayImage: string,
+  analysisJSON: any,
+  enrichmentJSON: any,
+  originalImage?: string,
+  sessionId?: string,
+  options?: {
+    jsonInputMethod?: 'inline' | 'separate' | 'embedded'; // How to provide JSON
+    imageInputMethod?: 'base64' | 'url' | 'auto';          // How to provide images
+    useSimplePrompt?: boolean;                              // Use simple vs dynamic prompt
+  }
+): Promise<GhostMannequinResult> {
+  const startTime = Date.now();
+  
+  if (!genAI) {
+    throw new GhostPipelineError(
+      'AI Studio client not configured. Call configureAiStudioClient first.',
+      'CLIENT_NOT_CONFIGURED',
+      'rendering'
+    );
+  }
+
+  const opts = {
+    jsonInputMethod: 'separate',
+    imageInputMethod: 'auto',
+    useSimplePrompt: false,
+    ...options
+  };
+
+  try {
+    console.log('🎯 Starting AI Studio generation with structured JSON...');
+    console.log(`📊 JSON Input Method: ${opts.jsonInputMethod}`);
+    console.log(`🖼️ Image Input Method: ${opts.imageInputMethod}`);
+    
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash-image-preview",
+      generationConfig: {
+        temperature: 0.05,
+      },
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+      ],
+    });
+
+    // Prepare base prompt
+    const basePrompt = opts.useSimplePrompt 
+      ? `Create a professional ghost mannequin image from this garment showing natural dimensional form against white background. Use the analysis data and reference images provided.`
+      : `Create professional e-commerce ghost mannequin photography showing this garment with perfect dimensional form against pristine white studio background.
+      
+This is invisible mannequin product photography where the garment displays natural fit and drape with no visible person, mannequin, or model. The garment appears filled with invisible human form, showing realistic volume and structure.
+      
+Use the provided analysis data for precise color matching, material properties, and construction details. Reference the images for visual accuracy while creating the 3D ghost mannequin effect.
+      
+Maintain any visible brand labels, care labels, or text elements with perfect clarity and readability.`;
+
+    const contentParts: any[] = [];
+    
+    // Add base prompt
+    contentParts.push({ text: basePrompt });
+    
+    // Handle JSON input based on method
+    switch (opts.jsonInputMethod) {
+      case 'separate':
+        // JSON as separate structured data parts
+        contentParts.push({
+          text: "Analysis Data (Garment structure, labels, construction details):"
+        });
+        contentParts.push({
+          inlineData: {
+            data: Buffer.from(JSON.stringify(analysisJSON, null, 2)).toString('base64'),
+            mimeType: 'application/json'
+          }
+        });
+        
+        contentParts.push({
+          text: "Enrichment Data (Colors, materials, rendering guidance):"
+        });
+        contentParts.push({
+          inlineData: {
+            data: Buffer.from(JSON.stringify(enrichmentJSON, null, 2)).toString('base64'),
+            mimeType: 'application/json'
+          }
+        });
+        break;
+        
+      case 'inline':
+        // JSON embedded in text
+        contentParts.push({
+          text: `Analysis Data: ${JSON.stringify(analysisJSON, null, 2)}`
+        });
+        contentParts.push({
+          text: `Enrichment Data: ${JSON.stringify(enrichmentJSON, null, 2)}`
+        });
+        break;
+        
+      case 'embedded':
+        // JSON embedded in main prompt
+        contentParts[0].text += `\n\nAnalysis Data: ${JSON.stringify(analysisJSON, null, 2)}\n\nEnrichment Data: ${JSON.stringify(enrichmentJSON, null, 2)}`;
+        break;
+    }
+    
+    // Handle image input based on method
+    const addImage = async (imageUrl: string, label: string) => {
+      contentParts.push({ text: label });
+      
+      switch (opts.imageInputMethod) {
+        case 'url':
+          // Try to pass URL directly (if supported)
+          contentParts.push({
+            text: `Image URL: ${imageUrl}`
+          });
+          break;
+          
+        case 'base64':
+        case 'auto':
+        default:
+          // Convert to base64 (current method)
+          const imageData = await prepareImageForAiStudio(imageUrl);
+          const mimeType = getImageMimeType(imageUrl);
+          contentParts.push({
+            inlineData: {
+              data: imageData,
+              mimeType: mimeType,
+            },
+          });
+          break;
+      }
+    };
+    
+    // Add flatlay image
+    await addImage(flatlayImage, "Primary Image (Main visual reference):");
+    
+    // Add original image if provided
+    if (originalImage) {
+      await addImage(originalImage, "Shape Reference (For proportions and fit):");
+    }
+    
+    console.log(`🚀 Calling AI Studio with ${contentParts.length} content parts...`);
+    console.log(`📄 Content structure:`);
+    contentParts.forEach((part, i) => {
+      if (part.text) {
+        console.log(`   ${i}: Text - ${part.text.length} chars`);
+      } else if (part.inlineData) {
+        console.log(`   ${i}: ${part.inlineData.mimeType} - ${part.inlineData.data.length} bytes`);
+      }
+    });
+    
+    const result = await model.generateContent(contentParts);
+    const response = await result.response;
+    
+    // Extract generated image (same logic as main function)
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0 && candidates[0].content?.parts) {
+      const imagePart = candidates[0].content.parts.find(part => 
+        part.inlineData?.mimeType?.startsWith('image/')
+      );
+      
+      if (imagePart?.inlineData) {
+        const imageDataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+        const { uploadImageToFalStorage } = await import('./fal');
+        const renderUrl = await uploadImageToFalStorage(imageDataUrl);
+        
+        const processingTime = Date.now() - startTime;
+        console.log(`✅ Structured JSON generation completed in ${processingTime}ms`);
+        
+        return {
+          renderUrl,
+          processingTime,
+        };
+      }
+    }
+    
+    throw new GhostPipelineError(
+      'AI Studio structured JSON generation failed to produce image',
+      'RENDERING_FAILED',
+      'rendering'
+    );
+
+  } catch (error) {
+    console.error('❌ AI Studio structured JSON generation failed:', error);
+    throw error instanceof GhostPipelineError ? error : new GhostPipelineError(
+      `AI Studio structured JSON generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'RENDERING_FAILED',
+      'rendering',
+      error instanceof Error ? error : undefined
+    );
+  }
 }
