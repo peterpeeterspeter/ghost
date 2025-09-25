@@ -41,24 +41,91 @@ const SafetySchemaLoose = z.preprocess(
 );
 
 export const FactsV3SchemaLoose = z.object({
+  // === CORE IDENTIFICATION ===
   category_generic: z.enum([
     "top","bottom","dress","outerwear","knitwear","underwear","accessory","unknown"
   ]).catch("unknown"),
   silhouette: z.string().default("generic_silhouette"),
   required_components: z.array(z.string()).default([]),
   forbidden_components: z.array(z.string()).default([]),
+  
+  // === CRITICAL LABEL INFORMATION (from AnalysisJSON) ===
+  labels_found: z.array(z.object({
+    type: z.enum(['brand', 'size', 'care', 'composition', 'origin', 'price', 'security_tag', 'rfid', 'other']),
+    location: z.string(),
+    text: z.string().optional(),
+    readable: z.boolean().default(true),
+    preserve: z.boolean().default(true),
+    visibility: z.enum(['fully_visible', 'partially_occluded', 'edge_visible']).optional(),
+    color_hex: z.string().optional(),
+  })).default([]),
+  
+  // === CRITICAL PRESERVATION DETAILS (from AnalysisJSON) ===
+  preserve_details: z.array(z.object({
+    element: z.string(),
+    priority: z.enum(['critical', 'important', 'nice_to_have']).default('important'),
+    location: z.string().optional(),
+    notes: z.string().optional(),
+  })).default([]),
+  
+  // === HOLLOW REGIONS (from AnalysisJSON) - CRITICAL FOR GHOST MANNEQUIN ===
+  hollow_regions: z.array(z.object({
+    region_type: z.enum(['neckline', 'sleeves', 'front_opening', 'armholes', 'other']),
+    keep_hollow: z.boolean().default(true),
+    inner_visible: z.boolean().default(false),
+    inner_description: z.string().optional(),
+  })).default([]),
+  
+  // === CONSTRUCTION DETAILS (from AnalysisJSON) ===
+  construction_details: z.array(z.object({
+    feature: z.string(),
+    silhouette_rule: z.string(),
+    critical_for_structure: z.boolean().default(false),
+  })).default([]),
+  
+  // === COLOR & VISUAL PROPERTIES ===
   palette: PaletteSchemaLoose,
+  pattern: z.string().default("unknown"),
+  print_scale: z.string().default("unknown"),
+  
+  // === MATERIAL PROPERTIES ===
   material: z.string().default("unspecified_material"),
   weave_knit: z.enum(["woven","knit","nonwoven","unknown"]).catch("unknown"),
   drape_stiffness: z.number().min(0).max(1).default(0.4),
   transparency: z.enum(["opaque","semi_sheer","sheer"]).catch("opaque"),
   surface_sheen: z.enum(["matte","subtle_sheen","glossy"]).catch("matte"),
-  pattern: z.string().default("unknown"),
-  print_scale: z.string().default("unknown"),
   edge_finish: z.string().default("unknown"),
+  
+  // === ENRICHMENT DATA INTEGRATION ===
+  color_precision: z.object({
+    primary_hex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    secondary_hex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    color_temperature: z.enum(['warm', 'cool', 'neutral']).optional(),
+    saturation_level: z.enum(['muted', 'moderate', 'vibrant']).optional(),
+  }).optional(),
+  
+  fabric_behavior: z.object({
+    drape_quality: z.enum(['crisp', 'flowing', 'structured', 'fluid', 'stiff']).optional(),
+    surface_sheen_detailed: z.enum(['matte', 'subtle_sheen', 'glossy', 'metallic']).optional(),
+    texture_depth: z.enum(['flat', 'subtle_texture', 'pronounced_texture', 'heavily_textured']).optional(),
+    transparency_level: z.enum(['opaque', 'semi_opaque', 'translucent', 'sheer']).optional(),
+  }).optional(),
+  
+  construction_precision: z.object({
+    seam_visibility: z.enum(['hidden', 'subtle', 'visible', 'decorative']).optional(),
+    edge_finishing: z.enum(['raw', 'serged', 'bound', 'rolled', 'pinked']).optional(),
+    stitching_contrast: z.boolean().optional(),
+    hardware_finish: z.enum(['none', 'matte_metal', 'polished_metal', 'plastic', 'fabric_covered']).optional(),
+  }).optional(),
+  
+  // === RENDERING SPECIFICATIONS ===
   view: z.string().default("front"),
   framing_margin_pct: z.number().min(2).max(12).default(6),
   shadow_style: z.enum(["soft","medium","hard"]).catch("soft"),
+  lighting_preference: z.enum(['soft_diffused', 'directional', 'high_key', 'dramatic']).optional(),
+  shadow_behavior: z.enum(['minimal_shadows', 'soft_shadows', 'defined_shadows', 'dramatic_shadows']).optional(),
+  
+  // === QUALITY & SAFETY ===
   qa_targets: z.object({
     deltaE_max: z.number().default(3),
     edge_halo_max_pct: z.number().default(1),
@@ -66,6 +133,28 @@ export const FactsV3SchemaLoose = z.object({
     min_resolution_px: z.number().default(2000),
   }).default({}),
   safety: SafetySchemaLoose.default({ must_not: [] }),
+  
+  // === VISUAL REFERENCES (NEW: Images embedded in JSON) ===
+  visual_references: z.object({
+    flatlay: z.object({
+      mime_type: z.enum(['image/jpeg', 'image/png']),
+      data: z.string(), // base64 encoded
+      role: z.literal('ground_truth_colors_textures_patterns'),
+    }),
+    on_model: z.object({
+      mime_type: z.enum(['image/jpeg', 'image/png']),
+      data: z.string(), // base64 encoded  
+      role: z.literal('proportions_reference_only'),
+    }).optional(),
+    // Reserve third slot for future use
+    detail_crop: z.object({
+      mime_type: z.enum(['image/jpeg', 'image/png']),
+      data: z.string(), // base64 encoded
+      role: z.string(), // flexible role description
+    }).optional(),
+  }),
+  
+  // === METADATA ===
   notes: z.string().optional(),
   structural_asymmetry: z.object({
     expected: z.boolean().default(false),
@@ -224,10 +313,19 @@ function normalizeRegionHints(hints: any): Record<string, string[]> {
 export function normalizeFacts(f: FactsV3): FactsV3 {
   return {
     ...f,
+    // Core normalization
     palette: normalizePalette(f.palette),
     safety: normalizeSafety(f.safety),
     required_components: f.required_components ?? [],
     forbidden_components: f.forbidden_components ?? [],
+    
+    // Critical structural data normalization
+    labels_found: f.labels_found ?? [],
+    preserve_details: f.preserve_details ?? [],
+    hollow_regions: f.hollow_regions ?? [],
+    construction_details: f.construction_details ?? [],
+    
+    // Enhanced normalization
     label_visibility: f.label_visibility ?? "required",
     qa_targets: {
       deltaE_max: f.qa_targets?.deltaE_max ?? 3,
@@ -236,6 +334,13 @@ export function normalizeFacts(f: FactsV3): FactsV3 {
       min_resolution_px: f.qa_targets?.min_resolution_px ?? 2000,
     },
     structural_asymmetry: f.structural_asymmetry ?? { expected: false, regions: [] },
+    
+    // Optional enrichment data (preserve if exists)
+    color_precision: f.color_precision,
+    fabric_behavior: f.fabric_behavior,
+    construction_precision: f.construction_precision,
+    lighting_preference: f.lighting_preference,
+    shadow_behavior: f.shadow_behavior,
   };
 }
 
@@ -332,7 +437,7 @@ async function callGeminiProConsolidator(payload: {
 
   } catch (error) {
     console.error('Consolidation API call failed:', error);
-    throw new Error(`JSON consolidation API failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error('JSON consolidation API failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
 
@@ -373,10 +478,10 @@ async function callGeminiProQA(payload: {
       }
     } else {
       // Handle HTTP URL - fetch and convert to base64
-      console.log('📥 Fetching image from URL for QA analysis:', payload.imageUrl);
+      console.log('Fetching image from URL for QA analysis:', payload.imageUrl);
       const response = await fetch(payload.imageUrl);
       if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
+        throw new Error('Failed to fetch image: ' + response.statusText);
       }
       
       const arrayBuffer = await response.arrayBuffer();
@@ -393,14 +498,14 @@ async function callGeminiProQA(payload: {
       }
     }
     
-    console.log(`🔍 QA analysis with ${mimeType} image data (${Math.round(imageData.length / 1024)}KB)`);
+    console.log('QA analysis with ' + mimeType + ' image data (' + Math.round(imageData.length / 1024) + 'KB)');
     
     const result = await model.generateContent([
       {
         text: prompt,
       },
       {
-        text: `Facts_v3 Reference:\n${JSON.stringify(payload.facts, null, 2)}\n\nSession ID: ${payload.sessionId}`,
+        text: 'Facts_v3 Reference:\n' + JSON.stringify(payload.facts, null, 2) + '\n\nSession ID: ' + payload.sessionId,
       },
       {
         inlineData: {
@@ -424,7 +529,7 @@ async function callGeminiProQA(payload: {
 
   } catch (error) {
     console.error('QA analysis failed:', error);
-    throw new Error(`QA analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error('QA analysis failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
 
@@ -438,82 +543,9 @@ export async function consolidateAnalyses(
   refs: { cleanedImageUrl: string; onModelUrl?: string },
   sessionId: string
 ): Promise<ConsolidationOutput> {
-  console.log(`[${sessionId}] Starting analysis consolidation...`);
+  console.log('[' + sessionId + '] Starting analysis consolidation...');
   
-  const prompt = `You are an expert consolidation system for garment analysis.
-
-Your task is to merge two JSON analyses into a unified FactsV3 structure and ControlBlock for rendering.
-
-Rule hierarchy for conflict resolution:
-1. Visual/perceptual evidence (highest priority)
-2. JSON-A (structural analysis)
-3. JSON-B (enrichment analysis)
-
-NOTE: If any field is unclear or cannot be determined, provide reasonable defaults.
-For colors, use hex format like #AABBCC. For safety constraints, use object format: {"must_not": ["no_nudity", "no_violence"]}.
-For continuity_rules, use object format: {"field_name": "string_value"}.
-For missing numeric values, provide sensible defaults (e.g., drape_stiffness: 0.4).
-
-Structural analysis (JSON-A):
-${JSON.stringify(jsonA, null, 2)}
-
-Enrichment analysis (JSON-B):
-${JSON.stringify(jsonB, null, 2)}
-
-Provide your consolidated output in this exact JSON format:
-{
-  "facts_v3": {
-    "category_generic": "top|bottom|dress|outerwear|knitwear|underwear|accessory|unknown",
-    "silhouette": "description of garment silhouette",
-    "required_components": ["component1", "component2"],
-    "forbidden_components": ["forbidden1"],
-    "palette": {
-      "dominant_hex": "#AABBCC",
-      "accent_hex": "#DDEEFF",
-      "trim_hex": "#FFFFFF",
-      "pattern_hexes": ["#123456"],
-      "region_hints": {}
-    },
-    "material": "fabric type",
-    "weave_knit": "woven|knit|nonwoven|unknown",
-    "drape_stiffness": 0.4,
-    "transparency": "opaque|semi_sheer|sheer",
-    "surface_sheen": "matte|subtle_sheen|glossy",
-    "pattern": "pattern description",
-    "print_scale": "scale description",
-    "edge_finish": "finish type",
-    "view": "front|back|side",
-    "framing_margin_pct": 6,
-    "shadow_style": "soft|medium|hard",
-    "qa_targets": {
-      "deltaE_max": 3,
-      "edge_halo_max_pct": 1,
-      "symmetry_tolerance_pct": 3,
-      "min_resolution_px": 2000
-    },
-    "safety": {"must_not": ["no_nudity", "no_violence"]},
-    "notes": "optional notes",
-    "structural_asymmetry": {
-      "expected": false,
-      "regions": []
-    },
-    "label_visibility": "required|optional",
-    "continuity_rules": {}
-  },
-  "control_block": {
-    // Same structure as facts_v3 but focused on rendering parameters
-  },
-  "conflicts_found": [
-    {
-      "field": "field_name",
-      "json_a": "value_from_a",
-      "json_b": "value_from_b", 
-      "resolution": "final_value",
-      "source_of_truth": "visual|json_a|json_b",
-      "confidence": 0.8
-    }
-  ]
-}`;
+  const prompt = 'You are an expert consolidation system for garment analysis. Merge two JSON analyses into a unified FactsV3 structure and ControlBlock for rendering. Structural analysis (JSON-A): ' + JSON.stringify(jsonA, null, 2) + ' Enrichment analysis (JSON-B): ' + JSON.stringify(jsonB, null, 2);
 
   try {
     const response = await callGeminiProConsolidator({ 
@@ -735,36 +767,36 @@ export async function buildDynamicFlashPrompt(
   useExpertPrompt?: boolean
 ): Promise<string> {
   try {
-    console.log(`🎯 Building ${useStructuredPrompt ? 'Amazon-Ready Structured' : 'dynamic'} prompt...`);
+    console.log('Building ' + (useStructuredPrompt ? 'Amazon-Ready Structured' : 'dynamic') + ' prompt...');
     
     // If structured prompts are requested, use that approach
     if (useStructuredPrompt) {
       const promptType = useExpertPrompt ? 'Expert AI Command' : 'Hybrid Structured';
-      console.log(`🚀 STRUCTURED PROMPT ACTIVATED: ${promptType} approach`);
-      console.log(`📊 Based on clockmaker test insights: 70% structured vs 0% narrative success rate`);
-      console.log(`🎯 Amazon marketplace compliance: 32+ structured fields, 85% frame fill, shadowless lighting`);
+      console.log('STRUCTURED PROMPT ACTIVATED: ' + promptType + ' approach');
+      console.log('Based on clockmaker test insights: 70% structured vs 0% narrative success rate');
+      console.log('Amazon marketplace compliance: 32+ structured fields, 85% frame fill, shadowless lighting');
       
       const { generateHybridStructuredPrompt } = await import('./structured-prompt-generator');
       const startTime = Date.now();
       const prompt = generateHybridStructuredPrompt(facts, control, useExpertPrompt);
       const processingTime = Date.now() - startTime;
       
-      console.log(`✅ ${promptType} prompt generated successfully`);
-      console.log(`   📏 Prompt length: ${prompt.length} characters`);
-      console.log(`   ⚡ Processing time: ${processingTime}ms`);
-      console.log(`   🏷️  Features: JSON structure + narrative + Amazon compliance`);
+      console.log(promptType + ' prompt generated successfully');
+      console.log('   Prompt length: ' + prompt.length + ' characters');
+      console.log('   Processing time: ' + processingTime + 'ms');
+      console.log('   Features: JSON structure + narrative + Amazon compliance');
       
       // Count structured elements for validation
       const structuredElementCount = (prompt.match(/#[0-9A-Fa-f]{6}/g) || []).length + 
                                     (prompt.match(/\d+\.\d+/g) || []).length + 
                                     (prompt.match(/\{[^}]*\}/g) || []).length;
-      console.log(`   📊 Structured elements detected: ${structuredElementCount}`);
+      console.log('   Structured elements detected: ' + structuredElementCount);
       
       return prompt;
     }
     
     // Use legacy dynamic prompt generator (AI-powered narrative approach)
-    console.log('📝 Using legacy dynamic prompt approach (AI-generated narrative)');
+    console.log('Using legacy dynamic prompt approach (AI-generated narrative)');
     const { generateDynamicPrompt, configurePromptGenerator } = await import('./prompt-generator');
     
     // Configure with Gemini API key (same as analysis)
@@ -772,18 +804,18 @@ export async function buildDynamicFlashPrompt(
     if (apiKey) {
       configurePromptGenerator(apiKey);
       const result = await generateDynamicPrompt(facts, control, sessionId);
-      console.log(`🎯 Generated legacy dynamic prompt in ${result.processingTime}ms`);
-      console.log(`   📏 Prompt length: ${result.prompt.length} characters`);
-      console.log(`   🏷️  Features: AI-generated narrative (legacy approach)`);
+      console.log('Generated legacy dynamic prompt in ' + result.processingTime + 'ms');
+      console.log('   Prompt length: ' + result.prompt.length + ' characters');
+      console.log('   Features: AI-generated narrative (legacy approach)');
       return result.prompt;
     }
     
     // Fallback to static if no API key
-    console.warn('⚠️ No Gemini API key available, using static prompt builder');
+    console.warn('No Gemini API key available, using static prompt builder');
     return buildStaticFlashPrompt(control);
     
   } catch (error) {
-    console.warn(`⚠️ ${useStructuredPrompt ? 'Structured' : 'Dynamic'} prompt generation failed, using static fallback:`, error);
+    console.warn((useStructuredPrompt ? 'Structured' : 'Dynamic') + ' prompt generation failed, using static fallback:', error);
     return buildStaticFlashPrompt(control);
   }
 }
@@ -794,187 +826,85 @@ export async function buildDynamicFlashPrompt(
 export function buildStaticFlashPrompt(control: ControlBlock): string {
   // Build component requirements safely
   const requiredText = control.required_components?.length ? 
-    `REQUIRED components (must include): ${control.required_components.join(", ")}` : 
+    'REQUIRED components (must include): ' + control.required_components.join(', ') : 
     'REQUIRED components: None specified';
     
   const forbiddenText = control.forbidden_components?.length ?
-    `\n- FORBIDDEN components (must not include): ${control.forbidden_components.join(", ")}` :
+    '\n- FORBIDDEN components (must not include): ' + control.forbidden_components.join(', ') :
     '';
 
   const patternText = control.palette?.pattern_hexes?.length ?
-    `\n- Patterns: ${control.palette.pattern_hexes.join(", ")}` :
+    '\n- Patterns: ' + control.palette.pattern_hexes.join(', ') :
     '';
 
   const regionHintsText = control.palette?.region_hints ? 
-    `\n- Region applications: ${JSON.stringify(control.palette.region_hints)}` : 
+    '\n- Region applications: ' + JSON.stringify(control.palette.region_hints) : 
     '';
 
   const safetyText = control.safety?.must_not?.length ?
-    `- MUST NOT include: ${control.safety.must_not.join(", ")}` :
+    '- MUST NOT include: ' + control.safety.must_not.join(', ') :
     '- Standard professional product photography guidelines';
 
   const asymmetryText = control.structural_asymmetry?.expected ?
-    `\n- Structural asymmetry expected in: ${control.structural_asymmetry.regions?.join(", ") || 'unspecified areas'}` :
+    '\n- Structural asymmetry expected in: ' + (control.structural_asymmetry.regions?.join(', ') || 'unspecified areas') :
     '';
 
   const continuityText = control.continuity_rules ?
-    `\n- Continuity rules: ${JSON.stringify(control.continuity_rules)}` :
+    '\n- Continuity rules: ' + JSON.stringify(control.continuity_rules) :
     '';
 
-  return `
-Task: Using the provided reference images, create a professional studio product photo with invisible mannequin effect (ghost mannequin). Transform the flat-laid garment from the input images into a 3D ghost mannequin effect that shows exactly the same garment design, colors, patterns, and details. No human body or model visible.
-
-IMAGE REFERENCE INSTRUCTIONS:
-- Use the provided images as the ONLY source for garment design, colors, patterns, and details
-- Do NOT change or modify the garment's appearance, colors, or design elements
-- Maintain 100% visual consistency with the input garment
-- Transform the flat layout into dimensional ghost mannequin form while preserving all original details
-
-STRICT CONSTRAINTS:
-- Category: ${control.category_generic || 'unknown'}
-- Silhouette: ${control.silhouette || 'generic'}
-- ${requiredText}${forbiddenText}
-
-COLOR PALETTE (exact hex values):
-- Dominant: ${control.palette?.dominant_hex || '#CCCCCC'}
-- Accent: ${control.palette?.accent_hex || control.palette?.dominant_hex || '#CCCCCC'}  
-- Trim: ${control.palette?.trim_hex || control.palette?.accent_hex || '#CCCCCC'}${patternText}${regionHintsText}
-
-MATERIAL & CONSTRUCTION:
-- Material: ${control.material || 'fabric'}
-- Weave/Knit: ${control.weave_knit || 'unknown'}
-- Drape stiffness (0-1): ${control.drape_stiffness ?? 0.4}
-- Edge finish: ${control.edge_finish || 'unknown'}
-- Transparency: ${control.transparency || 'opaque'}
-- Surface sheen: ${control.surface_sheen || 'matte'}
-
-PRESENTATION:
-- View: ${control.view || 'front'}
-- White background
-- Framing margin: ${control.framing_margin_pct ?? 6}% from edges
-- Shadow style: ${control.shadow_style || 'soft'}
-- Labels: ${control.label_visibility || 'required'}
-
-SAFETY CONSTRAINTS:
-${safetyText}${asymmetryText}${continuityText}
-
-CRITICAL: Follow all constraints exactly. Do not invent or add features not specified. Create realistic ghost mannequin effect showing garment structure without human form.
-
-IMAGE REFERENCE REMINDER:
-- ONLY use the garment shown in the provided reference images
-- Do NOT generate a different garment or change the design
-- Transform the EXACT SAME garment from flat to 3D ghost mannequin
-- Preserve ALL original colors, patterns, textures, and design elements from the reference images
-  `.trim();
+  return (
+    '\nTask: Using the provided reference images, create a professional studio product photo with invisible mannequin effect (ghost mannequin). Transform the flat-laid garment from the input images into a 3D ghost mannequin effect that shows exactly the same garment design, colors, patterns, and details. No human body or model visible.' +
+    '\n\nIMAGE REFERENCE INSTRUCTIONS:' +
+    '\n- Use the provided images as the ONLY source for garment design, colors, patterns, and details' +
+    '\n- Do NOT change or modify the garment\'s appearance, colors, or design elements' +
+    '\n- Maintain 100% visual consistency with the input garment' +
+    '\n- Transform the flat layout into dimensional ghost mannequin form while preserving all original details' +
+    '\n\nSTRICT CONSTRAINTS:' +
+    '\n- Category: ' + (control.category_generic || 'unknown') +
+    '\n- Silhouette: ' + (control.silhouette || 'generic') +
+    '\n- ' + requiredText + forbiddenText +
+    '\n\nCOLOR PALETTE (exact hex values):' +
+    '\n- Dominant: ' + (control.palette?.dominant_hex || '#CCCCCC') +
+    '\n- Accent: ' + (control.palette?.accent_hex || control.palette?.dominant_hex || '#CCCCCC') +
+    '\n- Trim: ' + (control.palette?.trim_hex || control.palette?.accent_hex || '#CCCCCC') + patternText + regionHintsText +
+    '\n\nMATERIAL & CONSTRUCTION:' +
+    '\n- Material: ' + (control.material || 'fabric') +
+    '\n- Weave/Knit: ' + (control.weave_knit || 'unknown') +
+    '\n- Drape stiffness (0-1): ' + (control.drape_stiffness ?? 0.4) +
+    '\n- Edge finish: ' + (control.edge_finish || 'unknown') +
+    '\n- Transparency: ' + (control.transparency || 'opaque') +
+    '\n- Surface sheen: ' + (control.surface_sheen || 'matte') +
+    '\n\nPRESENTATION:' +
+    '\n- View: ' + (control.view || 'front') +
+    '\n- White background' +
+    '\n- Framing margin: ' + (control.framing_margin_pct ?? 6) + '% from edges' +
+    '\n- Shadow style: ' + (control.shadow_style || 'soft') +
+    '\n- Labels: ' + (control.label_visibility || 'required') +
+    '\n\nSAFETY CONSTRAINTS:' +
+    '\n' + safetyText + asymmetryText + continuityText +
+    '\n\nCRITICAL: Follow all constraints exactly. Do not invent or add features not specified. Create realistic ghost mannequin effect showing garment structure without human form.' +
+    '\n\nIMAGE REFERENCE REMINDER:' +
+    '\n- ONLY use the garment shown in the provided reference images' +
+    '\n- Do NOT generate a different garment or change the design' +
+    '\n- Transform the EXACT SAME garment from flat to 3D ghost mannequin' +
+    '\n- Preserve ALL original colors, patterns, textures, and design elements from the reference images'
+  ).trim();
 }
 
 /**
  * Legacy alias for backwards compatibility
  */
 export function buildFlashPrompt(control: ControlBlock): string {
-  console.warn('⚠️ buildFlashPrompt is deprecated, use buildDynamicFlashPrompt or buildStaticFlashPrompt');
+  console.warn('buildFlashPrompt is deprecated, use buildDynamicFlashPrompt or buildStaticFlashPrompt');
   return buildStaticFlashPrompt(control);
 }
 
 /**
- * SeeDream 4.0 specialized Chinese prompt using JSON analysis integration
+ * Simple English prompt builder (Chinese version removed)
  */
 export function buildSeeDreamPrompt(control: ControlBlock, facts?: FactsV3): string {
-  // Extract JSON data for integration
-  const dominantHex = control.palette?.dominant_hex || "#CCCCCC";
-  const accentHex = control.palette?.accent_hex || control.palette?.dominant_hex || "#CCCCCC";
-  const trimHex = control.palette?.trim_hex || control.palette?.accent_hex || "#CCCCCC";
-  
-  const requiredComponents = control.required_components?.length ? 
-    control.required_components.join(", ") : "基本构造";
-    
-  const forbiddenComponents = control.forbidden_components?.length ?
-    control.forbidden_components.join(", ") : "人体轮廓";
-
-  const material = control.material || "fabric";
-  const drapeQuality = control.drape_stiffness ?? 0.4;
-  const surfaceSheen = control.surface_sheen || "matte";
-  const transparency = control.transparency || "opaque";
-  const weaveKnit = control.weave_knit || "unknown";
-  
-  const pattern = facts?.pattern || "unknown";
-  const printScale = facts?.print_scale || "unknown";
-  const shadowStyle = control.shadow_style || "soft";
-  const framingMargin = control.framing_margin_pct ?? 6;
-  const view = control.view || "front";
-  const silhouette = control.silhouette || "标准轮廓";
-  const category = control.category_generic || "unknown";
-  
-  return `
-动作 (ACTION): 生成专业电商隐形人台摄影作品
-对象 (OBJECT): 服装呈三维立体悬浮状态，内部中空，展现无形人体轮廓  
-属性 (ATTRIBUTES): 纯白无缝背景，柔光照明，商业级品质
-
-拍摄场景 (SCENE):
-专业摄影棚环境，纯净白色无缝背景，专业柔光设备。服装位于画面中心，呈现自然三维人体形状 - 面料自然垂坠，重量分布真实，皱褶折痕自然，完全呈现穿着时状态。
-
-核心技术要求 (TECHNICAL SPECS):
-- 颜色精度: 应用分析数据的精确十六进制色值
-- 面料物理: 模拟指定垂坠质感和表面属性
-- 照明设置: 柔光漫射照明，最小阴影
-- 细节锐度: 关键元素保持清晰定义  
-- 视角构图: 正面视角，6%边距构图
-
-参考图像整合 (REFERENCE INTEGRATION):
-- 图像B: 完全保真复制所有视觉细节
-- 图像A: 仅用于比例和空间关系参考
-- JSON分析: 应用颜色精度、面料物理、结构要求
-
-关键约束 (CONSTRAINTS):
-✓ 必须展示领口、袖口、下摆内部中空效果
-✓ 保持服装真实色彩和图案  
-✗ 严禁出现人台假模、支撑结构或人体轮廓
-
-专业要求 (OUTPUT):
-分辨率2K-4K，商业摄影标准，电商目录使用就绪
-
-JSON数据整合应用 (JSON INTEGRATION):
-
-色彩精确控制 (Color Precision Control):
-- 主色调: ${dominantHex} (严格匹配十六进制值)
-- 辅助色: ${accentHex} (用于装饰元素)
-- 镶边色: ${trimHex} (用于边缘细节)
-${pattern !== "unknown" ? `- 图案类型: ${pattern}` : ""}
-${printScale !== "unknown" ? `- 图案比例: ${printScale}` : ""}
-
-面料物理模拟 (Fabric Physics Simulation):
-- 材质类型: ${material}
-- 编织结构: ${weaveKnit}
-- 垂坠系数: ${drapeQuality} (${drapeQuality < 0.3 ? "飘逸柔软" : drapeQuality > 0.7 ? "挺括硬朗" : "结构适中"})
-- 表面光泽: ${surfaceSheen} 反光效果
-- 透明度: ${transparency} 透光处理
-
-构造要求精确执行 (Construction Requirements):
-- 服装类别: ${category}
-- 版型轮廓: ${silhouette}
-- 必含元素: ${requiredComponents} (必须清晰呈现)
-- 禁含元素: ${forbiddenComponents} (绝对排除)
-- 视角要求: ${view}视角拍摄
-- 边框留白: ${framingMargin}%空间留白
-
-光影效果控制 (Lighting & Shadow Control):
-- 阴影风格: ${shadowStyle}光影效果
-- 光线类型: 柔光漫射，避免强烈阴影
-- 色彩保真: 严格保持 ${dominantHex}, ${accentHex}, ${trimHex} 色值准确性
-
-隐形人台核心技术 (Core Invisible Mannequin Technique):
-✓ 服装悬浮立体，内部完全中空
-✓ 领口内侧、袖口内侧、下摆内侧清晰可见
-✓ 三维饱满造型，无需支撑结构
-✗ 严禁任何人台、假模、人体痕迹
-✗ 禁止显示支撑架或内部结构
-
-最终输出标准 (Final Output Standards):
-- 分辨率: 2048x2048像素起步
-- 格式: 商业摄影级品质
-- 用途: 电商产品目录就绪
-- 背景: 纯白无缝，无阴影干扰
-`.trim();
+  return buildStaticFlashPrompt(control);
 }
 
 export async function qaLoop(
@@ -1015,116 +945,9 @@ async function withRetry<T>(
 // -----------------------------
 
 function buildConsolidationPrompt(): string {
-  return `
-You are a fashion analysis expert. Your task is to consolidate two JSON analyses (JSON-A structural + JSON-B enrichment) into one conflict-free dataset.
-
-CONFLICT RESOLUTION HIERARCHY:
-1. Visual evidence (from images) > JSON-A > JSON-B
-2. Confidence thresholds: Color (0.8), Material (0.7), Construction (0.9)
-3. If confidence < 0.5, mark as "unknown"
-4. No new components from JSON-B that aren't in JSON-A
-
-OUTPUT REQUIREMENTS:
-Return a JSON object with exactly this structure:
-
-\`\`\`json
-{
-  "conflicts_found": [
-    {
-      "field": "string",
-      "json_a": "any",
-      "json_b": "any", 
-      "resolution": "any",
-      "source_of_truth": "visual|json_a|json_b",
-      "confidence": 0.0-1.0
-    }
-  ],
-  "facts_v3": {
-    "category_generic": "top|bottom|dress|outerwear|knitwear|underwear|accessory|unknown",
-    "silhouette": "string",
-    "required_components": ["string"],
-    "forbidden_components": ["string"],
-    "palette": {
-      "dominant_hex": "#RRGGBB",
-      "accent_hex": "#RRGGBB",
-      "trim_hex": "#RRGGBB", 
-      "pattern_hexes": ["#RRGGBB"],
-      "region_hints": {"trim_hex": ["collar", "cuffs"]}
-    },
-    "material": "string",
-    "weave_knit": "woven|knit|nonwoven|unknown",
-    "drape_stiffness": 0.0-1.0,
-    "transparency": "opaque|semi_sheer|sheer",
-    "surface_sheen": "matte|subtle_sheen|glossy",
-    "pattern": "string",
-    "print_scale": "string",
-    "edge_finish": "string",
-    "view": "string", 
-    "framing_margin_pct": 2-12,
-    "shadow_style": "soft|medium|hard",
-    "qa_targets": {
-      "deltaE_max": 3,
-      "edge_halo_max_pct": 1,
-      "symmetry_tolerance_pct": 3,
-      "min_resolution_px": 2000
-    },
-    "safety": {
-      "must_not": ["string"]
-    },
-    "label_visibility": "required|optional",
-    "structural_asymmetry": {
-      "expected": false,
-      "regions": ["string"]
-    }
-  },
-  "control_block": {
-    // Same as facts_v3 but only the 18-20 core fields needed for rendering
-  }
-}
-\`\`\`
-
-ANALYSIS PROCESS:
-1. Compare JSON-A and JSON-B for conflicts
-2. Apply resolution hierarchy  
-3. Build consolidated facts_v3
-4. Extract control_block with essential rendering fields
-5. Ensure no hallucinations or invented details
-  `.trim();
+  return 'You are a fashion analysis expert. Your task is to consolidate two JSON analyses (JSON-A structural + JSON-B enrichment) into one conflict-free dataset.';
 }
 
 function buildQAPrompt(): string {
-  return `
-You are a quality assurance expert for ghost mannequin product photography. Compare the generated image against the facts_v3 reference data.
-
-EVALUATION CRITERIA:
-- Color accuracy (ΔE < 3)
-- Edge quality (halo < 1%)  
-- Structural symmetry (tolerance < 3%)
-- Component presence/absence
-- Overall coherence
-
-OUTPUT FORMAT:
-Return JSON with this exact structure:
-
-\`\`\`json
-{
-  "overall_quality_score": 0.0-1.0,
-  "passed": true/false,
-  "deltas": [
-    {
-      "metric": "color_accuracy|edge_quality|symmetry|components",
-      "current_value": 0.0,
-      "target_value": 0.0,
-      "correction_prompt": "Specific instruction for improvement"
-    }
-  ]
-}
-\`\`\`
-
-CORRECTION PROMPTS:
-- Be specific and actionable
-- Focus on one issue per delta
-- Use precise language for adjustments
-- Max 2 iterations before manual review
-  `.trim();
+  return 'You are a quality assurance expert for ghost mannequin product photography. Compare the generated image against the facts_v3 reference data.';
 }

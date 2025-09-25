@@ -84,7 +84,7 @@ export class GhostMannequinPipeline {
   constructor(options: PipelineOptions) {
     this.options = {
       enableLogging: true,
-      renderingModel: 'ai-studio', // Default to AI Studio Gemini 2.5 Flash Image
+      renderingModel: 'gemini-flash', // Default to Gemini Flash (Google API direct)
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
@@ -699,13 +699,27 @@ export class GhostMannequinPipeline {
       case 'ai-studio':
         // AI Studio uses OPTIMAL direct JSON approach (no text conversion)
         this.log('🎯 Using AI Studio with direct JSON payload (OPTIMAL)');
-        return await generateGhostMannequinWithStructuredJSON(
-          cleanedGarmentDetail,
-          consolidation.facts_v3,    // Direct JSON from Gemini Pro analysis
-          consolidation.control_block, // Direct JSON from consolidation
-          originalOnModel,           // Use original on-model image
-          { sessionId: this.state.sessionId }
-        );
+        try {
+          return await generateGhostMannequinWithStructuredJSON(
+            cleanedGarmentDetail,
+            consolidation.facts_v3,    // Direct JSON from Gemini Pro analysis
+            consolidation.control_block, // Direct JSON from consolidation
+            originalOnModel,           // Use original on-model image
+            { sessionId: this.state.sessionId }
+          );
+        } catch (error) {
+          // Check for quota errors and fallback to Seedream
+          if (error instanceof GhostPipelineError && error.code === 'GEMINI_QUOTA_EXCEEDED') {
+            this.log('⚠️ AI Studio quota exceeded, falling back to Seedream...');
+            return await generateGhostMannequinWithControlBlock(
+              cleanedGarmentDetail,
+              controlBlockPrompt,
+              consolidation,
+              cleanedOnModel
+            );
+          }
+          throw error;
+        }
       
       case 'freepik-gemini':
       case 'gemini-flash':
