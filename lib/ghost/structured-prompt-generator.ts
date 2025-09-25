@@ -149,8 +149,9 @@ export function generateExpertAIPrompt(structured: StructuredGhostPrompt): strin
 4.  **Platform Compliance is Mandatory:** The \`TechnicalAndPlatformSpecs\` are non-negotiable.
     *   **Framing:** The garment MUST occupy the \`frame_fill_percentage\` of the total image area against the specified \`background\`.
     *   **Lighting:** The \`lighting\` must be soft and even, completely eliminating harsh shadows on the product and background.
+        Even, symmetric illumination: two large soft sources at 45° left/right, equal power (1:1), gentle on-axis fill; no single-side key, no rim/split lighting; preserve micro-fold shading and texture; seamless white background with no gradient or vignette.
     *   **Negative Constraints:** You are forbidden from rendering any elements listed in \`negative_constraints\`.
-5.  **Styling is Key:** The \`Styling\` category dictates the final look. A \`"perfectly_fitted_no_bunching"\` garment must be smooth and well-defined. Sleeve drape must be exactly as specified.
+5.  **Styling is Key:** The \`Styling\` category dictates the final look. A \`\"perfectly_fitted_no_bunching\"\` garment must be smooth and well-defined. Sleeve drape must be exactly as specified.
 
 Your output must be a single, high-resolution, commercially ready image that looks like it was taken in a professional photo studio. Do not add any commentary.
 
