@@ -1,5 +1,6 @@
 import type { FlashImagePromptPayload } from './json-payload-generator';
 import type { GhostMannequinResult } from '@/types/ghost';
+import type { ConsolidationOutput } from './consolidation';
 import { GhostPipelineError } from '@/types/ghost';
 
 /**
@@ -8,7 +9,8 @@ import { GhostPipelineError } from '@/types/ghost';
  */
 export async function generateGhostMannequinWithJsonPayload(
   payload: FlashImagePromptPayload,
-  renderingModel?: 'freepik-gemini' | 'ai-studio'
+  renderingModel?: 'freepik-gemini' | 'ai-studio',
+  originalConsolidation?: ConsolidationOutput  // Preserve original data for AI Studio
 ): Promise<GhostMannequinResult> {
   const startTime = Date.now();
   
@@ -31,10 +33,17 @@ export async function generateGhostMannequinWithJsonPayload(
         throw new Error('No detail_B image found in payload for AI Studio');
       }
       
+      // Use original consolidation data if available to preserve full FactsV3 details
+      // that may have been trimmed for Freepik JSON payload optimization
+      const factsToUse = originalConsolidation?.facts_v3 || payload.facts_v3;
+      const controlToUse = originalConsolidation?.control_block || payload.control_block;
+      
+      console.log('📊 Using data source:', originalConsolidation ? 'original consolidation' : 'payload data');
+      
       return await generateGhostMannequinWithStructuredJSON(
         detailImage.url,
-        payload.facts_v3,
-        payload.control_block,
+        factsToUse,
+        controlToUse,
         onModelImage?.url,
         { sessionId: payload.meta.session_id }
       );
@@ -127,7 +136,7 @@ export async function generateGhostMannequinWithJsonPayload(
  */
 export async function fallbackToDistilledPrompts(
   flatlayImage: string,
-  consolidation: any, // ConsolidationOutput type
+  consolidation: ConsolidationOutput,
   originalImage?: string
 ): Promise<GhostMannequinResult> {
   console.log('🔄 JSON approach failed, falling back to distilled prompts...');
@@ -141,7 +150,7 @@ export async function fallbackToDistilledPrompts(
     const distilledPrompt = await buildDynamicFlashPrompt(
       consolidation.facts_v3,
       consolidation.control_block,
-      consolidation.session_id
+      consolidation.session_id || 'fallback-session'
     );
     
     console.log(`🔄 Using distilled prompt: ${distilledPrompt.length} chars`);

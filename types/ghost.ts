@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import type { FactsV3, ControlBlock } from '../lib/ghost/consolidation';
+
+// Re-export consolidation types for convenience
+export type { FactsV3, ControlBlock };
 
 // Base types
 export type ImageInput = string; // base64 or signed URL

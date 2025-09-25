@@ -36,6 +36,8 @@ export interface StructuredGhostPrompt {
     accent_hex?: string;
     color_temperature: "warm" | "cool" | "neutral";
     saturation: "muted" | "moderate" | "vibrant";
+    pattern_direction?: "horizontal" | "vertical" | "diagonal" | "random";
+    pattern_repeat_size?: "micro" | "small" | "medium" | "large";
   };
   fabric: {
     material: string;
@@ -88,12 +90,14 @@ export function buildStructuredPrompt(facts: FactsV3, controlBlock: ControlBlock
       form: "invisible_human_silhouette",
       detail_shot_focus: undefined // Only used when view_angle is "detail_shot"
     },
-    colors: {
-      dominant_hex: facts.palette?.dominant_hex || controlBlock.palette?.dominant_hex || "#CCCCCC",
-      accent_hex: facts.palette?.accent_hex || controlBlock.palette?.accent_hex,
-      color_temperature: facts.color_temperature || "neutral",
-      saturation: facts.saturation_level || "moderate"
-    },
+  colors: {
+    dominant_hex: facts.color_precision?.primary_hex || facts.palette?.dominant_hex || controlBlock.palette?.dominant_hex || "#CCCCCC",
+    accent_hex: facts.color_precision?.secondary_hex || facts.palette?.accent_hex || controlBlock.palette?.accent_hex,
+    color_temperature: facts.color_precision?.color_temperature || "neutral",
+    saturation: facts.color_precision?.saturation_level || "moderate",
+    pattern_direction: facts.color_precision?.pattern_direction,
+    pattern_repeat_size: facts.color_precision?.pattern_repeat_size
+  },
     fabric: {
       material: facts.material || "fabric",
       drape_quality: facts.drape_quality || "flowing",
@@ -123,7 +127,7 @@ export function buildStructuredPrompt(facts: FactsV3, controlBlock: ControlBlock
       dimensional_form: true,
       no_visible_mannequin: true,
       frame_fill_percentage: 85, // Amazon's 85% frame fill requirement
-      negative_constraints: ["props", "human_models", "branding", "watermarks", "text"], // Amazon prohibitions
+      negative_constraints: ["props", "human_models", "branding", "watermarks", "text", "mannequin", "visible_mannequin", "dress_form", "torso_form", "plastic_body", "human_body_parts", "arms", "legs", "head", "neck", "visible_support_structure"], // Amazon prohibitions + anti-mannequin
       commercial_license_required: true
     }
   };
@@ -138,7 +142,7 @@ export function generateExpertAIPrompt(structured: StructuredGhostPrompt): strin
 
 **Your directives are:**
 1.  **Parse the JSON:** Analyze every field in the provided JSON schema. Each field is a direct command.
-2.  **Ghost Mannequin Execution:** The \`effect: "ghost_mannequin"\` and \`form: "invisible_human_silhouette"\` mean you must render the garment as if worn by an invisible person, giving it shape and volume without showing any part of a mannequin or model.
+2.  **Ghost Mannequin Execution:** The \`effect: "ghost_mannequin"\` and \`form: "invisible_human_silhouette"\` mean you must render the garment as if worn by an invisible person, giving it shape and volume without showing any part of a mannequin or model. CRITICAL: No visible mannequin, dress form, torso, plastic body, human body parts, arms, legs, head, neck, or any support structure must appear in the image. Only the garment should be visible with natural dimensional form.
 3.  **Crucial View Angles:** Pay close attention to the \`view_angle\`.
     *   If \`"interior_neckline_shot"\` is specified, you must generate a view of the *inside back and shoulder area* of the garment, including the brand tag if requested. This shot is vital for post-production.
     *   For all other angles, maintain perfect consistency in lighting, color, and fabric texture.
@@ -149,6 +153,8 @@ export function generateExpertAIPrompt(structured: StructuredGhostPrompt): strin
 5.  **Styling is Key:** The \`Styling\` category dictates the final look. A \`"perfectly_fitted_no_bunching"\` garment must be smooth and well-defined. Sleeve drape must be exactly as specified.
 
 Your output must be a single, high-resolution, commercially ready image that looks like it was taken in a professional photo studio. Do not add any commentary.
+
+**FINAL CRITICAL REQUIREMENT: The image must show ONLY the garment with natural dimensional form. Absolutely NO visible mannequin, dress form, torso, human body parts, or support structure of any kind. The garment appears to float with natural shape as if worn by an invisible person.**
 
 **JSON SPECIFICATION:**
 ${JSON.stringify(structured, null, 2)}`;

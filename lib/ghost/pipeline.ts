@@ -652,8 +652,12 @@ export class GhostMannequinPipeline {
       validateJsonPayload(jsonPayload);
       this.log(`✅ JSON payload validated successfully`);
       
-      // Generate with JSON payload
-      const result = await generateGhostMannequinWithJsonPayload(jsonPayload, renderingModel as 'freepik-gemini' | 'ai-studio');
+      // Generate with JSON payload (pass original consolidation to preserve full data for AI Studio)
+      const result = await generateGhostMannequinWithJsonPayload(
+        jsonPayload, 
+        renderingModel as 'freepik-gemini' | 'ai-studio',
+        consolidation  // Pass original consolidation to preserve full FactsV3 data
+      );
       this.log(`✅ JSON payload generation completed`);
       
       return result;

@@ -134,25 +134,29 @@ export const FactsV3SchemaLoose = z.object({
   }).default({}),
   safety: SafetySchemaLoose.default({ must_not: [] }),
   
-  // === VISUAL REFERENCES (NEW: Images embedded in JSON) ===
+  // === VISUAL REFERENCES (File API URIs - Token Efficient) ===
   visual_references: z.object({
     flatlay: z.object({
+      file_uri: z.string(), // Google Files API URI
       mime_type: z.enum(['image/jpeg', 'image/png']),
-      data: z.string(), // base64 encoded
-      role: z.literal('ground_truth_colors_textures_patterns'),
+      role: z.literal('ground_truth_source'),
+      instructions: z.string().default('Absolute truth for colors, patterns, textures, details'),
     }),
     on_model: z.object({
+      file_uri: z.string(), // Google Files API URI
       mime_type: z.enum(['image/jpeg', 'image/png']),
-      data: z.string(), // base64 encoded  
-      role: z.literal('proportions_reference_only'),
+      role: z.literal('proportions_only'),
+      instructions: z.string().default('Use ONLY for fit/shape - ignore colors/materials'),
     }).optional(),
-    // Reserve third slot for future use
-    detail_crop: z.object({
+    // Reserve third slot for future interior detail support
+    interior_detail: z.object({
+      file_uri: z.string(), // Google Files API URI
       mime_type: z.enum(['image/jpeg', 'image/png']),
-      data: z.string(), // base64 encoded
-      role: z.string(), // flexible role description
+      role: z.literal('interior_construction_reference'),
+      instructions: z.string().default('Reference for hollow regions, lining, seam placement'),
+      focus_areas: z.array(z.string()).optional(), // e.g., ['neckline_interior', 'sleeve_openings']
     }).optional(),
-  }),
+  }).optional(),
   
   // === METADATA ===
   notes: z.string().optional(),
@@ -628,6 +632,36 @@ export async function consolidateAnalyses(
       recoveredFacts.continuity_rules = rawFacts.continuity_rules || {};
       recoveredFacts.notes = rawFacts.notes;
       
+      // Try to preserve enrichment data
+      recoveredFacts.labels_found = Array.isArray(rawFacts.labels_found) ? rawFacts.labels_found : [];
+      recoveredFacts.preserve_details = Array.isArray(rawFacts.preserve_details) ? rawFacts.preserve_details : [];
+      recoveredFacts.hollow_regions = Array.isArray(rawFacts.hollow_regions) ? rawFacts.hollow_regions : [];
+      recoveredFacts.construction_details = Array.isArray(rawFacts.construction_details) ? rawFacts.construction_details : [];
+      
+      // Handle enrichment objects
+      if (rawFacts.color_precision && typeof rawFacts.color_precision === 'object') {
+        recoveredFacts.color_precision = rawFacts.color_precision;
+      }
+      if (rawFacts.fabric_behavior && typeof rawFacts.fabric_behavior === 'object') {
+        recoveredFacts.fabric_behavior = rawFacts.fabric_behavior;
+      }
+      if (rawFacts.construction_precision && typeof rawFacts.construction_precision === 'object') {
+        recoveredFacts.construction_precision = rawFacts.construction_precision;
+      }
+      
+      // Handle rendering preferences
+      if (rawFacts.lighting_preference) {
+        recoveredFacts.lighting_preference = rawFacts.lighting_preference;
+      }
+      if (rawFacts.shadow_behavior) {
+        recoveredFacts.shadow_behavior = rawFacts.shadow_behavior;
+      }
+      
+      // Handle visual_references (optional, will be populated during rendering)
+      if (rawFacts.visual_references && typeof rawFacts.visual_references === 'object') {
+        recoveredFacts.visual_references = rawFacts.visual_references;
+      }
+      
       console.log('Recovered fields from raw data:', Object.keys(recoveredFacts).filter(k => rawFacts[k] !== undefined));
       
       facts_v3 = normalizeFacts(recoveredFacts);
@@ -678,6 +712,10 @@ export async function consolidateAnalyses(
       silhouette: "generic_silhouette",
       required_components: [],
       forbidden_components: [], 
+      labels_found: [],
+      preserve_details: [],
+      hollow_regions: [],
+      construction_details: [],
       palette: { dominant_hex: undefined, accent_hex: undefined, trim_hex: undefined, pattern_hexes: [] },
       material: "unspecified_material",
       weave_knit: "unknown",
