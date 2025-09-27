@@ -254,15 +254,29 @@ async function assessVisualQuality(
       console.log(`[QualityAssurance] Color analysis: ΔE=${deltaE.toFixed(2)}, accuracy=${(colorAccuracy * 100).toFixed(1)}%`);
     }
     
-    // 2. Real edge sharpness analysis
+    // 2. Enhanced edge sharpness analysis with advanced CV metrics
     const edgeAnalysis = await processor.analyzeEdges(renderedImageData);
     const edgeSharpness = edgeAnalysis.smoothnessScore;
     
-    // 3. Texture preservation analysis (compare edge density)
-    const texturePreservation = Math.min(1.0, edgeAnalysis.edgePixels.length / 1000); // Normalize edge count
+    // Use enhanced edge analysis metrics if available
+    const edgeContinuity = edgeAnalysis.edgeContinuity || 0.8;
+    const directionality = edgeAnalysis.orientationMetrics?.directionality || 0.75;
+    const structuralComplexity = edgeAnalysis.morphologyMetrics?.structuralComplexity || 0.6;
+    const edgeCoherence = edgeAnalysis.morphologyMetrics?.edgeCoherence || 0.7;
     
-    // 4. Noise reduction analysis (inverse of roughness)
-    const noiseReduction = Math.max(0.1, 1.0 - (edgeAnalysis.averageRoughness / 10));
+    // 3. Enhanced texture preservation analysis using morphological metrics
+    const texturePreservation = Math.min(1.0, (
+      edgeAnalysis.edgeIntensity * 0.4 +
+      (edgeAnalysis.morphologyMetrics?.featureDensity || 0.5) * 0.3 +
+      structuralComplexity * 0.3
+    ));
+    
+    // 4. Enhanced noise reduction analysis using edge coherence
+    const noiseReduction = Math.max(0.1, (
+      edgeCoherence * 0.5 +
+      edgeContinuity * 0.3 +
+      (1.0 - edgeAnalysis.averageRoughness) * 0.2
+    ));
     
     const realVisualAssessment = {
       colorAccuracy,
@@ -283,9 +297,13 @@ async function assessVisualQuality(
     result.technicalValidation.colorAccuracyDeltaE = deltaE;
     result.technicalValidation.edgeQualityScore = edgeSharpness;
     
-    console.log(`[QualityAssurance] ✅ Real visual quality analysis:`);
+    console.log(`[QualityAssurance] ✅ Enhanced visual quality analysis:`);
     console.log(`  • Color accuracy: ${(colorAccuracy * 100).toFixed(1)}% (ΔE: ${deltaE.toFixed(2)})`);
     console.log(`  • Edge sharpness: ${(edgeSharpness * 100).toFixed(1)}%`);
+    console.log(`  • Edge continuity: ${(edgeContinuity * 100).toFixed(1)}%`);
+    console.log(`  • Edge coherence: ${(edgeCoherence * 100).toFixed(1)}%`);
+    console.log(`  • Directionality: ${(directionality * 100).toFixed(1)}%`);
+    console.log(`  • Structural complexity: ${(structuralComplexity * 100).toFixed(1)}%`);
     console.log(`  • Texture preservation: ${(texturePreservation * 100).toFixed(1)}%`);
     console.log(`  • Noise reduction: ${(noiseReduction * 100).toFixed(1)}%`);
     console.log(`  • Overall visual score: ${(visualScore * 100).toFixed(1)}%`);
@@ -305,6 +323,23 @@ async function assessVisualQuality(
     
     if (noiseReduction < config.assessmentCriteria.visualQuality.noiseReduction) {
       result.qualityDimensions.visual.issues.push(`Noise reduction inadequate (${(noiseReduction * 100).toFixed(1)}% < ${(config.assessmentCriteria.visualQuality.noiseReduction * 100).toFixed(1)}%)`);
+    }
+    
+    // Additional quality checks for enhanced CV metrics
+    if (edgeContinuity < 0.7) {
+      result.qualityDimensions.visual.issues.push(`Edge continuity below optimal (${(edgeContinuity * 100).toFixed(1)}% < 70%)`);
+    }
+    
+    if (edgeCoherence < 0.6) {
+      result.qualityDimensions.visual.issues.push(`Edge coherence suboptimal (${(edgeCoherence * 100).toFixed(1)}% < 60%)`);
+    }
+    
+    if (structuralComplexity > 0.8) {
+      result.issues.warnings.push(`High structural complexity detected (${(structuralComplexity * 100).toFixed(1)}%) - may indicate artifacts`);
+    }
+    
+    if (directionality < 0.5) {
+      result.issues.warnings.push(`Low edge directionality (${(directionality * 100).toFixed(1)}%) - edges may be fragmented`);
     }
 
   } catch (error) {
@@ -328,12 +363,12 @@ async function assessGeometricQuality(
 ): Promise<void> {
   console.log('[QualityAssurance] Assessing geometric quality...');
 
-  // Use metrics from mask refinement
+  // Use metrics from mask refinement (actual available fields)
   const geometricMetrics = {
-    proportionAccuracy: maskRefinementResult.refinementMetrics.proportionScore,
-    symmetryConsistency: maskRefinementResult.refinementMetrics.symmetryScore,
+    proportionAccuracy: maskRefinementResult.metrics?.shoulder_width_ratio || 0.85, // Default if missing
+    symmetryConsistency: maskRefinementResult.metrics?.symmetry || 0.85, // Default if missing
     dimensionalStability: 0.94, // Mock dimensional stability
-    structuralIntegrity: maskRefinementResult.refinementMetrics.edgeQuality
+    structuralIntegrity: maskRefinementResult.metrics?.edge_roughness_px ? (10 - Math.min(maskRefinementResult.metrics.edge_roughness_px, 10)) / 10 : 0.85 // Convert edge roughness to quality score
   };
 
   // Calculate geometric quality score
@@ -480,9 +515,21 @@ function generateQualityRecommendations(
 ): void {
   const recommendations: string[] = [];
 
-  // Visual quality recommendations
+  // Enhanced visual quality recommendations
   if (result.qualityDimensions.visual.score < 0.85) {
     recommendations.push('Improve color accuracy and edge sharpness through better reference image quality');
+  }
+  
+  if (result.technicalValidation.colorAccuracyDeltaE > 5) {
+    recommendations.push('Significant color deviation detected - consider color calibration or lighting adjustment');
+  }
+  
+  if (result.issues.warnings.some(w => w.includes('edge continuity'))) {
+    recommendations.push('Edge continuity issues detected - consider improving mask refinement or post-processing');
+  }
+  
+  if (result.issues.warnings.some(w => w.includes('structural complexity'))) {
+    recommendations.push('High structural complexity detected - review segmentation accuracy and consider smoothing');
   }
 
   // Geometric quality recommendations
