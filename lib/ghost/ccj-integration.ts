@@ -348,11 +348,25 @@ function mapDrapeStiffness(enrichment: EnrichmentJSON): number {
 }
 
 function mapTransparency(enrichment: EnrichmentJSON): 'opaque' | 'semi_sheer' | 'sheer' {
-  return enrichment.fabric_behavior?.transparency_level || 'opaque';
+  // Map from enrichment transparency levels to CCJ values
+  const transparencyMap: Record<string, 'opaque' | 'semi_sheer' | 'sheer'> = {
+    'opaque': 'opaque',
+    'semi_opaque': 'semi_sheer',
+    'translucent': 'semi_sheer',
+    'sheer': 'sheer'
+  };
+  return transparencyMap[enrichment.fabric_behavior?.transparency_level || ''] || 'opaque';
 }
 
 function mapSurfaceSheen(enrichment: EnrichmentJSON): 'matte' | 'subtle_sheen' | 'glossy' {
-  return enrichment.fabric_behavior?.surface_sheen || 'matte';
+  // Map from enrichment surface sheen to CCJ values
+  const sheenMap: Record<string, 'matte' | 'subtle_sheen' | 'glossy'> = {
+    'matte': 'matte',
+    'subtle_sheen': 'subtle_sheen',
+    'glossy': 'glossy',
+    'metallic': 'glossy'  // Map metallic to glossy for CCJ
+  };
+  return sheenMap[enrichment.fabric_behavior?.surface_sheen || ''] || 'matte';
 }
 
 function calculateSizeReduction(ccjResult: CCJPipelineResult, legacyResult?: ConsolidationOutput): number {

@@ -167,7 +167,7 @@ Achieve the ghost mannequin effect through positive description rather than nega
 Generate this professional three-dimensional ghost mannequin product photograph with complete integration of both structural analysis and enrichment specifications, ensuring technical excellence and commercial appropriateness.`;
 
 /**
- * Generate dynamic prompt using Gemini Pro 2.5 by weaving FactsV3 data into Flash 2.5 template
+ * Generate dynamic prompt using Gemini 2.0 Flash-Lite by weaving FactsV3 data into Flash 2.5 template
  */
 export async function generateDynamicPrompt(
   facts: FactsV3,
@@ -185,10 +185,10 @@ export async function generateDynamicPrompt(
   }
 
   try {
-    console.log('🎯 Generating dynamic prompt with Gemini Pro 2.5...');
+    console.log('🎯 Generating dynamic prompt with Gemini 2.0 Flash-Lite...');
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-pro",
+      model: "gemini-2.0-flash-lite",
       generationConfig: {
         temperature: 0.1, // Low temperature for consistent, precise integration
         topK: 1,
@@ -226,14 +226,14 @@ ${FLASH_25_BASE_TEMPLATE}
 
 Create a natural 350-word Flash prompt with embedded garment facts and clear ghost mannequin instructions:`;
 
-    console.log('🔄 Calling Gemini Pro 2.5 for prompt integration...');
+    console.log('🔄 Calling Gemini 2.0 Flash-Lite for prompt integration...');
 
     const result = await model.generateContent(integrationPrompt);
     const response = await result.response;
     const generatedPrompt = response.text();
 
     if (!generatedPrompt) {
-      throw new Error('Empty response from Gemini Pro 2.5');
+      throw new Error('Empty response from Gemini 2.0 Flash-Lite');
     }
 
     const processingTime = Date.now() - startTime;

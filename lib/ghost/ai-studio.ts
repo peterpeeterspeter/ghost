@@ -664,6 +664,10 @@ export async function generateGhostMannequinWithAiStudio(
     );
   }
 
+  // Declare variables that need to be accessible in catch block
+  let model: any;
+  let contentParts: any[] = [];
+
   try {
     console.log('🎯 Starting AI Studio ghost mannequin generation...');
     console.log(`📊 FactsV3 fields: ${Object.keys(consolidation.facts_v3).length}`);
@@ -703,7 +707,7 @@ export async function generateGhostMannequinWithAiStudio(
     console.log('🔍 Prompt preview:', promptResult.prompt.substring(0, 200) + '...');
 
     // Step 2: Configure Gemini 2.5 Flash Image model
-    const model = genAI.getGenerativeModel({
+    model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-image-preview",
       generationConfig: {
         temperature: 0.05, // Very low temperature for consistent results
@@ -734,7 +738,7 @@ export async function generateGhostMannequinWithAiStudio(
     const flatlayMimeType = getImageMimeType(flatlayImage);
     
     // Build content parts for generation
-    const contentParts: any[] = [
+    contentParts = [
       {
         text: promptResult.prompt,
       },
@@ -786,7 +790,7 @@ export async function generateGhostMannequinWithAiStudio(
         console.log(`📦 Found ${candidate.content.parts.length} content parts in response`);
         
         // Look for inline image data
-        const imagePart = candidate.content.parts.find(part => 
+        const imagePart = candidate.content.parts.find((part: any) => 
           part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')
         );
         
@@ -859,6 +863,9 @@ export async function generateGhostMannequinWithAiStudio(
         // Retry the request once
         try {
           console.log('🔄 Retrying AI Studio request after quota reset...');
+          if (!model || !contentParts) {
+            throw new Error('Model or contentParts not initialized for retry');
+          }
           const retryResult = await model.generateContent(contentParts);
           const retryResponse = await retryResult.response;
           
@@ -867,7 +874,7 @@ export async function generateGhostMannequinWithAiStudio(
           if (candidates && candidates.length > 0) {
             const candidate = candidates[0];
             if (candidate.content && candidate.content.parts) {
-              const imagePart = candidate.content.parts.find(part => 
+              const imagePart = candidate.content.parts.find((part: any) =>
                 part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')
               );
               

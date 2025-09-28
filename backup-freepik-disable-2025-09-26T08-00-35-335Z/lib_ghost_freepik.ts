@@ -281,7 +281,7 @@ async function convertUrlToBase64(imageUrl: string): Promise<string> {
 export async function testFreepikImageGeneration(
   testImage: string
 ): Promise<{ taskId: string; result: any }> {
-  const apiKey = process.env.FREEPIK_API_KEY_DISABLED;
+  const apiKey = process.env.FREEPIK_API_KEY;
   if (!apiKey) throw new Error('Missing API key');
 
   console.log('🧪 TESTING FREEPIK API WITH MINIMAL PAYLOAD');
@@ -328,7 +328,7 @@ export async function testFreepikWithSimplePrompt(
   imageUrl1: string,
   imageUrl2: string
 ): Promise<{ taskId: string; success: boolean; error?: string }> {
-  const apiKey = process.env.FREEPIK_API_KEY_DISABLED;
+  const apiKey = process.env.FREEPIK_API_KEY;
   if (!apiKey) throw new Error('Missing API key');
 
   console.log('🧪 TESTING FREEPIK WITH SIMPLE PROMPT');
@@ -398,7 +398,7 @@ export async function generateImageWithFreepikGemini(
   referenceImage?: string
 ): Promise<{ imageBase64: string; processingTime: number }> {
   const startTime = Date.now();
-  const apiKey = process.env.FREEPIK_API_KEY_DISABLED;
+  const apiKey = process.env.FREEPIK_API_KEY;
   
   if (!apiKey) {
     throw new GhostPipelineError(
@@ -480,7 +480,7 @@ export async function generateImageWithFreepikGeminiJson(
   referenceImage?: string
 ): Promise<{ imageBase64: string; processingTime: number }> {
   const startTime = Date.now();
-  const apiKey = process.env.FREEPIK_API_KEY_DISABLED;
+  const apiKey = process.env.FREEPIK_API_KEY;
   
   if (!apiKey) {
     throw new GhostPipelineError(
@@ -537,7 +537,7 @@ export async function generateImageWithFreepikMystic(
   referenceImage?: string
 ): Promise<{ imageBase64: string; processingTime: number }> {
   const startTime = Date.now();
-  const apiKey = process.env.FREEPIK_API_KEY_DISABLED;
+  const apiKey = process.env.FREEPIK_API_KEY;
   
   if (!apiKey) {
     throw new GhostPipelineError(
@@ -651,7 +651,7 @@ export async function generateImageWithFreepikMystic(
  * Health check for Freepik API
  */
 export async function checkFreepikHealth(): Promise<{ status: string; message: string }> {
-  const apiKey = process.env.FREEPIK_API_KEY_DISABLED;
+  const apiKey = process.env.FREEPIK_API_KEY;
   
   if (!apiKey) {
     return {

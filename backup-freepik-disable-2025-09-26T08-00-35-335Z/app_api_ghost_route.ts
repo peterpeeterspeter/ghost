@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
     if (action === 'health') {
       const falApiKey = process.env.FAL_API_KEY;
       const geminiApiKey = process.env.GEMINI_API_KEY;
-      const freepikApiKey = process.env.FREEPIK_API_KEY_DISABLED;
+      const freepikApiKey = process.env.FREEPIK_API_KEY;
       const renderingModel = process.env.RENDERING_MODEL || 'freepik-gemini';
 
       const errors: string[] = [];
@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
       if (!falApiKey) errors.push('FAL_API_KEY not configured');
       if (!geminiApiKey) errors.push('GEMINI_API_KEY not configured');
       if (renderingModel === 'freepik-gemini' && !freepikApiKey) {
-        errors.push('FREEPIK_API_KEY_DISABLED not configured for freepik-gemini model');
+        errors.push('FREEPIK_API_KEY not configured for freepik-gemini model');
       }
 
       const services = {

@@ -307,9 +307,9 @@ export function extractCCJMetrics(result: CCJPipelineResult): {
   const executionSpeed = 1000 / result.execution_time_ms; // operations per second
   
   return {
-    ccj_efficiency,
-    qa_score,
-    retry_rate,
-    execution_speed
+    ccj_efficiency: ccjEfficiency,
+    qa_score: qaScore,
+    retry_rate: retryRate,
+    execution_speed: executionSpeed
   };
 }

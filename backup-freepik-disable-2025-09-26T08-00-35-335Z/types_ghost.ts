@@ -470,7 +470,6 @@ export type EnrichmentJSON = z.infer<typeof EnrichmentJSONSchema>;
 export interface BackgroundRemovalResult {
   cleanedImageUrl: string;
   processingTime: number;
-  filesApiUri?: string; // Optional Files API URI for token optimization
 }
 
 export interface GarmentAnalysisResult {

@@ -350,7 +350,7 @@ export function generateFlashJsonPayload(
         accent_hex: facts.palette?.accent_hex,
         trim_hex: facts.palette?.trim_hex,
         pattern_hexes: facts.palette?.pattern_hexes || [],
-        region_hints: facts.palette?.region_hints || {}
+        region_hints: convertRegionHintsToStringRecord(facts.palette?.region_hints) || {}
       },
       material: facts.material || "unknown",
       weave_knit: mapWeaveKnit(facts.weave_knit),
@@ -447,6 +447,20 @@ Your output must be a single, high-resolution, commercially ready image that loo
       error instanceof Error ? error : undefined
     );
   }
+}
+
+/**
+ * Helper function to convert region hints from Record<string, string[]> to Record<string, string>
+ */
+function convertRegionHintsToStringRecord(regionHints?: Record<string, string[]>): Record<string, string> {
+  if (!regionHints) return {};
+  
+  const result: Record<string, string> = {};
+  for (const [key, values] of Object.entries(regionHints)) {
+    // Join array values with commas or take the first value
+    result[key] = Array.isArray(values) ? values.join(', ') : String(values);
+  }
+  return result;
 }
 
 /**

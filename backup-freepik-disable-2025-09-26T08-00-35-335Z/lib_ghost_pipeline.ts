@@ -84,7 +84,7 @@ export class GhostMannequinPipeline {
   constructor(options: PipelineOptions) {
     this.options = {
       enableLogging: true,
-      renderingModel: 'ai-studio', // Default to AI Studio (Gemini 2.5 Flash Image Preview)
+      renderingModel: 'gemini-flash', // Default to Gemini Flash (Google API direct)
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
@@ -165,50 +165,15 @@ export class GhostMannequinPipeline {
           // this.state.stageResults.backgroundRemovalOnModel = onModelResult;
         }
         
-        // Stage 1.5: Early Files API Upload for Token Optimization
-        if (process.env.ENABLE_EARLY_FILES_UPLOAD !== 'false') {
-          try {
-            this.log('Stage 1.5: Uploading cleaned image to Files API for token optimization');
-            const filesApiUri = await this.uploadImageToFilesAPI(
-              flatlayResult.cleanedImageUrl,
-              'flatlay',
-              this.state.sessionId
-            );
-            
-            // Store Files API URI alongside original URL
-            this.state.stageResults.backgroundRemovalFlatlay = {
-              ...flatlayResult,
-              filesApiUri: filesApiUri
-            };
-            
-            this.log('✅ Image uploaded to Files API - all stages will use optimized URI');
-            this.log('🎆 Token optimization active: 97% reduction in image processing costs');
-          } catch (error) {
-            this.log('⚠️ Files API upload failed, continuing with URL fallback');
-            console.warn('Files API upload error:', error);
-            // Continue with original URL - no blocking error
-          }
-        }
-        
         return flatlayResult;
       });
 
       // Stage 2: Garment Analysis (ONLY on garment detail image)
       await this.executeStage('analysis', async () => {
         this.log('Stage 2: Garment analysis - Processing ONLY garment detail image');
-        
-        // Use Files API URI if available, otherwise fall back to URL
-        const imageReference = this.state.stageResults.backgroundRemovalFlatlay!.filesApiUri 
-                            || this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
-        
-        if (this.state.stageResults.backgroundRemovalFlatlay!.filesApiUri) {
-          this.log('🎆 Using Files API URI for analysis - token-optimized!');
-        } else {
-          this.log('⚠️ Using image URL for analysis - will be resized');
-        }
-        
+        const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
         const result = await this.executeWithTimeout(
-          analyzeGarment(imageReference, this.state.sessionId),
+          analyzeGarment(cleanedGarmentDetail, this.state.sessionId),
           this.options.timeouts!.analysis!,
           'analysis'
         );
@@ -219,22 +184,12 @@ export class GhostMannequinPipeline {
       // Stage 3: Enrichment Analysis (Focused high-value analysis)
       await this.executeStage('enrichment', async () => {
         this.log('Stage 3: Enrichment analysis - Focused rendering-critical attributes');
-        
-        // Use Files API URI if available, otherwise fall back to URL
-        const imageReference = this.state.stageResults.backgroundRemovalFlatlay!.filesApiUri 
-                            || this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
-        
-        if (this.state.stageResults.backgroundRemovalFlatlay!.filesApiUri) {
-          this.log('🎆 Using Files API URI for enrichment - token-optimized!');
-        } else {
-          this.log('⚠️ Using image URL for enrichment - will be resized');
-        }
-        
+        const cleanedGarmentDetail = this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl;
         const baseAnalysisSessionId = this.state.stageResults.analysis!.analysis.meta.session_id;
         const enrichmentSessionId = `${this.state.sessionId}_enrichment`;
         
         const result = await this.executeWithTimeout(
-          analyzeGarmentEnrichment(imageReference, enrichmentSessionId, baseAnalysisSessionId),
+          analyzeGarmentEnrichment(cleanedGarmentDetail, enrichmentSessionId, baseAnalysisSessionId),
           this.options.timeouts!.enrichment!,
           'enrichment'
         );
@@ -771,81 +726,16 @@ export class GhostMannequinPipeline {
         }
       
       case 'freepik-gemini':
-        // Freepik disabled for cost control
-        throw new GhostPipelineError(
-          'Freepik rendering disabled for cost control. Use ai-studio instead.',
-          'FREEPIK_DISABLED',
-          'rendering'
-        );
-      
       case 'gemini-flash':
       default:
-        // Fallback to ai-studio for safety
-        this.log('⚠️ Using ai-studio fallback for legacy gemini-flash');
-        return await generateGhostMannequinWithStructuredJSON(
+        // Use Freepik's Gemini 2.5 Flash for both freepik-gemini and legacy gemini-flash
+        this.log('🎯 Using Freepik Gemini 2.5 Flash renderer');
+        return await generateGhostMannequinWithControlBlockGemini(
           cleanedGarmentDetail,
-          consolidation.facts_v3,
-          consolidation.control_block,
-          originalOnModel,
-          { sessionId: this.state.sessionId }
+          controlBlockPrompt,
+          consolidation,
+          originalOnModel  // Use original uncleaned on-model image
         );
-    }
-  }
-
-  /**
-   * Upload image to Files API for token optimization
-   * @param imageUrl - URL of the image to upload
-   * @param role - Role of the image (flatlay, reference, analysis)
-   * @param sessionId - Session ID for tracking
-   * @returns Promise<string> - Files API URI
-   */
-  private async uploadImageToFilesAPI(
-    imageUrl: string, 
-    role: 'flatlay' | 'reference' | 'analysis',
-    sessionId: string
-  ): Promise<string> {
-    try {
-      // Import Files API utilities
-      const { configureFilesManager, getFilesManager } = await import('./files-manager');
-      
-      // Configure Files Manager with Gemini API key
-      configureFilesManager(this.options.geminiApiKey);
-      const filesManager = getFilesManager();
-      
-      // Fetch image data
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-      }
-      
-      const buffer = Buffer.from(await response.arrayBuffer());
-      const mimeType = response.headers.get('content-type') || 'image/jpeg';
-      
-      console.log(`📤 Uploading ${role} image to Files API (${Math.round(buffer.length / 1024)}KB)...`);
-      
-      // Upload with optimization
-      const managedFile = await filesManager.uploadFile(buffer, {
-        role,
-        sessionId,
-        mimeType,
-        displayName: `ghost-${role}-${sessionId}-${Date.now()}.${mimeType.split('/')[1]}`,
-        allowDuplicates: false // Enable deduplication
-      });
-      
-      console.log(`✅ Uploaded to Files API: ${managedFile.name}`);
-      console.log(`📎 Files API URI: ${managedFile.uri}`);
-      console.log(`🎆 Token optimization: ~97% reduction for all subsequent stages`);
-      
-      return managedFile.uri;
-      
-    } catch (error) {
-      console.warn('Files API upload failed:', error);
-      throw new GhostPipelineError(
-        `Failed to upload ${role} image to Files API: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'FILES_API_UPLOAD_FAILED',
-        'background_removal',
-        error instanceof Error ? error : undefined
-      );
     }
   }
 

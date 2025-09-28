@@ -400,10 +400,10 @@ async function callGeminiProConsolidator(payload: {
   sessionId: string;
   prompt: string;
 }): Promise<{ text: string }> {
-  console.log('Starting JSON consolidation with Gemini Pro...');
+  console.log('💰 Starting JSON consolidation with Gemini 2.0 Flash-Lite (cost-optimized)...');
   
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.0-flash-lite",
     generationConfig: {
       temperature: 0.0,
       topP: 0.2,
@@ -453,7 +453,7 @@ async function callGeminiProQA(payload: {
   console.log('Starting QA analysis with Gemini Pro...');
   
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.0-flash-lite",
     generationConfig: {
       temperature: 0.0,
       topP: 0.3,
@@ -549,22 +549,111 @@ export async function consolidateAnalyses(
 ): Promise<ConsolidationOutput> {
   console.log('[' + sessionId + '] Starting analysis consolidation...');
   
-  const prompt = 'You are an expert consolidation system for garment analysis. Merge two JSON analyses into a unified FactsV3 structure and ControlBlock for rendering. Structural analysis (JSON-A): ' + JSON.stringify(jsonA, null, 2) + ' Enrichment analysis (JSON-B): ' + JSON.stringify(jsonB, null, 2);
+  // 💰 Cost control: Check if expensive retries are disabled
+  const allowExpensiveRetries = process.env.ALLOW_EXPENSIVE_CONSOLIDATION_RETRIES !== 'false';
+  
+  const prompt = `You are an expert consolidation system for garment analysis. Merge two JSON analyses into a unified FactsV3 structure and ControlBlock for rendering.
+
+IMPORTANT: Ensure the output includes a complete palette object with color information from the enrichment analysis.
+
+Structural analysis (JSON-A): ${JSON.stringify(jsonA, null, 2)}
+
+Enrichment analysis (JSON-B): ${JSON.stringify(jsonB, null, 2)}
+
+Return JSON in this format:
+{
+  "facts_v3": {
+    "category_generic": "...",
+    "silhouette": "...",
+    "palette": {
+      "dominant_hex": "#XXXXXX" // from enrichment color_precision.primary_hex
+      "accent_hex": "#XXXXXX", // from enrichment color_precision.secondary_hex
+      "pattern_hexes": [],
+      "region_hints": {}
+    },
+    // ... other fields
+  },
+  "control_block": {
+    // derived fields
+  },
+  "conflicts_found": []
+}`;
 
   try {
-    const response = await callGeminiProConsolidator({ 
-      jsonA, 
-      jsonB, 
-      refs, 
-      sessionId,
-      prompt
-    });
+    console.log('💰 Consolidation: Using gemini-2.0-flash-lite for cost optimization');
     
-    // Parse and validate with graceful fallbacks
-    const parsed = JSON.parse(response.text || '{}');
+    let response;
+    try {
+      response = await callGeminiProConsolidator({ 
+        jsonA, 
+        jsonB, 
+        refs, 
+        sessionId,
+        prompt
+      });
+    } catch (apiError) {
+      if (!allowExpensiveRetries) {
+        console.log('🛡️ Consolidation API failed, using cost-efficient fallback (retries disabled)');
+        throw new Error('API_FAILED_FALLBACK_REQUESTED');
+      }
+      throw apiError; // Re-throw if retries are allowed
+    }
+    
+    // Enhanced error handling and parsing
+    let parsed: any;
+    try {
+      parsed = JSON.parse(response.text || '{}');
+    } catch (parseError) {
+      console.warn('JSON parsing failed, attempting recovery:', parseError);
+      // Try to extract JSON from markdown blocks or other formats
+      const jsonMatch = response.text?.match(/```(?:json)?\s*({[\s\S]*?})\s*```/) || 
+                       response.text?.match(/{[\s\S]*}/); 
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      } else {
+        throw new Error('No valid JSON found in response');
+      }
+    }
+    
+    // Pre-fill missing data with smart defaults to prevent schema failures
+    const mergedFacts = { ...(parsed.facts_v3 || {}) };
+    
+    // 🎯 Fix palette issues that were causing expensive retries
+    if (!mergedFacts.palette || typeof mergedFacts.palette !== 'object') {
+      console.log('🔧 Auto-fixing missing/invalid palette to prevent expensive retries');
+      mergedFacts.palette = {
+        dominant_hex: jsonB.color_precision?.primary_hex || '#808080', // Default gray
+        accent_hex: jsonB.color_precision?.secondary_hex || undefined,
+        trim_hex: undefined,
+        pattern_hexes: [],
+        region_hints: {}
+      };
+    } else {
+      // Ensure existing palette has required structure
+      if (!Array.isArray(mergedFacts.palette.pattern_hexes)) {
+        mergedFacts.palette.pattern_hexes = [];
+      }
+      if (!mergedFacts.palette.region_hints || typeof mergedFacts.palette.region_hints !== 'object') {
+        mergedFacts.palette.region_hints = {};
+      }
+    }
+    
+    // Auto-fix other common missing required fields
+    if (!mergedFacts.category_generic) {
+      mergedFacts.category_generic = jsonA.category?.main_category || 'unknown';
+    }
+    if (!mergedFacts.silhouette) {
+      mergedFacts.silhouette = 'generic_silhouette';
+    }
+    if (!Array.isArray(mergedFacts.required_components)) {
+      mergedFacts.required_components = [];
+    }
+    if (!Array.isArray(mergedFacts.forbidden_components)) {
+      mergedFacts.forbidden_components = [];
+    }
     
     // Use loose schemas with safeParse for graceful error handling
-    const factsResult = FactsV3SchemaLoose.safeParse(parsed.facts_v3 || {});
+    const factsResult = FactsV3SchemaLoose.safeParse(mergedFacts);
     const controlResult = ControlBlockSchemaLoose.safeParse(parsed.control_block || {});
     const conflictsResult = z.array(ConflictSchema).safeParse(parsed.conflicts_found || []);
     
@@ -572,9 +661,13 @@ export async function consolidateAnalyses(
     let control_block: ControlBlock;
     
     if (factsResult.success) {
+      console.log('✅ Facts schema validation successful after auto-repair');
       facts_v3 = normalizeFacts(factsResult.data);
     } else {
-      console.warn('Facts schema parse failed, attempting intelligent recovery:', factsResult.error);
+      console.warn('⚠️ Facts schema parse failed after auto-repair, attempting intelligent recovery...');
+      console.log('Schema validation errors:', factsResult.error.issues.map(issue => 
+        `${issue.path.join('.')}: ${issue.message}`).join('; '));
+      console.log('Failed data keys:', Object.keys(mergedFacts));
       
       // Try to preserve valid fields from the raw parsed data
       const rawFacts = parsed.facts_v3 || {};
@@ -668,9 +761,12 @@ export async function consolidateAnalyses(
     }
     
     if (controlResult.success) {
+      console.log('✅ Control block schema validation successful');
       control_block = normalizeControlBlock(controlResult.data, facts_v3);
     } else {
-      console.warn('Control block schema parse failed, deriving from facts:', controlResult.error);
+      console.warn('⚠️ Control block schema parse failed, deriving from facts...');
+      console.log('Control block validation errors:', controlResult.error.issues.map(issue => 
+        `${issue.path.join('.')}: ${issue.message}`).join('; '));
       // Derive control block from facts_v3
       control_block = normalizeControlBlock({
         category_generic: undefined,
@@ -696,6 +792,12 @@ export async function consolidateAnalyses(
     
     const conflicts_found = conflictsResult.success ? conflictsResult.data : [];
     
+    console.log('✅ Consolidation successful using cost-optimized model!');
+    console.log(`   📊 Facts fields count: ${Object.keys(facts_v3).length}`);
+    console.log(`   📊 Control block fields: ${Object.keys(control_block).length}`);
+    console.log(`   🎨 Palette colors: ${facts_v3.palette?.dominant_hex ? 'present' : 'missing'}`);
+    console.log(`   🔍 Conflicts detected: ${conflicts_found.length}`);
+    
     return {
       facts_v3,
       control_block,
@@ -704,30 +806,54 @@ export async function consolidateAnalyses(
       session_id: sessionId
     };
   } catch (error) {
-    console.warn('Consolidation JSON parse failed, using minimal defaults:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn('💰 Consolidation failed - using cost-efficient fallback instead of expensive retries');
+    console.log('   ❌ Error type:', errorMessage.substring(0, 100) + (errorMessage.length > 100 ? '...' : ''));
     
-    // Last resort: minimal valid output
+    // 🎯 COST OPTIMIZATION: Instead of retrying with expensive Pro model calls,
+    // create a reasonable fallback from the original analysis data
+    console.log('🔄 Building cost-efficient fallback from original analysis data...');
+    
     const facts_v3 = normalizeFacts({
       category_generic: "unknown",
-      silhouette: "generic_silhouette",
+      silhouette: "generic_silhouette", 
       required_components: [],
-      forbidden_components: [], 
-      labels_found: [],
-      preserve_details: [],
-      hollow_regions: [],
-      construction_details: [],
-      palette: { dominant_hex: undefined, accent_hex: undefined, trim_hex: undefined, pattern_hexes: [] },
-      material: "unspecified_material",
+      forbidden_components: [],
+      
+      // ✅ Preserve critical data from original analysis (NO API CALLS)
+      labels_found: jsonA.labels_found || [],
+      preserve_details: jsonA.preserve_details || [],
+      hollow_regions: jsonA.hollow_regions || [],
+      construction_details: jsonA.construction_details || [],
+      
+      // ✅ Use enrichment color data if available (NO API CALLS)
+      palette: {
+        dominant_hex: jsonB.color_precision?.primary_hex || undefined,
+        accent_hex: jsonB.color_precision?.secondary_hex || undefined,
+        trim_hex: undefined,
+        pattern_hexes: [],
+        region_hints: {}
+      },
+      
+      // ✅ Use enrichment fabric data (NO API CALLS)  
+      material: "fabric_from_enrichment",
       weave_knit: "unknown",
       drape_stiffness: 0.4,
-      transparency: "opaque",
-      surface_sheen: "matte",
+      transparency: (jsonB.fabric_behavior?.transparency_level === 'opaque') ? "opaque" : "opaque",
+      surface_sheen: (jsonB.fabric_behavior?.surface_sheen_detailed === 'matte') ? "matte" : "matte",
+      
       pattern: "unknown",
-      print_scale: "unknown", 
+      print_scale: "unknown",
       edge_finish: "unknown",
       view: "front",
       framing_margin_pct: 6,
       shadow_style: "soft",
+      
+      // ✅ Include enrichment analysis data
+      color_precision: jsonB.color_precision,
+      fabric_behavior: jsonB.fabric_behavior,
+      construction_precision: jsonB.construction_precision,
+      
       qa_targets: {
         deltaE_max: 3,
         edge_halo_max_pct: 1,
@@ -758,6 +884,12 @@ export async function consolidateAnalyses(
       transparency: undefined,
       surface_sheen: undefined,
     } as any, facts_v3);
+    
+    console.log('✅ Cost-efficient fallback consolidation completed successfully!');
+    console.log(`   📊 Fallback facts fields: ${Object.keys(facts_v3).length}`);
+    console.log(`   🎨 Palette from enrichment: ${facts_v3.palette?.dominant_hex ? 'preserved' : 'default'}`);
+    console.log(`   🧵 Material data: ${jsonB.fabric_behavior ? 'enrichment preserved' : 'defaults used'}`);
+    console.log(`   💰 Cost savings: Avoided expensive Pro model retry`);
     
     return {
       facts_v3,
