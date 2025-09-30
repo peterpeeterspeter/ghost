@@ -1,0 +1,46 @@
+[
+  {
+    "testNumber": 1,
+    "imageName": "hemd.jpg",
+    "success": true,
+    "processingTime": 60994,
+    "cleanedImageUrl": "https://v3.fal.media/files/tiger/vMAWOuAbhp-5ms0vxKb4B.jpeg",
+    "analysisLabels": 1,
+    "analysisDetails": 4,
+    "sessionId": "54a2b619-56a7-4eb3-9a7d-00114e64f53d",
+    "error": null
+  },
+  {
+    "testNumber": 2,
+    "imageName": "eat trui.jpg",
+    "success": true,
+    "processingTime": 52719,
+    "cleanedImageUrl": "https://v3.fal.media/files/elephant/8gBYapsb80xiHoOeQiByx.jpeg",
+    "analysisLabels": 1,
+    "analysisDetails": 5,
+    "sessionId": "e34b654e-6734-4f41-904e-c835430bbcb9",
+    "error": null
+  },
+  {
+    "testNumber": 3,
+    "imageName": "singlet Detail.jpg",
+    "success": true,
+    "processingTime": 50877,
+    "cleanedImageUrl": "https://v3.fal.media/files/monkey/oaPuAp15vK7bdbRysqM0s.jpeg",
+    "analysisLabels": 2,
+    "analysisDetails": 3,
+    "sessionId": "46c3435b-2774-490c-9eee-86983ec3dc13",
+    "error": null
+  },
+  {
+    "testNumber": 4,
+    "imageName": "wide detail.JPG",
+    "success": true,
+    "processingTime": 54732,
+    "cleanedImageUrl": "https://v3.fal.media/files/penguin/Bf26hFe9K5qRT8w9BWeZb.jpeg",
+    "analysisLabels": 1,
+    "analysisDetails": 5,
+    "sessionId": "47368bdd-77b9-4bed-9b1f-2d83080debff",
+    "error": null
+  }
+]

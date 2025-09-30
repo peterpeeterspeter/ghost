@@ -1,0 +1,196 @@
+{
+  "sessionId": "c8adca70-ec8a-4709-942e-446f26e77097",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "78.70s",
+    "stageTimings": {
+      "backgroundRemoval": 12184,
+      "analysis": 6692,
+      "enrichment": 5911,
+      "consolidation": 1759216944814,
+      "rendering": 22472,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/kangaroo/DrsUSP2wkujKU5qMLPoXc.jpeg",
+  "renderUrl": "https://v3.fal.media/files/penguin/7QCbWlTdtTcxtv-fcSrUd_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "c8adca70-ec8a-4709-942e-446f26e77097"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "neckline",
+        "bbox_norm": [
+          0.38,
+          0.13,
+          0.45,
+          0.17
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.9,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "fringe trim",
+        "priority": "critical",
+        "location": "neckline",
+        "region_bbox_norm": [
+          0.37,
+          0.16,
+          0.63,
+          0.2
+        ],
+        "notes": "Fringe trim along the neckline."
+      },
+      {
+        "element": "pattern",
+        "priority": "critical",
+        "location": "overall",
+        "region_bbox_norm": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "notes": "The garment has a unique pattern that needs to be preserved."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true
+      },
+      {
+        "region_type": "sleeves",
+        "keep_hollow": true,
+        "inner_visible": false
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "kimono style",
+        "silhouette_rule": "loose and flowing",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "sleeve construction",
+        "silhouette_rule": "wide sleeves",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "edge_fidelity_required": true,
+      "color_authority": true
+    },
+    "special_handling": "Preserve the fringe trim and the unique pattern. Maintain the kimono style and wide sleeves."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "dress",
+      "silhouette": "kimono",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#0080ff",
+        "accent_hex": "#ff0080",
+        "trim_hex": "#ff0080",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "unspecified_material",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "continuity_rules": {},
+      "labels_found": [],
+      "preserve_details": [
+        {
+          "element": "fringe trim",
+          "location": "neckline",
+          "region_bbox_norm": [
+            0.37,
+            0.16,
+            0.63,
+            0.2
+          ],
+          "notes": "Fringe trim along the neckline."
+        },
+        {
+          "element": "pattern",
+          "location": "overall",
+          "region_bbox_norm": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "notes": "The garment has a unique pattern that needs to be preserved."
+        }
+      ],
+      "hollow_regions": [],
+      "construction_details": []
+    },
+    "control_block": {
+      "category_generic": "dress",
+      "silhouette": "kimono",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#0080ff",
+        "accent_hex": "#ff0080",
+        "trim_hex": "#ff0080",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "unspecified_material",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "continuity_rules": {},
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

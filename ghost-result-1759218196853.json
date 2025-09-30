@@ -1,0 +1,266 @@
+{
+  "sessionId": "1ebd79fa-569e-4993-ba25-1931b58701f9",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "64.52s",
+    "stageTimings": {
+      "backgroundRemoval": 13461,
+      "analysis": 4402,
+      "enrichment": 2025,
+      "consolidation": 1759218174532,
+      "rendering": 22296,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/penguin/l3dcVqnOuCsHvsuM2Jfw8.jpeg",
+  "renderUrl": "https://v3.fal.media/files/monkey/-1UQCg-OTjPpwrou-TVbK_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "1ebd79fa-569e-4993-ba25-1931b58701f9"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "interior_neckline",
+        "bbox_norm": [
+          0.448,
+          0.397,
+          0.558,
+          0.421
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "Front Opening Trim (Fringe/Lace)",
+        "priority": "critical",
+        "location": "center_front_opening",
+        "region_bbox_norm": [
+          0.305,
+          0.34,
+          0.695,
+          0.85
+        ],
+        "notes": "Brownish/tan fringe trim with white crocheted/lace edging running along the entire front opening."
+      },
+      {
+        "element": "Main Body Print (Stripes/Bands)",
+        "priority": "important",
+        "location": "body_and_sleeves",
+        "region_bbox_norm": [
+          0,
+          0.25,
+          1,
+          0.85
+        ],
+        "notes": "Complex, multi-colored block print featuring horizontal bands of patterns: green wave/diamond motif, pink/red patterned band, and solid blue sections with white/cream leaf motifs."
+      },
+      {
+        "element": "Center Panel Print",
+        "priority": "important",
+        "location": "center_front_interior_facing",
+        "region_bbox_norm": [
+          0.35,
+          0.42,
+          0.65,
+          0.85
+        ],
+        "notes": "Cream/off-white background with a repeating small blue geometric/quatrefoil pattern."
+      },
+      {
+        "element": "Sleeve Hem Finish",
+        "priority": "important",
+        "location": "sleeve_cuffs",
+        "region_bbox_norm": [
+          0,
+          0.65,
+          0.25,
+          0.85
+        ],
+        "notes": "Sleeves appear to be finished with a simple turned-up hem, showing the exterior print pattern continuity."
+      }
+    ],
+    "interior_analysis": [
+      {
+        "surface_type": "collar_interior",
+        "priority": "critical",
+        "location": "neckline_interior",
+        "region_bbox_norm": [
+          0.38,
+          0.36,
+          0.62,
+          0.42
+        ],
+        "pattern_description": "Small repeating blue geometric/quatrefoil pattern on cream background.",
+        "material_description": "Lightweight woven fabric, likely cotton or rayon, with block print.",
+        "color_hex": "#F5F5DC",
+        "construction_notes": "The interior collar lining appears to be the same fabric as the main body's center panel (cream with blue pattern).",
+        "edge_definition": "The edge where the collar meets the exterior trim is visible."
+      },
+      {
+        "surface_type": "reverse_side",
+        "priority": "important",
+        "location": "interior_facing_panels",
+        "region_bbox_norm": [
+          0.35,
+          0.42,
+          0.65,
+          0.85
+        ],
+        "pattern_description": "Small repeating blue geometric/quatrefoil pattern on cream background.",
+        "material_description": "Lightweight woven fabric, likely cotton or rayon, with block print.",
+        "color_hex": "#F5F5DC",
+        "construction_notes": "The reverse side of the main body fabric is visible where the garment opens, showing the same pattern as the center panel.",
+        "edge_definition": "The reverse side is visible along the front opening edges, underneath the trim."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "The interior facing fabric (cream with blue pattern) is visible.",
+        "edge_sampling_notes": "The front opening is heavily trimmed, but the interior fabric is visible deep inside the opening."
+      },
+      {
+        "region_type": "armholes",
+        "keep_hollow": false,
+        "inner_visible": false,
+        "inner_description": "Not clearly visible.",
+        "edge_sampling_notes": "Armholes are not clearly visible as the garment is laid flat, but they are likely finished simply due to the unstructured nature."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Kimono/Open Front Style",
+        "silhouette_rule": "Drapey, unstructured open front jacket/cardigan.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Wide, Straight Sleeves",
+        "silhouette_rule": "Loose, elbow-length or three-quarter length sleeves typical of a kimono cut.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Front Opening Binding",
+        "silhouette_rule": "The front opening is defined by a thick, textured trim (fringe/lace) applied over the seam allowance, giving structure to the opening.",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": false,
+      "print_direction_notes": "The print is complex and directional in parts (stripes), but the overall garment shape is symmetrical.",
+      "color_authority": true
+    },
+    "special_handling": "Garment features highly saturated, multi-colored block prints. Ensure color fidelity is maintained. The fringe trim along the opening is a key textural element that must be preserved accurately."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "Kimono/Open Front",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [],
+      "hollow_regions": [],
+      "construction_details": [],
+      "palette": {
+        "dominant_hex": "#F0F0D0",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F5F5DC",
+          "#1E90FF"
+        ],
+        "region_hints": {
+          "main_body_print": [
+            "Complex",
+            "multi-colored block print featuring green",
+            "pink/red",
+            "and blue/cream motifs."
+          ],
+          "trim": [
+            "Brownish/tan fringe with white edging."
+          ]
+        }
+      },
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "material": "unspecified_material",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "Kimono/Open Front",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#F0F0D0",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F5F5DC",
+          "#1E90FF"
+        ],
+        "region_hints": {
+          "main_body_print": [
+            "Complex",
+            "multi-colored block print featuring green",
+            "pink/red",
+            "and blue/cream motifs."
+          ],
+          "trim": [
+            "Brownish/tan fringe with white edging."
+          ]
+        }
+      },
+      "material": "unspecified_material",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "sessionId": "b9faa9d1-513a-41e8-898f-6eaee06332ed",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "70.97s",
+    "stageTimings": {
+      "backgroundRemoval": 14362,
+      "analysis": 3382,
+      "enrichment": 2393,
+      "consolidation": 1759217422039,
+      "rendering": 21728,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/tiger/dgVUI7PfuKxUhLq4VFHGE.jpeg",
+  "renderUrl": "https://v3.fal.media/files/monkey/0gL0p0Qwhoi5Uu140dIhI_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "b9faa9d1-513a-41e8-898f-6eaee06332ed"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "inside_neckline",
+        "bbox_norm": [
+          0.437,
+          0.335,
+          0.565,
+          0.375
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "Front Opening Trim",
+        "priority": "critical",
+        "location": "center_front_opening",
+        "region_bbox_norm": [
+          0.28,
+          0.28,
+          0.72,
+          0.85
+        ],
+        "notes": "Brown/tan fringe trim with white lace/crochet edging along the entire front opening."
+      },
+      {
+        "element": "Main Body Print (Blue/Cream)",
+        "priority": "important",
+        "location": "center_front_panel",
+        "region_bbox_norm": [
+          0.32,
+          0.37,
+          0.68,
+          0.85
+        ],
+        "notes": "Cream background with repeating blue stylized floral/quatrefoil pattern."
+      },
+      {
+        "element": "Sleeve/Side Panel Print (Striped)",
+        "priority": "important",
+        "location": "sleeves_and_sides",
+        "region_bbox_norm": [
+          0,
+          0.25,
+          0.35,
+          0.85
+        ],
+        "notes": "Multi-colored horizontal stripes featuring pink, green, and cream patterns, likely block printed."
+      },
+      {
+        "element": "Sleeve Cuff Edge",
+        "priority": "nice_to_have",
+        "location": "sleeve_ends",
+        "region_bbox_norm": [
+          0,
+          0.75,
+          0.3,
+          0.95
+        ],
+        "notes": "The sleeve ends appear folded up, showing the continuation of the striped pattern."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "The interior fabric visible at the opening matches the central blue/cream pattern.",
+        "edge_sampling_notes": "The opening is defined by the heavy fringe trim."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Kimono/Open Front Style",
+        "silhouette_rule": "Drapey, unstructured open front jacket/cardigan.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Wide, Straight Sleeves",
+        "silhouette_rule": "Loose, elbow-length or three-quarter sleeves with a wide opening.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Front Opening Binding",
+        "silhouette_rule": "The front opening is heavily trimmed with fringe, which adds weight and defines the front edges.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Panel Construction",
+        "silhouette_rule": "The garment uses different patterned fabric panels for the center body versus the sides/sleeves.",
+        "critical_for_structure": false
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": true,
+      "print_direction_notes": "The print patterns (stripes and central motif) must maintain their orientation relative to the garment structure.",
+      "color_authority": true
+    },
+    "special_handling": "The heavy fringe trim along the front opening requires careful masking/cloning to ensure it appears correctly against the background when ghosting the garment."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "Drapey, unstructured open front jacket/cardigan.",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [],
+      "hollow_regions": [],
+      "construction_details": [],
+      "palette": {
+        "dominant_hex": "#F0F0D0",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#1E90FF",
+          "#F0F0D0"
+        ],
+        "region_hints": {
+          "center_front_panel": [
+            "Cream background with repeating blue stylized floral/quatrefoil pattern."
+          ],
+          "sleeves_and_sides": [
+            "Multi-colored horizontal stripes featuring pink",
+            "green",
+            "and cream patterns."
+          ]
+        }
+      },
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "material": "unspecified_material",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "Drapey, unstructured open front jacket/cardigan.",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#F0F0D0",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#1E90FF",
+          "#F0F0D0"
+        ],
+        "region_hints": {
+          "center_front_panel": [
+            "Cream background with repeating blue stylized floral/quatrefoil pattern."
+          ],
+          "sleeves_and_sides": [
+            "Multi-colored horizontal stripes featuring pink",
+            "green",
+            "and cream patterns."
+          ]
+        }
+      },
+      "material": "unspecified_material",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

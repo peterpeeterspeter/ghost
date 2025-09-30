@@ -1,0 +1,182 @@
+{
+  "sessionId": "24e55ace-24d9-412b-b890-0c8a33f8c4a6",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "72.88s",
+    "stageTimings": {
+      "backgroundRemoval": 15353,
+      "analysis": 6379,
+      "enrichment": 5211,
+      "consolidation": 1759217022628,
+      "rendering": 24097,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/tiger/JsJ04dsofUnv11SpGWARF.jpeg",
+  "renderUrl": "https://v3.fal.media/files/lion/U-uCZAPx1cndSlqWXuRFf_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "24e55ace-24d9-412b-b890-0c8a33f8c4a6"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "neckline",
+        "bbox_norm": [
+          0.39,
+          0.18,
+          0.46,
+          0.21
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "fringe trim",
+        "priority": "critical",
+        "location": "neckline",
+        "region_bbox_norm": [
+          0.38,
+          0.18,
+          0.62,
+          0.22
+        ],
+        "notes": "Fringe trim along the neckline."
+      },
+      {
+        "element": "printed pattern",
+        "priority": "critical",
+        "location": "overall garment",
+        "region_bbox_norm": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "notes": "The garment has a complex printed pattern with multiple colors and designs."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true
+      },
+      {
+        "region_type": "sleeves",
+        "keep_hollow": true,
+        "inner_visible": true
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "open front",
+        "silhouette_rule": "loose fit",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "kimono sleeves",
+        "silhouette_rule": "wide sleeves",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "edge_fidelity_required": true,
+      "color_authority": true
+    },
+    "special_handling": "Preserve the fringe trim and the complex printed pattern. Maintain the open front and kimono sleeve construction."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "dress",
+      "silhouette": "loose fit",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [],
+      "hollow_regions": [],
+      "construction_details": [
+        {
+          "feature": "open front",
+          "silhouette_rule": "loose fit",
+          "critical_for_structure": true
+        },
+        {
+          "feature": "kimono sleeves",
+          "silhouette_rule": "wide sleeves",
+          "critical_for_structure": true
+        }
+      ],
+      "palette": {
+        "dominant_hex": "#008080",
+        "accent_hex": "#F08080",
+        "trim_hex": "#F08080",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "material": "unspecified_material",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "dress",
+      "silhouette": "loose fit",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#008080",
+        "accent_hex": "#F08080",
+        "trim_hex": "#F08080",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "unspecified_material",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

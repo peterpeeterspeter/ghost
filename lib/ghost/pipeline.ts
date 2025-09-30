@@ -43,6 +43,7 @@ interface PipelineOptions {
   supabaseKey?: string;
   enableLogging?: boolean;
   renderingModel?: 'freepik-gemini' | 'gemini-flash' | 'seedream' | 'ai-studio'; // Simple model choice for rendering only
+  outputType?: 'ghost-mannequin' | 'flatlay'; // Output type: 3D ghost mannequin or enhanced flatlay
   timeouts?: {
     backgroundRemoval?: number;
     analysis?: number;
@@ -86,6 +87,7 @@ export class GhostMannequinPipeline {
     this.options = {
       enableLogging: true,
       renderingModel: 'ai-studio', // Default to AI Studio (Gemini 2.5 Flash Image Preview)
+      outputType: 'ghost-mannequin', // Default to ghost mannequin output
       timeouts: {
         backgroundRemoval: 30000, // 30 seconds
         analysis: 90000,          // 90 seconds (increased for complex analysis)
@@ -324,11 +326,43 @@ export class GhostMannequinPipeline {
         }
       });
 
-      // Stage 5: Ghost Mannequin Generation (Using Control Block) - Skip if CCJ handled it
+      // Stage 5: Ghost Mannequin Generation or Flatlay Enhancement (Using Control Block) - Skip if CCJ handled it
       if (!this.state.stageResults.rendering) {
         await this.executeStage('rendering', async () => {
-          this.log(`Stage 5: Ghost mannequin generation - Using control block with ${this.options.renderingModel} model`);
+          const outputType = this.options.outputType || 'ghost-mannequin';
+          const isFlatlayOutput = outputType === 'flatlay';
+          
+          console.log('🔍 DEBUG OUTPUT TYPE:', {
+            outputType,
+            isFlatlayOutput,
+            optionsOutputType: this.options.outputType,
+            willUseFlatlay: isFlatlayOutput ? 'YES - FLATLAY ROUTE' : 'NO - GHOST MANNEQUIN ROUTE'
+          });
+          
+          this.log(`Stage 5: ${isFlatlayOutput ? '🎨 FLATLAY ENHANCEMENT' : 'Ghost mannequin generation'} - Using control block with ${this.options.renderingModel} model`);
           const consolidation = this.state.stageResults.consolidation!;
+          
+          // CRITICAL: Check flatlay output FIRST before any other rendering logic
+          if (isFlatlayOutput) {
+            this.log('🎨 Routing to flatlay enhancement pipeline...');
+            const { generateEnhancedFlatlay } = await import('./ai-studio');
+            
+            const result = await this.executeWithTimeout(
+              generateEnhancedFlatlay(
+                consolidation,
+                this.state.stageResults.backgroundRemovalFlatlay!.cleanedImageUrl,
+                { sessionId: this.state.sessionId }
+              ),
+              this.options.timeouts!.rendering!,
+              'rendering'
+            );
+            this.state.stageResults.rendering = result;
+            return result;
+          }
+          
+          // ============================================================
+          // GHOST MANNEQUIN RENDERING (below this point)
+          // ============================================================
         
         // Check if user requested structured prompts - this takes priority over environment settings
         const userRequestedStructured = this.state.originalRequest?.options?.useStructuredPrompt;

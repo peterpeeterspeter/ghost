@@ -9,6 +9,92 @@ export function configurePromptGenerator(apiKey: string): void {
   genAI = new GoogleGenerativeAI(apiKey);
 }
 
+// Enhanced Flatlay Base Template - Professional flatlay with AI-enhanced quality
+const FLATLAY_BASE_TEMPLATE = `Create a professionally enhanced flatlay photograph for e-commerce product display, elevating the original flatlay image with superior lighting, perfect color accuracy, and optimal presentation while maintaining the authentic flat lay perspective.
+
+## DETAILED SCENE NARRATIVE:
+
+Imagine a high-end commercial photography studio with perfect, even lighting and a pristine pure white background (#FFFFFF). A garment is laid out completely flat in perfect symmetry, as if carefully arranged by a professional product stylist. The fabric displays natural texture and authentic drape in its flat state, with colors rendered with absolute precision. Every detail is sharp and clearly visible, from fabric weave to construction elements. This is captured with professional photography equipment using optimal lighting that eliminates ALL shadows while revealing fabric texture and pattern details.
+
+## ENHANCED FLATLAY DEFINITION:
+
+This is professional e-commerce flatlay photography enhanced with AI - the garment is presented in a perfectly flat, symmetrical arrangement on a pure white background. The enhancement process optimizes lighting, sharpens details, perfects color accuracy, and ensures professional presentation quality while maintaining the authentic flatlay perspective and garment structure.
+
+## REFERENCE IMAGE AUTHORITY:
+
+**Cleaned Garment Image** - This is your ONLY visual reference and contains the absolute truth for ALL colors, patterns, textures, construction details, material properties, and garment structure. Enhance this image while preserving complete fidelity to the original appearance.
+
+**Base Analysis JSON** - Contains mandatory preservation rules for specific elements (labels, details, construction features) that must be maintained with perfect clarity and legibility.
+
+**Enrichment Analysis JSON** - Provides technical specifications for color precision, fabric rendering, and quality expectations that guide the enhancement process.
+
+Use the cleaned garment image as the authoritative source - enhance its presentation quality while maintaining perfect accuracy to the original.
+
+## FLATLAY-SPECIFIC REQUIREMENTS:
+
+### PERSPECTIVE AND POSITIONING:
+
+- **Flat Perspective**: Maintain completely flat presentation - NO dimensional lifting or 3D effects
+- **Top-Down View**: Perfect overhead view as if photographed directly from above with zero angle
+- **Symmetrical Arrangement**: Garment laid out in perfect symmetry with even, balanced positioning
+- **Natural Drape**: Fabric shows authentic flat-state drape and natural settling
+- **Edge Definition**: Clean, crisp edges where garment meets background with perfect cutout
+- **Centered Composition**: Garment perfectly centered in frame with balanced margins
+
+### ENHANCEMENT FOCUS:
+
+- **Lighting Optimization**: Even, shadow-free lighting that reveals texture and detail from all angles
+- **Color Perfection**: Exact hex values from enrichment analysis with zero color shift
+- **Detail Sharpness**: Crystal-clear fabric texture, weave patterns, and construction details
+- **Label Clarity**: All labels, tags, and text perfectly legible and sharp
+- **Texture Visibility**: Fabric texture and material properties clearly visible
+- **Pattern Precision**: Patterns rendered with perfect clarity and alignment
+- **Interior Surfaces**: All interior patterns, colors, and materials clearly visible and properly rendered
+
+## CRITICAL EXCLUSION CONSTRAINTS:
+
+ABSOLUTELY EXCLUDE from the final image:
+- **NO dimensional effects** (no 3D lifting, no ghost mannequin effect)
+- **NO shadows** (completely flat, even lighting throughout)
+- **NO models, mannequins, or human elements**
+- **NO visible support structures**
+- **NO backgrounds** other than pure white (#FFFFFF) - NO gradients, textures, or variations
+- **NO props** beyond the garment itself
+- **NO perspective distortion** (maintain perfect flat overhead view)
+- **NO artistic effects** (keep it clean and commercial)
+
+## FLATLAY ENHANCEMENT PROCESS:
+
+### Step 1: Preserve Authentic Layout
+Maintain the exact flat arrangement from the reference image - the garment's position, symmetry, and layout must remain identical to the original flatlay presentation.
+
+### Step 2: Optimize Lighting and Exposure
+Apply perfect even lighting that eliminates ALL shadows while revealing fabric texture. Ensure consistent brightness across the entire garment with no hotspots or dark areas.
+
+### Step 3: Perfect Color Accuracy
+Apply the exact hex color values from enrichment analysis. Ensure colors match the specified values with zero deviation, maintaining proper saturation and color temperature.
+
+### Step 4: Enhance Detail and Sharpness
+Sharpen fabric texture, pattern details, and construction elements. Ensure labels are perfectly legible and all fine details are crystal clear.
+
+### Step 5: Interior Surface Integration (CRITICAL)
+If interior surfaces are visible (through openings, under collars, at edges), render them with exact patterns, colors, and materials from interior_analysis data. Maintain perfect clarity of interior details.
+
+### Step 6: Final Quality Validation
+Verify pure white background (#FFFFFF) with no variations, perfect color accuracy, sharp details throughout, clean cutout with no artifacts, and professional presentation quality suitable for premium e-commerce.
+
+## QUALITY STANDARDS:
+
+- **Background Purity**: Absolute pure white (#FFFFFF) with no gradients, textures, or variations
+- **Color Fidelity**: Perfect match to specified hex values with zero deviation
+- **Detail Clarity**: All elements sharp and clearly visible
+- **Professional Finish**: Premium e-commerce quality presentation
+- **Authentic Representation**: True to original garment appearance
+- **Clean Cutout**: Perfect edge definition with no background artifacts or halos
+- **Symmetrical Layout**: Perfectly balanced and centered composition
+
+Generate this professional enhanced flatlay photograph with complete integration of analysis data, ensuring technical excellence and authentic flat presentation.`;
+
 // Comprehensive Flash 2.5 Base Template - Professional ghost mannequin with full technical specifications
 const FLASH_25_BASE_TEMPLATE = `Create a professional three-dimensional ghost mannequin photograph for e-commerce product display, transforming flat garment images into a dimensional presentation that shows how the clothing would appear when worn by an invisible person.
 
@@ -332,6 +418,131 @@ function hexToColorName(hex: string): string {
     const avg = (r + g + b) / 3;
     return avg > 200 ? 'light gray' : avg > 100 ? 'gray' : 'dark gray';
   }
+}
+
+/**
+ * Generate dynamic flatlay enhancement prompt using Gemini 2.5 Flash-Lite
+ */
+export async function generateFlatlayPrompt(
+  facts: FactsV3,
+  controlBlock: ControlBlock,
+  sessionId: string
+): Promise<{ prompt: string; processingTime: number }> {
+  const startTime = Date.now();
+
+  if (!genAI) {
+    throw new GhostPipelineError(
+      'Prompt generator not configured. Call configurePromptGenerator first.',
+      'CLIENT_NOT_CONFIGURED', 
+      'rendering'
+    );
+  }
+
+  try {
+    console.log('🎯 Generating flatlay enhancement prompt with Gemini 2.5 Flash-Lite...');
+
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash-lite-preview-09-2025",
+      generationConfig: {
+        temperature: 0.1, // Low temperature for consistent, precise integration
+        topK: 1,
+        topP: 0.8,
+      }
+    });
+
+    // Create structured data summary for integration
+    const factsData = JSON.stringify(facts, null, 2);
+    const controlData = JSON.stringify(controlBlock, null, 2);
+
+    const integrationPrompt = `Act as a professional prompt writer. Using the master template as reference, create a focused 350-word prompt for Gemini Flash Image 2.5 that naturally integrates the garment facts for FLATLAY enhancement (NOT ghost mannequin).
+
+Write in natural, flowing sentences - avoid bullets or lists. CRITICAL: Include these essential elements:
+
+• **Flatlay Enhancement Definition**: Clearly state this is "enhanced flatlay photography" maintaining completely flat presentation with NO 3D effects or dimensional lifting
+• **E-commerce Photography**: Emphasize this is professional product photography for online retail with commercial styling
+• **Perfect Flat Perspective**: Specify "top-down overhead view", "completely flat", "perfect symmetry" - the garment lies flat on the surface
+• **Lighting Optimization**: Even, shadow-free lighting that reveals texture and detail from all angles
+• **Garment Specifics**: Integrate the actual colors, materials, and construction details from the facts
+• **Interior Surfaces**: CRITICAL - Include all interior analysis data (interior patterns, colors, materials) to ensure interior surfaces are visible and properly rendered
+• **Quality Standards**: Professional, commercial-grade photography with perfect color accuracy and clean cutout
+• **Styling Requirements**: Perfect symmetry, professional commercial styling, optimal positioning, clean presentation
+
+CRITICAL EXCLUSION REQUIREMENTS - The prompt MUST explicitly exclude:
+• NO dimensional effects, 3D lifting, or ghost mannequin effect
+• NO shadows (completely flat, even lighting throughout)
+• NO models, mannequins, human figures, or body parts
+• NO visible support structures
+• NO props or accessories beyond the garment itself
+• ONLY pure white background (#FFFFFF) - NO gradients, textures, or variations
+• Maintain perfect flat overhead perspective with zero angle
+• NO artistic effects (keep it clean and commercial)
+
+The enhancement must preserve the authentic flatlay arrangement while optimizing lighting, sharpening details, perfecting color accuracy, and ensuring professional commercial styling. Emphasize "flatlay enhancement", "perfect symmetry", "commercial styling", and "flat perspective" rather than any dimensional effects.
+
+GARMENT FACTS TO INTEGRATE:
+\`\`\`json
+${factsData}
+\`\`\`
+
+MASTER TEMPLATE (reference style, don't copy verbatim):
+---
+${FLATLAY_BASE_TEMPLATE}
+---
+
+Create a natural 350-word flatlay enhancement prompt with embedded garment facts and clear flat perspective instructions:`;
+
+    console.log('🔄 Calling Gemini 2.5 Flash-Lite for flatlay prompt integration...');
+
+    const result = await model.generateContent(integrationPrompt);
+    const response = await result.response;
+    const generatedPrompt = response.text();
+
+    if (!generatedPrompt) {
+      throw new Error('Empty response from Gemini 2.5 Flash-Lite');
+    }
+
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ Flatlay prompt generated in ${processingTime}ms`);
+    console.log(`📏 Generated prompt length: ${generatedPrompt.length} characters`);
+    console.log('🎯 Flatlay prompt preview:', generatedPrompt.substring(0, 200) + '...');
+
+    return {
+      prompt: generatedPrompt.trim(),
+      processingTime
+    };
+
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error('❌ Flatlay prompt generation failed:', error);
+
+    // Fallback to static template with basic interpolation
+    console.log('🔄 Falling back to static flatlay template...');
+    
+    const fallbackPrompt = generateFallbackFlatlayPrompt(facts, controlBlock);
+    
+    return {
+      prompt: fallbackPrompt,
+      processingTime
+    };
+  }
+}
+
+/**
+ * Fallback flatlay prompt generator using simple template interpolation
+ */
+function generateFallbackFlatlayPrompt(facts: FactsV3, controlBlock: ControlBlock): string {
+  const primaryColor = hexToColorName(facts.palette.dominant_hex);
+  const category = facts.category_generic || 'garment';
+  
+  return `Professional enhanced flatlay photograph of a ${primaryColor} ${category} on pure white background. 
+  
+The garment is laid out completely flat in perfect symmetry with top-down overhead perspective. NO dimensional effects or 3D lifting - maintain authentic flat presentation.
+
+Apply even, shadow-free lighting that reveals fabric texture and detail. Ensure perfect color accuracy with ${facts.palette.dominant_hex} as the dominant color. All labels and construction details must be sharp and clearly visible.
+
+${facts.interior_analysis && facts.interior_analysis.length > 0 ? `Interior surfaces are visible showing ${facts.interior_analysis.map(i => i.pattern_description).join(', ')}.` : ''}
+
+This is professional e-commerce flatlay photography - the garment maintains its flat arrangement while being enhanced with superior lighting, perfect color accuracy, and optimal presentation quality. Pure white background (#FFFFFF) with no shadows, props, or dimensional effects.`;
 }
 
 /**

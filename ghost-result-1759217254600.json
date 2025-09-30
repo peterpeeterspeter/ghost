@@ -1,0 +1,237 @@
+{
+  "sessionId": "2e089cc1-07bc-408d-b39c-826eb49ba46f",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "60.82s",
+    "stageTimings": {
+      "backgroundRemoval": 12654,
+      "analysis": 3790,
+      "enrichment": 2096,
+      "consolidation": 1759217235646,
+      "rendering": 18939,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/elephant/hPKFsuAiTYnsqEmE-lP5E.jpeg",
+  "renderUrl": "https://v3.fal.media/files/penguin/Vr43uV6A5p64ETbRRfKl__ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "2e089cc1-07bc-408d-b39c-826eb49ba46f"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "inside collar area",
+        "bbox_norm": [
+          0.459,
+          0.305,
+          0.566,
+          0.335
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "Front Opening Trim (Fringe/Tassel)",
+        "priority": "critical",
+        "location": "Along the entire front opening edge",
+        "region_bbox_norm": [
+          0.28,
+          0.28,
+          0.72,
+          0.85
+        ],
+        "notes": "Brown/tan woven fringe trim with a white crocheted/lacy edge detail. This is a major aesthetic feature."
+      },
+      {
+        "element": "Main Body Print (Blue/Cream)",
+        "priority": "important",
+        "location": "Center front panel",
+        "region_bbox_norm": [
+          0.33,
+          0.33,
+          0.67,
+          0.82
+        ],
+        "notes": "Cream background with repeating blue stylized floral/clover motifs."
+      },
+      {
+        "element": "Patterned Border Print (Stripes)",
+        "priority": "important",
+        "location": "Sleeves and side panels",
+        "region_bbox_norm": [
+          0,
+          0.25,
+          1,
+          0.85
+        ],
+        "notes": "Complex horizontal striping featuring pink/red, green wavy patterns, and blue patterned sections."
+      },
+      {
+        "element": "Collar Lining Print",
+        "priority": "nice_to_have",
+        "location": "Inside back of the collar",
+        "region_bbox_norm": [
+          0.4,
+          0.32,
+          0.6,
+          0.37
+        ],
+        "notes": "Red/pink abstract/paisley pattern visible under the main label."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "The interior fabric visible is the main body print (blue/cream).",
+        "edge_sampling_notes": "The front opening is heavily defined by the fringe trim."
+      },
+      {
+        "region_type": "armholes",
+        "keep_hollow": true,
+        "inner_visible": false,
+        "inner_description": "Interior fabric visible suggests the same patterned fabric is used throughout.",
+        "edge_sampling_notes": "Armholes are visible but obscured by the way the sleeves are folded/laid out."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Open Front/Kimono Style",
+        "silhouette_rule": "Drape open, no closure visible.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Wide, Straight Sleeves",
+        "silhouette_rule": "Sleeves appear wide and relatively short (elbow length or shorter), consistent with a kimono or robe style.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Contrast Trim Application",
+        "silhouette_rule": "The heavy fringe trim defines the front opening edge, adding weight and structure to the drape.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Seam connecting patterned panels",
+        "silhouette_rule": "The garment appears constructed from multiple vertical panels of different prints (center panel vs. side/sleeve panels).",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": true,
+      "print_direction_notes": "The print orientation is clearly visible and must be maintained.",
+      "color_authority": true
+    },
+    "special_handling": "The garment is laid flat on a tiled floor. Care must be taken to remove the floor texture/grout lines from the final ghost mannequin rendering. The fringe trim requires careful handling to maintain its texture and alignment."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "Kimono/Open Front Cardigan",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [],
+      "hollow_regions": [],
+      "construction_details": [],
+      "palette": {
+        "dominant_hex": "#F0F0D8",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F0F0D8",
+          "#1E90FF"
+        ],
+        "region_hints": {
+          "main_body_background": [
+            "#F0F0D8"
+          ],
+          "main_body_motif": [
+            "#1E90FF"
+          ],
+          "trim_detail": [
+            "#FFFFFF"
+          ]
+        }
+      },
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "material": "unspecified_material",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "Kimono/Open Front Cardigan",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#F0F0D8",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F0F0D8",
+          "#1E90FF"
+        ],
+        "region_hints": {
+          "main_body_background": [
+            "#F0F0D8"
+          ],
+          "main_body_motif": [
+            "#1E90FF"
+          ],
+          "trim_detail": [
+            "#FFFFFF"
+          ]
+        }
+      },
+      "material": "unspecified_material",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

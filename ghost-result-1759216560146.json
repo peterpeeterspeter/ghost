@@ -1,0 +1,248 @@
+{
+  "sessionId": "d3894aa1-510a-401a-9262-981a442fcd49",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "59.70s",
+    "stageTimings": {
+      "backgroundRemoval": 11212,
+      "analysis": 5832,
+      "enrichment": 6516,
+      "consolidation": 1759216541036,
+      "rendering": 19094,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/elephant/mxX7BOL3nyw8aPrGLqthM.jpeg",
+  "renderUrl": "https://v3.fal.media/files/lion/iLNwMbm9gllwIottMZUge_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "d3894aa1-510a-401a-9262-981a442fcd49"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "neckline",
+        "bbox_norm": [
+          0.38,
+          0.15,
+          0.45,
+          0.19
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "fringe trim",
+        "priority": "critical",
+        "location": "neckline",
+        "region_bbox_norm": [
+          0.38,
+          0.18,
+          0.62,
+          0.21
+        ],
+        "notes": "Fringe trim along the neckline."
+      },
+      {
+        "element": "pattern",
+        "priority": "critical",
+        "location": "entire garment",
+        "region_bbox_norm": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "notes": "The garment has a complex pattern with multiple colors and shapes."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "The inner fabric is visible."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "open front",
+        "silhouette_rule": "loose",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "kimono sleeves",
+        "silhouette_rule": "relaxed",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "edge_fidelity_required": true,
+      "color_authority": true
+    },
+    "special_handling": "Preserve the fringe trim and the complex pattern during processing."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [
+        {
+          "type": "brand",
+          "location": "neckline",
+          "bbox_norm": [
+            0.38,
+            0.15,
+            0.45,
+            0.19
+          ],
+          "text": "Boho Style",
+          "ocr_conf": 0.95,
+          "readable": true,
+          "preserve": true,
+          "visibility": "fully_visible"
+        }
+      ],
+      "preserve_details": [
+        {
+          "element": "fringe trim",
+          "priority": "critical",
+          "location": "neckline",
+          "region_bbox_norm": [
+            0.38,
+            0.18,
+            0.62,
+            0.21
+          ],
+          "notes": "Fringe trim along the neckline."
+        },
+        {
+          "element": "pattern",
+          "priority": "critical",
+          "location": "entire garment",
+          "region_bbox_norm": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "notes": "The garment has a complex pattern with multiple colors and shapes."
+        }
+      ],
+      "hollow_regions": [
+        {
+          "region_type": "front_opening",
+          "keep_hollow": true,
+          "inner_visible": true,
+          "inner_description": "The inner fabric is visible."
+        }
+      ],
+      "construction_details": [
+        {
+          "feature": "open front",
+          "silhouette_rule": "loose",
+          "critical_for_structure": true
+        },
+        {
+          "feature": "kimono sleeves",
+          "silhouette_rule": "relaxed",
+          "critical_for_structure": true
+        }
+      ],
+      "palette": {
+        "dominant_hex": "#007bff",
+        "accent_hex": "#dc3545",
+        "trim_hex": "#dc3545",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "color_precision": {
+        "primary_hex": "#007bff",
+        "secondary_hex": "#dc3545",
+        "color_temperature": "neutral",
+        "saturation_level": "moderate",
+        "pattern_direction": "horizontal",
+        "pattern_repeat_size": "medium"
+      },
+      "fabric_behavior": {
+        "drape_quality": "flowing",
+        "surface_sheen": "matte",
+        "texture_depth": "subtle_texture",
+        "wrinkle_tendency": "moderate",
+        "transparency_level": "opaque"
+      },
+      "construction_precision": {
+        "seam_visibility": "subtle",
+        "edge_finishing": "serged",
+        "stitching_contrast": false,
+        "hardware_finish": "none",
+        "closure_visibility": "none"
+      },
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#007bff",
+        "accent_hex": "#dc3545",
+        "trim_hex": "#dc3545",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

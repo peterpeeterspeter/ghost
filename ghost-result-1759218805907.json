@@ -1,0 +1,275 @@
+{
+  "sessionId": "33436839-741f-4406-a193-d7e0214e6225",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "65.45s",
+    "stageTimings": {
+      "backgroundRemoval": 13145,
+      "analysis": 4307,
+      "enrichment": 1811,
+      "consolidation": 1759218786601,
+      "rendering": 19274,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/rabbit/0YCcEadCq7knu7DaCRykP.jpeg",
+  "renderUrl": "https://v3.fal.media/files/rabbit/0URKP_Y2d6cIFZkHTMuzE_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "33436839-741f-4406-a193-d7e0214e6225"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "interior neckline, center back area",
+        "bbox_norm": [
+          0.438,
+          0.376,
+          0.562,
+          0.406
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "Front Opening Trim (Fringe/Lace)",
+        "priority": "critical",
+        "location": "Along both front opening edges",
+        "region_bbox_norm": [
+          0.3,
+          0.34,
+          0.7,
+          0.85
+        ],
+        "notes": "Multi-layered trim consisting of a thin white lace layer and an outer layer of brown/tan fringe. Essential for the garment's bohemian aesthetic."
+      },
+      {
+        "element": "Main Body Print Pattern",
+        "priority": "critical",
+        "location": "Entire garment exterior",
+        "region_bbox_norm": [
+          0,
+          0.15,
+          1,
+          0.95
+        ],
+        "notes": "Complex, multi-colored block print pattern featuring horizontal stripes of green/pink/cream geometric designs alternating with a central panel of blue/cream repeating motifs. Must be preserved accurately."
+      },
+      {
+        "element": "Sleeve Cuff/Hem Edge",
+        "priority": "important",
+        "location": "Ends of both sleeves",
+        "region_bbox_norm": [
+          0,
+          0.15,
+          0.25,
+          0.48
+        ],
+        "notes": "The sleeve ends are folded up, showing the continuation of the exterior print pattern."
+      },
+      {
+        "element": "Collar/Neckline Edge Finish",
+        "priority": "important",
+        "location": "Around the entire neckline opening",
+        "region_bbox_norm": [
+          0.3,
+          0.34,
+          0.7,
+          0.4
+        ],
+        "notes": "The trim described above runs along the neckline edge."
+      }
+    ],
+    "interior_analysis": [
+      {
+        "surface_type": "lining",
+        "priority": "critical",
+        "location": "Center front interior panel",
+        "region_bbox_norm": [
+          0.3,
+          0.4,
+          0.7,
+          0.85
+        ],
+        "pattern_description": "Small, repeating, stylized four-leaf clover or cross shape in bright blue on a cream/off-white background.",
+        "material_description": "Lightweight woven fabric, likely cotton or rayon, with a block print.",
+        "color_hex": "#F0F8FF",
+        "construction_notes": "The interior fabric appears to be the same material as the exterior, but featuring a different, smaller scale pattern.",
+        "edge_definition": "The interior fabric is visible along the front opening, bordered by the trim."
+      },
+      {
+        "surface_type": "collar_interior",
+        "priority": "important",
+        "location": "Top edge of the neckline facing",
+        "region_bbox_norm": [
+          0.35,
+          0.34,
+          0.65,
+          0.38
+        ],
+        "pattern_description": "Small, dense, abstract red/pink pattern on a lighter background.",
+        "material_description": "Woven fabric with a small, dense red/pink pattern.",
+        "color_hex": "#E0A0A0",
+        "construction_notes": "The underside of the collar facing appears to be a red/pink patterned fabric, contrasting with the main body's interior lining.",
+        "edge_definition": "The collar edge shows the transition from the exterior patterned fabric to the interior facing fabric."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "The interior fabric is visible down the center opening.",
+        "edge_sampling_notes": "The front opening is defined by the application of the heavy fringe trim."
+      },
+      {
+        "region_type": "armholes",
+        "keep_hollow": false,
+        "inner_visible": false,
+        "inner_description": "Interior lining/fabric is not visible at the armhole seam in this view.",
+        "edge_sampling_notes": "Armholes are not clearly visible as the garment is laid flat, but they are implied by the sleeve attachment."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Kimono/Open Front Style",
+        "silhouette_rule": "Drapey, unstructured front opening.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Dropped Shoulder/Wide Sleeve",
+        "silhouette_rule": "Loose, wide sleeves typical of a kimono or robe style.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Seam Construction (Shoulder/Side)",
+        "silhouette_rule": "Seams appear standard, joining patterned panels.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Front Opening Trim Application",
+        "silhouette_rule": "The heavy fringe trim dictates the appearance of the front opening when worn open.",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": true,
+      "print_direction_notes": "The print is directional, especially the central blue pattern, which should be oriented vertically when rendered on a mannequin.",
+      "color_authority": true
+    },
+    "special_handling": "The garment features extensive, multi-colored block printing which requires high fidelity preservation. The heavy fringe trim along the front opening is a critical structural and aesthetic element that must be rendered accurately, including its layered construction (lace + fringe)."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "Kimono/Open Front Style",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [],
+      "hollow_regions": [],
+      "construction_details": [],
+      "palette": {
+        "dominant_hex": "#F0F0D0",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F0F8FF",
+          "#E0A0A0"
+        ],
+        "region_hints": {
+          "main_body_print": [
+            "Complex",
+            "multi-colored block print featuring green/pink/cream geometric designs alternating with blue/cream motifs."
+          ],
+          "interior_lining": [
+            "Cream/off-white background with bright blue four-leaf clover/cross pattern."
+          ],
+          "collar_facing_interior": [
+            "Small",
+            "dense red/pink pattern."
+          ]
+        }
+      },
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "material": "unspecified_material",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#F0F0D0",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F0F8FF",
+          "#E0A0A0"
+        ],
+        "region_hints": {
+          "main_body_print": [
+            "Complex",
+            "multi-colored block print featuring green/pink/cream geometric designs alternating with blue/cream motifs."
+          ],
+          "interior_lining": [
+            "Cream/off-white background with bright blue four-leaf clover/cross pattern."
+          ],
+          "collar_facing_interior": [
+            "Small",
+            "dense red/pink pattern."
+          ]
+        }
+      },
+      "material": "unspecified_material",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

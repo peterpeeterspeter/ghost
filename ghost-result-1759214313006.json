@@ -1,0 +1,267 @@
+{
+  "sessionId": "3cee28ec-9172-407d-b8be-b82bec7966f3",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "41.93s",
+    "stageTimings": {
+      "backgroundRemoval": 3001,
+      "analysis": 7121,
+      "enrichment": 5030,
+      "consolidation": 1759214292946,
+      "rendering": 19973,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/monkey/vgngZ9RCVBjCKonjFCJpp.jpeg",
+  "renderUrl": "https://v3.fal.media/files/rabbit/izmJbxyzkOdXEt71cAtoI_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "3cee28ec-9172-407d-b8be-b82bec7966f3"
+    },
+    "labels_found": [],
+    "preserve_details": [
+      {
+        "element": "Crocodile texture on bag",
+        "priority": "critical",
+        "location": "Front of bag",
+        "region_bbox_norm": [
+          0.28,
+          0.39,
+          0.72,
+          0.61
+        ],
+        "notes": "Texture is a key design element."
+      },
+      {
+        "element": "Bag hardware (clasp)",
+        "priority": "critical",
+        "location": "Front of bag",
+        "region_bbox_norm": [
+          0.45,
+          0.48,
+          0.55,
+          0.52
+        ],
+        "notes": "Hardware is a key design element."
+      },
+      {
+        "element": "Braided strap detail",
+        "priority": "important",
+        "location": "Shoulder strap",
+        "region_bbox_norm": [
+          0.05,
+          0.05,
+          0.15,
+          0.25
+        ],
+        "notes": "Braided detail is a key design element."
+      },
+      {
+        "element": "Beaded detail on strap",
+        "priority": "important",
+        "location": "Shoulder strap",
+        "region_bbox_norm": [
+          0.05,
+          0.05,
+          0.15,
+          0.25
+        ],
+        "notes": "Beaded detail is a key design element."
+      },
+      {
+        "element": "Dress knit pattern",
+        "priority": "important",
+        "location": "Dress",
+        "region_bbox_norm": [
+          0.1,
+          0.2,
+          0.9,
+          0.9
+        ],
+        "notes": "Knit pattern is a key design element."
+      }
+    ],
+    "hollow_regions": [],
+    "construction_details": [
+      {
+        "feature": "Dress knit construction",
+        "silhouette_rule": "Drape and form-fitting",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Bag construction",
+        "silhouette_rule": "Structured",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {},
+    "special_handling": "Preserve all textures and details on the bag. Maintain the drape and form-fitting nature of the dress."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [
+        {
+          "element": "Crocodile texture on bag",
+          "priority": "critical",
+          "location": "Front of bag",
+          "region_bbox_norm": [
+            0.28,
+            0.39,
+            0.72,
+            0.61
+          ],
+          "notes": "Texture is a key design element."
+        },
+        {
+          "element": "Bag hardware (clasp)",
+          "priority": "critical",
+          "location": "Front of bag",
+          "region_bbox_norm": [
+            0.45,
+            0.48,
+            0.55,
+            0.52
+          ],
+          "notes": "Hardware is a key design element."
+        },
+        {
+          "element": "Braided strap detail",
+          "priority": "important",
+          "location": "Shoulder strap",
+          "region_bbox_norm": [
+            0.05,
+            0.05,
+            0.15,
+            0.25
+          ],
+          "notes": "Braided detail is a key design element."
+        },
+        {
+          "element": "Beaded detail on strap",
+          "priority": "important",
+          "location": "Shoulder strap",
+          "region_bbox_norm": [
+            0.05,
+            0.05,
+            0.15,
+            0.25
+          ],
+          "notes": "Beaded detail is a key design element."
+        },
+        {
+          "element": "Dress knit pattern",
+          "priority": "important",
+          "location": "Dress",
+          "region_bbox_norm": [
+            0.1,
+            0.2,
+            0.9,
+            0.9
+          ],
+          "notes": "Knit pattern is a key design element."
+        }
+      ],
+      "hollow_regions": [],
+      "construction_details": [
+        {
+          "feature": "Dress knit construction",
+          "silhouette_rule": "Drape and form-fitting",
+          "critical_for_structure": false
+        },
+        {
+          "feature": "Bag construction",
+          "silhouette_rule": "Structured",
+          "critical_for_structure": true
+        }
+      ],
+      "palette": {
+        "dominant_hex": "#A0522D",
+        "accent_hex": "#F5F5DC",
+        "trim_hex": "#F5F5DC",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "color_precision": {
+        "primary_hex": "#A0522D",
+        "secondary_hex": "#F5F5DC",
+        "color_temperature": "warm",
+        "saturation_level": "moderate"
+      },
+      "fabric_behavior": {
+        "drape_quality": "structured",
+        "surface_sheen": "matte",
+        "texture_depth": "pronounced_texture",
+        "transparency_level": "opaque"
+      },
+      "construction_precision": {
+        "seam_visibility": "subtle",
+        "edge_finishing": "bound",
+        "stitching_contrast": false,
+        "hardware_finish": "polished_metal"
+      },
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#A0522D",
+        "accent_hex": "#F5F5DC",
+        "trim_hex": "#F5F5DC",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

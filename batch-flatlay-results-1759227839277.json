@@ -1,0 +1,68 @@
+[
+  {
+    "testNumber": 1,
+    "imageName": "hemd.jpg",
+    "success": true,
+    "processingTime": 70039,
+    "cleanedImageUrl": "https://v3.fal.media/files/koala/wfbqgtkEpPbe63LueC7_w.jpeg",
+    "analysisLabels": 1,
+    "analysisDetails": 4,
+    "sessionId": "66a12a6c-d12b-4010-8d6e-c9e024bc66eb",
+    "error": null
+  },
+  {
+    "testNumber": 2,
+    "imageName": "eat trui.jpg",
+    "success": true,
+    "processingTime": 63978,
+    "cleanedImageUrl": "https://v3.fal.media/files/tiger/z31iNb5UhcpnMAKLwgMXq.jpeg",
+    "analysisLabels": 1,
+    "analysisDetails": 5,
+    "sessionId": "d1fae072-1a34-4fbc-a353-e515fd20fd84",
+    "error": null
+  },
+  {
+    "testNumber": 3,
+    "imageName": "singlet Detail.jpg",
+    "success": true,
+    "processingTime": 64892,
+    "cleanedImageUrl": "https://v3.fal.media/files/tiger/fNg8YdKnE39avDOwyACTO.jpeg",
+    "analysisLabels": 3,
+    "analysisDetails": 3,
+    "sessionId": "a87b5953-3dd7-4fe2-81dd-028c5ade3dda",
+    "error": null
+  },
+  {
+    "testNumber": 4,
+    "imageName": "wide detail.JPG",
+    "success": true,
+    "processingTime": 73702,
+    "cleanedImageUrl": "https://v3.fal.media/files/lion/D0oDaFU0-Ybw3cYPI8_Uq.jpeg",
+    "analysisLabels": 1,
+    "analysisDetails": 5,
+    "sessionId": "31a3eaaa-03b6-416c-93c6-5b3e86352c15",
+    "error": null
+  },
+  {
+    "testNumber": 5,
+    "imageName": "eat peter trui.JPG",
+    "success": true,
+    "processingTime": 81470,
+    "cleanedImageUrl": "https://v3.fal.media/files/rabbit/5DN1leKvq8QmbO8TOh5cj.jpeg",
+    "analysisLabels": 1,
+    "analysisDetails": 5,
+    "sessionId": "becf30e8-f6b6-4cfa-ba4a-2b59d9cfe3d9",
+    "error": null
+  },
+  {
+    "testNumber": 6,
+    "imageName": "encinitas detail.JPG",
+    "success": true,
+    "processingTime": 70466,
+    "cleanedImageUrl": "https://v3.fal.media/files/rabbit/WX54yINrLdDMgZUzFA82-.jpeg",
+    "analysisLabels": 3,
+    "analysisDetails": 4,
+    "sessionId": "95cd22a2-d2df-4faf-8510-cbfe98792942",
+    "error": null
+  }
+]

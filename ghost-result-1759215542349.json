@@ -1,0 +1,340 @@
+{
+  "sessionId": "f54d6820-cf1a-4c55-b568-a493e71d137c",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "49.01s",
+    "stageTimings": {
+      "backgroundRemoval": 3012,
+      "analysis": 3199,
+      "enrichment": 1687,
+      "consolidation": 1759215506708,
+      "rendering": 35618,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/elephant/WQFq7s9xGdeL-KpyiDjAY.jpeg",
+  "renderUrl": "https://v3.fal.media/files/koala/XRa_zwATGiHbJknLpVaCI_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "f54d6820-cf1a-4c55-b568-a493e71d137c"
+    },
+    "labels_found": [],
+    "preserve_details": [
+      {
+        "element": "Knitted Chevron Pattern on Dress",
+        "priority": "critical",
+        "location": "Torso/Dress Body",
+        "region_bbox_norm": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "notes": "The primary texture and pattern of the garment. Must be preserved accurately."
+      },
+      {
+        "element": "Shoulder Strap Detail (Braided with Beads)",
+        "priority": "important",
+        "location": "Shoulder/Strap Attachment",
+        "region_bbox_norm": [
+          0.15,
+          0,
+          0.35,
+          0.35
+        ],
+        "notes": "Unique decorative element featuring braided material and small wooden/colored beads. Needs careful handling to maintain bead placement relative to the braid."
+      },
+      {
+        "element": "Shoulder Strap Detail (Braided with Beads)",
+        "priority": "important",
+        "location": "Shoulder/Strap Attachment",
+        "region_bbox_norm": [
+          0.65,
+          0,
+          0.85,
+          0.35
+        ],
+        "notes": "Unique decorative element featuring braided material and small wooden/colored beads. Needs careful handling to maintain bead placement relative to the braid."
+      },
+      {
+        "element": "Brown Faux Croc Handbag Flap Clasp",
+        "priority": "important",
+        "location": "Handbag Front Center",
+        "region_bbox_norm": [
+          0.4,
+          0.65,
+          0.6,
+          0.75
+        ],
+        "notes": "Metallic silver/gunmetal clasp hardware on the handbag flap. Must be preserved as it is a focal point."
+      },
+      {
+        "element": "Brown Faux Croc Texture on Handbag",
+        "priority": "important",
+        "location": "Handbag Body",
+        "region_bbox_norm": [
+          0.3,
+          0.55,
+          0.75,
+          0.85
+        ],
+        "notes": "Distinctive embossed crocodile skin texture on the main flap and front pocket of the bag."
+      },
+      {
+        "element": "Brown Leather/Faux Leather Straps (Shoulder/Handle)",
+        "priority": "nice_to_have",
+        "location": "Across Body/Hands",
+        "region_bbox_norm": [
+          0.25,
+          0.15,
+          0.45,
+          0.65
+        ],
+        "notes": "Smooth brown straps contrasting with the knit dress texture."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "armholes",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "A sliver of an inner garment or skin is visible.",
+        "edge_sampling_notes": "Armhole edges are visible but the focus is on the garment structure, not the void."
+      },
+      {
+        "region_type": "neckline",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "A lighter colored undergarment or lining is visible beneath the knit.",
+        "edge_sampling_notes": "V-neckline edge needs clean preservation."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Knit Chevron Pattern",
+        "silhouette_rule": "The open-work knit structure defines the drape and texture of the dress body.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Braided Rope Straps with Beads",
+        "silhouette_rule": "These straps are decorative and contribute to a bohemian/casual aesthetic, contrasting with the smooth leather bag straps.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Sleeveless/Tank Top Cut",
+        "silhouette_rule": "Clean armhole and neckline edges define the upper silhouette.",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": true,
+      "print_direction_notes": "No prints detected on the garment itself.",
+      "color_authority": false
+    },
+    "special_handling": "The primary garment is a highly textured, open-work knit dress. Ghost mannequin processing must accurately render the chevron pattern and maintain the integrity of the knit structure, especially around the edges and where the bag obscures it. The braided straps with beads are unique features requiring careful masking/cloning."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [
+        {
+          "element": "Knitted Chevron Pattern on Dress",
+          "priority": "critical",
+          "location": "Torso/Dress Body",
+          "region_bbox_norm": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "notes": "The primary texture and pattern of the garment. Must be preserved accurately."
+        },
+        {
+          "element": "Shoulder Strap Detail (Braided with Beads)",
+          "priority": "important",
+          "location": "Shoulder/Strap Attachment",
+          "region_bbox_norm": [
+            0.15,
+            0,
+            0.35,
+            0.35
+          ],
+          "notes": "Unique decorative element featuring braided material and small wooden/colored beads. Needs careful handling to maintain bead placement relative to the braid."
+        },
+        {
+          "element": "Shoulder Strap Detail (Braided with Beads)",
+          "priority": "important",
+          "location": "Shoulder/Strap Attachment",
+          "region_bbox_norm": [
+            0.65,
+            0,
+            0.85,
+            0.35
+          ],
+          "notes": "Unique decorative element featuring braided material and small wooden/colored beads. Needs careful handling to maintain bead placement relative to the braid."
+        },
+        {
+          "element": "Brown Faux Croc Handbag Flap Clasp",
+          "priority": "important",
+          "location": "Handbag Front Center",
+          "region_bbox_norm": [
+            0.4,
+            0.65,
+            0.6,
+            0.75
+          ],
+          "notes": "Metallic silver/gunmetal clasp hardware on the handbag flap. Must be preserved as it is a focal point."
+        },
+        {
+          "element": "Brown Faux Croc Texture on Handbag",
+          "priority": "important",
+          "location": "Handbag Body",
+          "region_bbox_norm": [
+            0.3,
+            0.55,
+            0.75,
+            0.85
+          ],
+          "notes": "Distinctive embossed crocodile skin texture on the main flap and front pocket of the bag."
+        },
+        {
+          "element": "Brown Leather/Faux Leather Straps (Shoulder/Handle)",
+          "priority": "nice_to_have",
+          "location": "Across Body/Hands",
+          "region_bbox_norm": [
+            0.25,
+            0.15,
+            0.45,
+            0.65
+          ],
+          "notes": "Smooth brown straps contrasting with the knit dress texture."
+        }
+      ],
+      "hollow_regions": [
+        {
+          "region_type": "armholes",
+          "keep_hollow": true,
+          "inner_visible": true,
+          "inner_description": "A sliver of an inner garment or skin is visible.",
+          "edge_sampling_notes": "Armhole edges are visible but the focus is on the garment structure, not the void."
+        },
+        {
+          "region_type": "neckline",
+          "keep_hollow": true,
+          "inner_visible": true,
+          "inner_description": "A lighter colored undergarment or lining is visible beneath the knit.",
+          "edge_sampling_notes": "V-neckline edge needs clean preservation."
+        }
+      ],
+      "construction_details": [
+        {
+          "feature": "Knit Chevron Pattern",
+          "silhouette_rule": "The open-work knit structure defines the drape and texture of the dress body.",
+          "critical_for_structure": true
+        },
+        {
+          "feature": "Braided Rope Straps with Beads",
+          "silhouette_rule": "These straps are decorative and contribute to a bohemian/casual aesthetic, contrasting with the smooth leather bag straps.",
+          "critical_for_structure": false
+        },
+        {
+          "feature": "Sleeveless/Tank Top Cut",
+          "silhouette_rule": "Clean armhole and neckline edges define the upper silhouette.",
+          "critical_for_structure": true
+        }
+      ],
+      "palette": {
+        "dominant_hex": "#EAD8C8",
+        "accent_hex": "#A0522D",
+        "trim_hex": "#A0522D",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "color_precision": {
+        "primary_hex": "#EAD8C8",
+        "secondary_hex": "#A0522D",
+        "color_temperature": "warm",
+        "saturation_level": "muted",
+        "pattern_direction": "vertical",
+        "pattern_repeat_size": "medium"
+      },
+      "fabric_behavior": {
+        "drape_quality": "structured",
+        "surface_sheen": "matte",
+        "texture_depth": "pronounced_texture",
+        "wrinkle_tendency": "moderate",
+        "transparency_level": "semi_opaque"
+      },
+      "construction_precision": {
+        "seam_visibility": "subtle",
+        "edge_finishing": "serged",
+        "stitching_contrast": false,
+        "hardware_finish": "matte_metal",
+        "closure_visibility": "functional"
+      },
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#EAD8C8",
+        "accent_hex": "#A0522D",
+        "trim_hex": "#A0522D",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

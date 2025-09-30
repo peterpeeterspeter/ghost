@@ -1,0 +1,364 @@
+{
+  "sessionId": "7f5b1853-2f5c-438e-a1e1-c00cb8382476",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "29.93s",
+    "stageTimings": {
+      "backgroundRemoval": 2629,
+      "analysis": 3416,
+      "enrichment": 1873,
+      "consolidation": 1759215993659,
+      "rendering": 17831,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/tiger/5eL8Oy-oGaEqR2icJ7Jb0.jpeg",
+  "renderUrl": "https://v3.fal.media/files/penguin/gTvQFoVe3TLSSVbpvWSul_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "7f5b1853-2f5c-438e-a1e1-c00cb8382476"
+    },
+    "labels_found": [],
+    "preserve_details": [
+      {
+        "element": "Knit Pattern/Texture",
+        "priority": "critical",
+        "location": "Main body of the dress",
+        "region_bbox_norm": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "notes": "Distinctive chevron/zig-zag open-knit pattern covering the entire garment. Must be preserved accurately."
+      },
+      {
+        "element": "Shoulder Strap Detail (Beads)",
+        "priority": "important",
+        "location": "Left and right shoulder straps",
+        "region_bbox_norm": [
+          0.15,
+          0.05,
+          0.35,
+          0.25
+        ],
+        "notes": "Small wooden/colored beads attached to the braided rope shoulder straps. These are decorative accents."
+      },
+      {
+        "element": "Shoulder Strap Detail (Braiding)",
+        "priority": "important",
+        "location": "Shoulder straps",
+        "region_bbox_norm": [
+          0.15,
+          0.05,
+          0.35,
+          0.35
+        ],
+        "notes": "The straps are made of a thick, light-colored braid, contrasting with the brown leather-look strap."
+      },
+      {
+        "element": "Handbag - Croc Embossed Flap",
+        "priority": "important",
+        "location": "Front flap of the handbag",
+        "region_bbox_norm": [
+          0.35,
+          0.45,
+          0.75,
+          0.75
+        ],
+        "notes": "Prominent brown material with a crocodile/alligator embossed texture."
+      },
+      {
+        "element": "Handbag - Metal Clasp/Hardware",
+        "priority": "critical",
+        "location": "Center front of the handbag flap",
+        "region_bbox_norm": [
+          0.45,
+          0.65,
+          0.6,
+          0.75
+        ],
+        "notes": "Silver/gunmetal colored geometric clasp hardware. Essential for the accessory's appearance."
+      },
+      {
+        "element": "Handbag - Smooth Trim/Strap",
+        "priority": "important",
+        "location": "Handbag body and main strap",
+        "region_bbox_norm": [
+          0.25,
+          0.3,
+          0.85,
+          0.85
+        ],
+        "notes": "Smooth, solid brown material used for the main body trim and the adjustable shoulder strap."
+      },
+      {
+        "element": "Neckline Edge",
+        "priority": "nice_to_have",
+        "location": "Upper chest/neckline area",
+        "region_bbox_norm": [
+          0.25,
+          0,
+          0.75,
+          0.25
+        ],
+        "notes": "V-neckline shape of the outer knit layer."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "armholes",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "Skin visible, inner layer of the dress is visible near the edge.",
+        "edge_sampling_notes": "The armhole edges are defined by the knit structure and the transition to the skin."
+      },
+      {
+        "region_type": "neckline",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "Inner beige/nude layer visible beneath the outer knit.",
+        "edge_sampling_notes": "The V-neckline opening needs careful ghosting to show the inner layer beneath the knit."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Knit Construction",
+        "silhouette_rule": "The open, textured knit suggests a lightweight, possibly summer garment. The structure is defined by the knit pattern itself, draping softly over the body.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Sleeveless/Tank Top Cut",
+        "silhouette_rule": "The garment is sleeveless with straps that appear to be braided rope or cord, tied or knotted at the shoulder.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Layering",
+        "silhouette_rule": "An inner, solid-colored layer (likely a slip or camisole) is visible underneath the sheer outer knit layer at the neckline.",
+        "critical_for_structure": false
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": true,
+      "print_direction_notes": "Focus on preserving the texture and drape of the knit fabric and the details of the accessory (handbag).",
+      "color_authority": false
+    },
+    "special_handling": "The primary garment is a highly textured, open knit dress. Ghost mannequin processing must accurately represent the drape and the intricate chevron pattern, ensuring the negative space created by the knit holes is handled correctly, especially around the edges and where the model's arms/body obscure parts of the dress. The accessory (handbag) should be treated as a separate object if it is not part of the garment being ghosted, but its interaction with the garment (straps resting on shoulders) must be noted."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [],
+      "preserve_details": [
+        {
+          "element": "Knit Pattern/Texture",
+          "priority": "critical",
+          "location": "Main body of the dress",
+          "region_bbox_norm": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "notes": "Distinctive chevron/zig-zag open-knit pattern covering the entire garment. Must be preserved accurately."
+        },
+        {
+          "element": "Shoulder Strap Detail (Beads)",
+          "priority": "important",
+          "location": "Left and right shoulder straps",
+          "region_bbox_norm": [
+            0.15,
+            0.05,
+            0.35,
+            0.25
+          ],
+          "notes": "Small wooden/colored beads attached to the braided rope shoulder straps. These are decorative accents."
+        },
+        {
+          "element": "Shoulder Strap Detail (Braiding)",
+          "priority": "important",
+          "location": "Shoulder straps",
+          "region_bbox_norm": [
+            0.15,
+            0.05,
+            0.35,
+            0.35
+          ],
+          "notes": "The straps are made of a thick, light-colored braid, contrasting with the brown leather-look strap."
+        },
+        {
+          "element": "Handbag - Croc Embossed Flap",
+          "priority": "important",
+          "location": "Front flap of the handbag",
+          "region_bbox_norm": [
+            0.35,
+            0.45,
+            0.75,
+            0.75
+          ],
+          "notes": "Prominent brown material with a crocodile/alligator embossed texture."
+        },
+        {
+          "element": "Handbag - Metal Clasp/Hardware",
+          "priority": "critical",
+          "location": "Center front of the handbag flap",
+          "region_bbox_norm": [
+            0.45,
+            0.65,
+            0.6,
+            0.75
+          ],
+          "notes": "Silver/gunmetal colored geometric clasp hardware. Essential for the accessory's appearance."
+        },
+        {
+          "element": "Handbag - Smooth Trim/Strap",
+          "priority": "important",
+          "location": "Handbag body and main strap",
+          "region_bbox_norm": [
+            0.25,
+            0.3,
+            0.85,
+            0.85
+          ],
+          "notes": "Smooth, solid brown material used for the main body trim and the adjustable shoulder strap."
+        },
+        {
+          "element": "Neckline Edge",
+          "priority": "nice_to_have",
+          "location": "Upper chest/neckline area",
+          "region_bbox_norm": [
+            0.25,
+            0,
+            0.75,
+            0.25
+          ],
+          "notes": "V-neckline shape of the outer knit layer."
+        }
+      ],
+      "hollow_regions": [
+        {
+          "region_type": "armholes",
+          "keep_hollow": true,
+          "inner_visible": true,
+          "inner_description": "Skin visible, inner layer of the dress is visible near the edge.",
+          "edge_sampling_notes": "The armhole edges are defined by the knit structure and the transition to the skin."
+        },
+        {
+          "region_type": "neckline",
+          "keep_hollow": true,
+          "inner_visible": true,
+          "inner_description": "Inner beige/nude layer visible beneath the outer knit.",
+          "edge_sampling_notes": "The V-neckline opening needs careful ghosting to show the inner layer beneath the knit."
+        }
+      ],
+      "construction_details": [
+        {
+          "feature": "Knit Construction",
+          "silhouette_rule": "The open, textured knit suggests a lightweight, possibly summer garment. The structure is defined by the knit pattern itself, draping softly over the body.",
+          "critical_for_structure": true
+        },
+        {
+          "feature": "Sleeveless/Tank Top Cut",
+          "silhouette_rule": "The garment is sleeveless with straps that appear to be braided rope or cord, tied or knotted at the shoulder.",
+          "critical_for_structure": true
+        },
+        {
+          "feature": "Layering",
+          "silhouette_rule": "An inner, solid-colored layer (likely a slip or camisole) is visible underneath the sheer outer knit layer at the neckline.",
+          "critical_for_structure": false
+        }
+      ],
+      "palette": {
+        "dominant_hex": "#E0D5C0",
+        "accent_hex": "#A0522D",
+        "trim_hex": "#A0522D",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "color_precision": {
+        "primary_hex": "#E0D5C0",
+        "secondary_hex": "#A0522D",
+        "color_temperature": "neutral",
+        "saturation_level": "muted",
+        "pattern_direction": "vertical",
+        "pattern_repeat_size": "medium"
+      },
+      "fabric_behavior": {
+        "drape_quality": "structured",
+        "surface_sheen": "matte",
+        "texture_depth": "pronounced_texture",
+        "wrinkle_tendency": "moderate",
+        "transparency_level": "semi_opaque"
+      },
+      "construction_precision": {
+        "seam_visibility": "subtle",
+        "edge_finishing": "serged",
+        "stitching_contrast": false,
+        "hardware_finish": "matte_metal",
+        "closure_visibility": "functional"
+      },
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#E0D5C0",
+        "accent_hex": "#A0522D",
+        "trim_hex": "#A0522D",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

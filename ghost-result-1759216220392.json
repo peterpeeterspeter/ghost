@@ -1,0 +1,324 @@
+{
+  "sessionId": "b49a440a-70a0-4f09-b6d8-50b692b3aaba",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "71.08s",
+    "stageTimings": {
+      "backgroundRemoval": 10379,
+      "analysis": 4624,
+      "enrichment": 2030,
+      "consolidation": 1759216185884,
+      "rendering": 34495,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/elephant/20Tth3Sjz5AcSFaIL5k9A.jpeg",
+  "renderUrl": "https://v3.fal.media/files/monkey/YgID1Xq_PEDPIVcbF2rSt_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "b49a440a-70a0-4f09-b6d8-50b692b3aaba"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "inside_neckline_center",
+        "bbox_norm": [
+          0.435,
+          0.305,
+          0.565,
+          0.345
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "fully_visible"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "Front Opening Trim (Fringe/Tassel)",
+        "priority": "critical",
+        "location": "along_center_front_edges",
+        "region_bbox_norm": [
+          0.28,
+          0.28,
+          0.72,
+          0.85
+        ],
+        "notes": "Brown/tan fringe trim with white piping detail running along the entire front opening. Essential for the garment's aesthetic."
+      },
+      {
+        "element": "Main Body Print (Blue/Cream)",
+        "priority": "important",
+        "location": "center_front_panel",
+        "region_bbox_norm": [
+          0.3,
+          0.35,
+          0.7,
+          0.85
+        ],
+        "notes": "Cream background with repeating blue stylized floral/clover pattern."
+      },
+      {
+        "element": "Border Print (Stripes)",
+        "priority": "important",
+        "location": "sleeves_and_side_panels",
+        "region_bbox_norm": [
+          0,
+          0.25,
+          1,
+          0.85
+        ],
+        "notes": "Complex horizontal stripe pattern featuring pink, green, and cream geometric/wave motifs."
+      },
+      {
+        "element": "Sleeve Cuff/Edge",
+        "priority": "important",
+        "location": "sleeve_ends",
+        "region_bbox_norm": [
+          0,
+          0.55,
+          0.25,
+          0.85
+        ],
+        "notes": "The sleeves are folded up, showing the patterned fabric edge."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "The interior fabric matches the main body print (blue/cream).",
+        "edge_sampling_notes": "The front opening is defined by the applied fringe trim."
+      },
+      {
+        "region_type": "armholes",
+        "keep_hollow": true,
+        "inner_visible": false,
+        "inner_description": "Interior fabric is visible.",
+        "edge_sampling_notes": "Armholes are visible but obscured by the wide sleeves."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Kimono/Open Front Style",
+        "silhouette_rule": "Drapey, unstructured front opening.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Wide, Straight Sleeves",
+        "silhouette_rule": "Loose, boxy fit, possibly dolman or batwing style based on the cut shown.",
+        "critical_for_structure": false
+      },
+      {
+        "feature": "Applied Front Trim",
+        "silhouette_rule": "The heavy fringe trim dictates the front edge profile and adds weight/structure to the opening.",
+        "critical_for_structure": true
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": true,
+      "print_direction_notes": "The print is composed of vertical bands of pattern, which must be maintained relative to the garment's vertical axis.",
+      "color_authority": true
+    },
+    "special_handling": "The garment is highly patterned and features significant textural trim (fringe) along the opening. Ensure the fringe detail is perfectly preserved and separated from the background, as it defines the front silhouette."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [
+        {
+          "type": "brand",
+          "location": "inside_neckline_center",
+          "bbox_norm": [
+            0.435,
+            0.305,
+            0.565,
+            0.345
+          ],
+          "text": "Boho Style",
+          "ocr_conf": 0.95,
+          "readable": true,
+          "preserve": true,
+          "visibility": "fully_visible"
+        }
+      ],
+      "preserve_details": [
+        {
+          "element": "Front Opening Trim (Fringe/Tassel)",
+          "priority": "critical",
+          "location": "along_center_front_edges",
+          "region_bbox_norm": [
+            0.28,
+            0.28,
+            0.72,
+            0.85
+          ],
+          "notes": "Brown/tan fringe trim with white piping detail running along the entire front opening. Essential for the garment's aesthetic."
+        },
+        {
+          "element": "Main Body Print (Blue/Cream)",
+          "priority": "important",
+          "location": "center_front_panel",
+          "region_bbox_norm": [
+            0.3,
+            0.35,
+            0.7,
+            0.85
+          ],
+          "notes": "Cream background with repeating blue stylized floral/clover pattern."
+        },
+        {
+          "element": "Border Print (Stripes)",
+          "priority": "important",
+          "location": "sleeves_and_side_panels",
+          "region_bbox_norm": [
+            0,
+            0.25,
+            1,
+            0.85
+          ],
+          "notes": "Complex horizontal stripe pattern featuring pink, green, and cream geometric/wave motifs."
+        },
+        {
+          "element": "Sleeve Cuff/Edge",
+          "priority": "important",
+          "location": "sleeve_ends",
+          "region_bbox_norm": [
+            0,
+            0.55,
+            0.25,
+            0.85
+          ],
+          "notes": "The sleeves are folded up, showing the patterned fabric edge."
+        }
+      ],
+      "hollow_regions": [
+        {
+          "region_type": "front_opening",
+          "keep_hollow": true,
+          "inner_visible": true,
+          "inner_description": "The interior fabric matches the main body print (blue/cream).",
+          "edge_sampling_notes": "The front opening is defined by the applied fringe trim."
+        },
+        {
+          "region_type": "armholes",
+          "keep_hollow": true,
+          "inner_visible": false,
+          "inner_description": "Interior fabric is visible.",
+          "edge_sampling_notes": "Armholes are visible but obscured by the wide sleeves."
+        }
+      ],
+      "construction_details": [
+        {
+          "feature": "Kimono/Open Front Style",
+          "silhouette_rule": "Drapey, unstructured front opening.",
+          "critical_for_structure": false
+        },
+        {
+          "feature": "Wide, Straight Sleeves",
+          "silhouette_rule": "Loose, boxy fit, possibly dolman or batwing style based on the cut shown.",
+          "critical_for_structure": false
+        },
+        {
+          "feature": "Applied Front Trim",
+          "silhouette_rule": "The heavy fringe trim dictates the front edge profile and adds weight/structure to the opening.",
+          "critical_for_structure": true
+        }
+      ],
+      "palette": {
+        "dominant_hex": "#F5F5DC",
+        "accent_hex": "#007FFF",
+        "trim_hex": "#007FFF",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "color_precision": {
+        "primary_hex": "#F5F5DC",
+        "secondary_hex": "#007FFF",
+        "color_temperature": "neutral",
+        "saturation_level": "moderate",
+        "pattern_direction": "vertical",
+        "pattern_repeat_size": "medium"
+      },
+      "fabric_behavior": {
+        "drape_quality": "flowing",
+        "surface_sheen": "matte",
+        "texture_depth": "subtle_texture",
+        "wrinkle_tendency": "wrinkles_easily",
+        "transparency_level": "semi_opaque"
+      },
+      "construction_precision": {
+        "seam_visibility": "hidden",
+        "edge_finishing": "raw",
+        "stitching_contrast": false,
+        "hardware_finish": "none",
+        "closure_visibility": "none"
+      },
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#F5F5DC",
+        "accent_hex": "#007FFF",
+        "trim_hex": "#007FFF",
+        "pattern_hexes": [],
+        "region_hints": {}
+      },
+      "material": "fabric_from_enrichment",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}

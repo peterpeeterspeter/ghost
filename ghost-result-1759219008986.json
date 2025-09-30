@@ -1,0 +1,289 @@
+{
+  "sessionId": "952dcba7-1c34-43a9-8b71-4f67c6ae738d",
+  "status": "completed",
+  "metrics": {
+    "processingTime": "60.24s",
+    "stageTimings": {
+      "backgroundRemoval": 17133,
+      "analysis": 4298,
+      "enrichment": 2080,
+      "consolidation": 1759218989941,
+      "rendering": 19027,
+      "qa": 0
+    }
+  },
+  "cleanedImageUrl": "https://v3.fal.media/files/zebra/I821HbMP8BQVMJ49G-RCb.jpeg",
+  "renderUrl": "https://v3.fal.media/files/penguin/1L0X9hKfgiglnSmSMxkfy_ghost-mannequin.png",
+  "analysis": {
+    "type": "garment_analysis",
+    "meta": {
+      "schema_version": "4.1",
+      "session_id": "952dcba7-1c34-43a9-8b71-4f67c6ae738d"
+    },
+    "labels_found": [
+      {
+        "type": "brand",
+        "location": "interior neckline area",
+        "bbox_norm": [
+          0.465,
+          0.38,
+          0.575,
+          0.41
+        ],
+        "text": "Boho Style",
+        "ocr_conf": 0.95,
+        "readable": true,
+        "preserve": true,
+        "visibility": "partially_occluded"
+      }
+    ],
+    "preserve_details": [
+      {
+        "element": "Front Opening Trim (Fringe/Lace)",
+        "priority": "critical",
+        "location": "Along both front edges",
+        "region_bbox_norm": [
+          0.32,
+          0.33,
+          0.68,
+          0.75
+        ],
+        "notes": "Multi-layered trim consisting of a thin white lace layer and a thicker brown/tan fringe layer. Essential for the garment's aesthetic."
+      },
+      {
+        "element": "Main Body Print Pattern",
+        "priority": "critical",
+        "location": "Entire exterior surface",
+        "region_bbox_norm": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "notes": "Complex, multi-colored block print style featuring horizontal stripes of different patterns (green/pink/white waves, solid blue with white/blue motifs). Must be preserved accurately."
+      },
+      {
+        "element": "Center Panel Print Pattern",
+        "priority": "critical",
+        "location": "Center front interior facing panel",
+        "region_bbox_norm": [
+          0.35,
+          0.42,
+          0.65,
+          0.75
+        ],
+        "notes": "Cream/off-white background with repeating small blue cross/clover-like motifs."
+      },
+      {
+        "element": "Sleeve Cuff Edge",
+        "priority": "important",
+        "location": "Folded edge of both sleeves",
+        "region_bbox_norm": [
+          0,
+          0,
+          0.3,
+          0.5
+        ],
+        "notes": "The pattern continuity at the sleeve hem/cuff needs to be maintained, showing the folded edge."
+      },
+      {
+        "element": "Collar/Neckline Edge Finish",
+        "priority": "important",
+        "location": "Top edge of the garment opening",
+        "region_bbox_norm": [
+          0.35,
+          0.33,
+          0.65,
+          0.38
+        ],
+        "notes": "The trim meets the neckline fabric, which appears to have a contrasting red/pink patterned facing underneath the main trim."
+      }
+    ],
+    "interior_analysis": [
+      {
+        "surface_type": "collar_interior",
+        "priority": "important",
+        "location": "Inside neckline area",
+        "region_bbox_norm": [
+          0.4,
+          0.35,
+          0.6,
+          0.4
+        ],
+        "pattern_description": "Cream background with repeating small blue cross/clover shapes.",
+        "material_description": "Lightweight printed fabric.",
+        "color_hex": "#F5F5DC",
+        "construction_notes": "The interior facing visible at the neckline appears to be the same fabric as the center front panel (cream with blue motifs).",
+        "edge_definition": "Meets the exterior patterned fabric at a seam, covered by the decorative trim."
+      },
+      {
+        "surface_type": "reverse_side",
+        "priority": "important",
+        "location": "Center front interior panel",
+        "region_bbox_norm": [
+          0.35,
+          0.42,
+          0.65,
+          0.75
+        ],
+        "pattern_description": "Cream background with repeating small blue cross/clover shapes.",
+        "material_description": "Lightweight printed fabric, likely the same as the exterior but showing the reverse side of the print if it's single-layer.",
+        "color_hex": "#F5F5DC",
+        "construction_notes": "The main body interior facing (center panel) is visible due to the open front.",
+        "edge_definition": "The edge where the main body fabric meets the trim is visible."
+      }
+    ],
+    "hollow_regions": [
+      {
+        "region_type": "front_opening",
+        "keep_hollow": true,
+        "inner_visible": true,
+        "inner_description": "The interior facing fabric (cream with blue motifs) is visible.",
+        "edge_sampling_notes": "The front opening is defined by the applied trim. The interior facing fabric is visible between the trim layers."
+      },
+      {
+        "region_type": "armholes",
+        "keep_hollow": false,
+        "inner_visible": false,
+        "inner_description": "Not clearly visible.",
+        "edge_sampling_notes": "Armholes are not clearly defined or visible as separate openings due to the garment lying flat and the wide sleeve cut."
+      }
+    ],
+    "construction_details": [
+      {
+        "feature": "Kimono/Open Front Style",
+        "silhouette_rule": "Drape should be loose and unstructured, characteristic of a lightweight robe or cardigan.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Dropped/Wide Sleeves",
+        "silhouette_rule": "Sleeves are wide and short (likely 3/4 or elbow length), contributing to a relaxed silhouette.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Front Opening Binding/Facing",
+        "silhouette_rule": "The front opening is heavily defined by the applied fringe trim, which dictates the front vertical lines.",
+        "critical_for_structure": true
+      },
+      {
+        "feature": "Seam where patterned panels meet",
+        "silhouette_rule": "Vertical seams connect the highly patterned side/sleeve panels to the center front panel.",
+        "critical_for_structure": false
+      }
+    ],
+    "image_b_priority": {
+      "is_ground_truth": false,
+      "edge_fidelity_required": true,
+      "print_direction_notes": "The print orientation is critical, especially the horizontal banding on the exterior panels.",
+      "color_authority": true
+    },
+    "special_handling": "The garment features extensive, complex, multi-colored block printing. Preservation of the exact color registration and pattern alignment across seams and panels is paramount. The heavy fringe trim along the front opening must be preserved intact, including the underlying white lace detail."
+  },
+  "consolidation": {
+    "facts_v3": {
+      "category_generic": "unknown",
+      "silhouette": "Relaxed/Unstructured Open Front",
+      "required_components": [],
+      "forbidden_components": [],
+      "labels_found": [
+        {
+          "type": "brand",
+          "location": "interior neckline area",
+          "text": "Boho Style",
+          "readable": true,
+          "preserve": true
+        }
+      ],
+      "preserve_details": [],
+      "hollow_regions": [],
+      "construction_details": [],
+      "palette": {
+        "dominant_hex": "#F0F0D8",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F5F5DC"
+        ],
+        "region_hints": {
+          "interior_facing": [
+            "#F0F0D8"
+          ],
+          "trim_lace": [
+            "#FFFFFF"
+          ],
+          "trim_fringe": [
+            "#A0522D"
+          ]
+        }
+      },
+      "pattern": "unknown",
+      "print_scale": "unknown",
+      "material": "unspecified_material",
+      "weave_knit": "unknown",
+      "drape_stiffness": 0.4,
+      "transparency": "opaque",
+      "surface_sheen": "matte",
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "qa_targets": {
+        "deltaE_max": 3,
+        "edge_halo_max_pct": 1,
+        "symmetry_tolerance_pct": 3,
+        "min_resolution_px": 2000
+      },
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      }
+    },
+    "control_block": {
+      "category_generic": "unknown",
+      "silhouette": "generic_silhouette",
+      "required_components": [],
+      "forbidden_components": [],
+      "palette": {
+        "dominant_hex": "#F0F0D8",
+        "accent_hex": "#1E90FF",
+        "trim_hex": "#1E90FF",
+        "pattern_hexes": [
+          "#F5F5DC"
+        ],
+        "region_hints": {
+          "interior_facing": [
+            "#F0F0D8"
+          ],
+          "trim_lace": [
+            "#FFFFFF"
+          ],
+          "trim_fringe": [
+            "#A0522D"
+          ]
+        }
+      },
+      "material": "unspecified_material",
+      "drape_stiffness": 0.4,
+      "edge_finish": "unknown",
+      "view": "front",
+      "framing_margin_pct": 6,
+      "shadow_style": "soft",
+      "safety": {
+        "must_not": []
+      },
+      "label_visibility": "required",
+      "structural_asymmetry": {
+        "expected": false,
+        "regions": []
+      },
+      "weave_knit": "unknown",
+      "transparency": "opaque",
+      "surface_sheen": "matte"
+    },
+    "conflicts_resolved": 0
+  }
+}
