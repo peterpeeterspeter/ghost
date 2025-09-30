@@ -111,7 +111,7 @@ function getImageMimeType(imageInput: string): string {
 }
 
 /**
- * Analyze garment using Gemini Pro model with structured output
+ * Analyze garment using Gemini 2.5 Flash Lite Preview model with structured output
  * @param imageUrl - Clean garment image URL or base64
  * @param sessionId - Session ID for tracking
  * @returns Promise with structured analysis and processing time
@@ -128,7 +128,7 @@ export async function analyzeGarment(imageUrl: string, sessionId: string): Promi
   }
 
   try {
-    console.log('Starting garment analysis with Gemini 2.0 Flash-Lite...');
+    console.log('Starting garment analysis with Gemini 2.5 Flash-Lite Preview (09-2025)...');
 
     // Try structured output first, with fallback to unstructured if it fails
     let analysis: AnalysisJSON;
@@ -192,7 +192,7 @@ export async function analyzeGarment(imageUrl: string, sessionId: string): Promi
 }
 
 /**
- * Perform enrichment analysis on garment using Gemini Pro model with structured output (STEP 2)
+ * Perform enrichment analysis on garment using Gemini 2.5 Flash Lite Preview model with structured output (STEP 2)
  * This is the second analysis stage that focuses on rendering-critical attributes
  * @param imageUrl - Clean garment image URL or base64 (same as first analysis)
  * @param sessionId - Session ID for tracking
@@ -215,7 +215,7 @@ export async function analyzeGarmentEnrichment(
   }
 
   try {
-    console.log('Starting garment enrichment analysis with Gemini 2.0 Flash-Lite...');
+    console.log('Starting garment enrichment analysis with Gemini 2.5 Flash-Lite Preview (09-2025)...');
 
     // Try structured output first, with fallback to unstructured if it fails
     let enrichment: EnrichmentJSON;
@@ -286,9 +286,9 @@ async function analyzeWithStructuredOutput(imageUrl: string, sessionId: string):
   
   console.log('Attempting structured output analysis...');
   
-  // Get the Gemini Pro model with structured output
+  // Get the Gemini Flash Lite model with structured output
   const model = genAI!.getGenerativeModel({
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash-lite-preview-09-2025",
     generationConfig: {
       temperature: 0.1,
       responseMimeType: "application/json",
@@ -369,9 +369,9 @@ async function analyzeWithFallbackMode(imageUrl: string, sessionId: string): Pro
   
   console.log('Attempting fallback analysis without structured output...');
   
-  // Get the Gemini Pro model without structured output constraints
+  // Get the Gemini Flash Lite model without structured output constraints
   const model = genAI!.getGenerativeModel({
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash-lite-preview-09-2025",
     generationConfig: {
       temperature: 0.2,
       responseMimeType: "application/json",
@@ -1404,9 +1404,9 @@ async function analyzeEnrichmentWithStructuredOutput(
   
   console.log('Attempting enrichment structured output analysis...');
   
-  // Get the Gemini Pro model with structured output
+  // Get the Gemini Flash Lite model with structured output
   const model = genAI!.getGenerativeModel({
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash-lite-preview-09-2025",
     generationConfig: {
       temperature: 0.1,
       responseMimeType: "application/json",
@@ -1492,9 +1492,9 @@ async function analyzeEnrichmentWithFallbackMode(
   
   console.log('Attempting enrichment fallback analysis without structured output...');
   
-  // Get the Gemini Pro model without structured output constraints
+  // Get the Gemini Flash Lite model without structured output constraints
   const model = genAI!.getGenerativeModel({
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash-lite-preview-09-2025",
     generationConfig: {
       temperature: 0.2,
       responseMimeType: "application/json",

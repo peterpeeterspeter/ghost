@@ -176,7 +176,7 @@ export const ControlBlockSchemaLoose = z.object({
   silhouette: z.string().default("generic_silhouette"),
   required_components: z.array(z.string()).default([]),
   forbidden_components: z.array(z.string()).default([]),
-  palette: PaletteSchemaLoose,
+  palette: PaletteSchemaLoose.optional(),
   material: z.string().default("unspecified_material"),
   drape_stiffness: z.number().default(0.4),
   edge_finish: z.string().default("unknown"),
@@ -391,7 +391,11 @@ export function stableHash(input: string): number {
 // Gemini Integration
 // -----------------------------
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+let genAI: GoogleGenerativeAI | null = null;
+
+export function configureConsolidationClient(apiKey: string): void {
+  genAI = new GoogleGenerativeAI(apiKey);
+}
 
 async function callGeminiProConsolidator(payload: {
   jsonA: AnalysisJSON;
@@ -400,10 +404,14 @@ async function callGeminiProConsolidator(payload: {
   sessionId: string;
   prompt: string;
 }): Promise<{ text: string }> {
-  console.log('💰 Starting JSON consolidation with Gemini 2.0 Flash-Lite (cost-optimized)...');
+  console.log('💰 Starting JSON consolidation with Gemini 2.5 Flash Lite Preview (09-2025) (cost-optimized)...');
+  
+  if (!genAI) {
+    throw new Error('Consolidation client not configured. Call configureConsolidationClient first.');
+  }
   
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash-lite-preview-09-2025",
     generationConfig: {
       temperature: 0.0,
       topP: 0.2,
@@ -453,7 +461,7 @@ async function callGeminiProQA(payload: {
   console.log('Starting QA analysis with Gemini Pro...');
   
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash-lite-preview-09-2025",
     generationConfig: {
       temperature: 0.0,
       topP: 0.3,
@@ -580,7 +588,7 @@ Return JSON in this format:
 }`;
 
   try {
-    console.log('💰 Consolidation: Using gemini-2.0-flash-lite for cost optimization');
+    console.log('💰 Consolidation: Using gemini-2.5-flash-lite-preview for cost optimization');
     
     let response;
     try {

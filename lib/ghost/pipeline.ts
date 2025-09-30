@@ -10,7 +10,8 @@ import {
   ProcessingStage
 } from '@/types/ghost';
 import { 
-  consolidateAnalyses, 
+  consolidateAnalyses,
+  configureConsolidationClient,
   buildDynamicFlashPrompt,
   buildStaticFlashPrompt,
   buildSeeDreamPrompt,
@@ -118,6 +119,7 @@ export class GhostMannequinPipeline {
     try {
       configureFalClient(this.options.falApiKey);
       configureGeminiClient(this.options.geminiApiKey);
+      configureConsolidationClient(this.options.geminiApiKey); // Configure consolidation with Gemini API key
       configureAiStudioClient(this.options.geminiApiKey); // AI Studio uses same API key as Gemini
       
       if (this.options.enableLogging) {

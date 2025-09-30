@@ -6,9 +6,9 @@
 
 ### Core Pipeline (Fully Operational)
 - **Background Removal**: FAL.AI Bria 2.0 ✅
-- **Garment Analysis**: Gemini Pro 2.5 (Base + Enrichment) ✅ 
+- **Garment Analysis**: Gemini 2.0 Flash Lite (Base + Enrichment) ✅ 
 - **JSON Consolidation**: Analysis data merging ✅
-- **Dynamic Prompt Generation**: Gemini Pro 2.5 ✅
+- **Dynamic Prompt Generation**: Gemini 2.0 Flash Lite ✅
 - **Ghost Mannequin Rendering**: FAL.AI Seedream 4.0 ✅
 
 ### Recent Achievements

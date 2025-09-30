@@ -7,10 +7,10 @@ AI-powered transformation of flatlay product photos into professional ghost mann
 This system orchestrates multiple AI services in a sophisticated four-stage pipeline to transform flatlay garment photos into professional ghost mannequin images:
 
 1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from product images
-2. **Garment Analysis** - Gemini 2.5 Pro performs comprehensive structural analysis
-3. **Enrichment Analysis** - Gemini 2.5 Pro extracts rendering-critical attributes
-4. **Dynamic Prompt Generation** - Gemini 2.5 Pro creates contextual, analysis-specific prompts
-5. **Ghost Mannequin Generation** - Choose between Gemini 2.5 Flash or FAL.AI Seedream 4.0
+2. **Garment Analysis** - Gemini 2.0 Flash Lite performs comprehensive structural analysis
+3. **Enrichment Analysis** - Gemini 2.0 Flash Lite extracts rendering-critical attributes
+4. **Dynamic Prompt Generation** - Gemini 2.0 Flash Lite creates contextual, analysis-specific prompts
+5. **Ghost Mannequin Generation** - Choose between Gemini 2.5 Flash Image or FAL.AI Seedream 4.0
 
 ## 🏗️ Architecture
 

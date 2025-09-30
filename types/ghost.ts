@@ -48,6 +48,17 @@ export const AnalysisJSONSchema = z.object({
     notes: z.string().optional(),
     material_notes: z.string().optional().describe('Special finishes: metallic, embossed, raised, foil, etc.'),
   })),
+  interior_analysis: z.array(z.object({
+    surface_type: z.enum(['lining', 'inner_fabric', 'reverse_side', 'collar_interior', 'sleeve_interior', 'hem_interior', 'other']),
+    priority: z.enum(['critical', 'important', 'nice_to_have']),
+    location: z.string().optional(),
+    region_bbox_norm: z.array(z.number()).min(4).max(4).optional(),
+    pattern_description: z.string().optional().describe('Pattern, color, or texture visible on interior surface'),
+    material_description: z.string().optional().describe('Fabric type and finish of interior component'),
+    color_hex: z.string().optional().describe('Primary color of interior surface'),
+    construction_notes: z.string().optional().describe('Interior seams, reinforcements, or structural elements'),
+    edge_definition: z.string().optional().describe('How interior meets exterior edges'),
+  })).optional(),
   hollow_regions: z.array(z.object({
     region_type: z.enum(['neckline', 'sleeves', 'front_opening', 'armholes', 'other']),
     keep_hollow: z.boolean(),
@@ -160,6 +171,54 @@ export const AnalysisJSONSchemaObject = {
           }
         },
         required: ["element", "priority"]
+      }
+    },
+    interior_analysis: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          surface_type: {
+            type: "string",
+            enum: ["lining", "inner_fabric", "reverse_side", "collar_interior", "sleeve_interior", "hem_interior", "other"]
+          },
+          priority: {
+            type: "string",
+            enum: ["critical", "important", "nice_to_have"]
+          },
+          location: {
+            type: "string"
+          },
+          region_bbox_norm: {
+            type: "array",
+            items: {
+              type: "number"
+            },
+            minItems: 4,
+            maxItems: 4
+          },
+          pattern_description: {
+            type: "string",
+            description: "Pattern, color, or texture visible on interior surface"
+          },
+          material_description: {
+            type: "string",
+            description: "Fabric type and finish of interior component"
+          },
+          color_hex: {
+            type: "string",
+            description: "Primary color of interior surface"
+          },
+          construction_notes: {
+            type: "string",
+            description: "Interior seams, reinforcements, or structural elements"
+          },
+          edge_definition: {
+            type: "string",
+            description: "How interior meets exterior edges"
+          }
+        },
+        required: ["surface_type", "priority"]
       }
     },
     hollow_regions: {
@@ -648,14 +707,26 @@ CONSTRUCTION ANALYSIS (Priority 3):
 - Structural Elements: Note shoulder taping, hems, seam types, sleeve construction
 - Drape Impact: Describe how construction features should appear in final rendering
 
+INTERIOR/LINING ANALYSIS (Priority 2 - CRITICAL):
+- Interior Visibility: Identify ALL visible interior surfaces - linings, inner fabric, reverse sides
+- Interior Patterns: Document any patterns, colors, or textures visible on interior surfaces
+- Interior Materials: Note fabric types, textures, and finishes of interior components
+- Interior Construction: Identify interior seams, reinforcements, or structural elements
+- Interior Color Coordination: Analyze how interior colors complement or contrast with exterior
+- Interior Spatial Mapping: Provide bounding boxes for all visible interior areas
+- Interior Preservation Priority: Mark interior elements as critical/important for ghost mannequin rendering
+- Interior Edge Definition: Note how interior surfaces meet exterior edges (cuffs, collars, hems)
+
 SEARCH STRATEGY:
-- Neck Area: Inside and outside neckline, collar areas
-- Chest Area: Front and back chest regions
-- Sleeve Areas: Cuffs, sleeve seams, armpit regions
-- Hem Areas: Bottom edges, side seams
-- Hidden Areas: Check for folded labels or tags
+- Neck Area: Inside and outside neckline, collar areas, collar lining/interior
+- Chest Area: Front and back chest regions, interior lining visibility
+- Sleeve Areas: Cuffs, sleeve seams, armpit regions, sleeve lining/interior
+- Hem Areas: Bottom edges, side seams, interior hem finishes
+- Openings: Front openings, side slits, any gaps showing interior fabric
+- Hidden Areas: Check for folded labels or tags, interior pockets
 - Hardware: Buttons, zippers, snaps, grommets
 - Seam Details: Contrast stitching, binding, piping
+- Interior Surfaces: All visible lining, reverse sides, interior patterns
 
 TECHNICAL PRECISION:
 - Bounding Boxes: Use normalized coordinates (0.0 to 1.0) relative to image dimensions
@@ -665,17 +736,19 @@ TECHNICAL PRECISION:
 - High-Res Crops: Generate data URIs for critical label patches when possible
 
 CRITICAL INSTRUCTIONS:
-- Be Exhaustive: Don't miss any labels or details - check everywhere
-- Be Precise: Provide exact spatial coordinates and accurate text extraction
+- Be Exhaustive: Don't miss any labels or details - check everywhere including ALL interior surfaces
+- Be Precise: Provide exact spatial coordinates and accurate text extraction for both exterior and interior
 - Be Selective: Only mark details as "critical" if they're truly essential for brand/product identity
 - Be Accurate: Only report what you can clearly observe - don't guess or interpolate
 - Focus on Preservation: The goal is to identify what must be preserved during ghost mannequin processing
+- INTERIOR CRITICAL: Pay special attention to interior surfaces - they are often forgotten but essential for realistic ghost mannequin rendering
 
 OUTPUT REQUIREMENTS:
 Return analysis as JSON matching the provided schema exactly. Include:
 - All detected labels with spatial data and OCR results
-- All significant details with preservation priorities
+- All significant details with preservation priorities (exterior AND interior)
 - Construction features that affect garment appearance
+- Interior/lining analysis with spatial mapping and preservation priorities
 - Global handling notes for special processing requirements
 
 Analyze this garment image with meticulous attention to labels and preservable details.`;
@@ -685,14 +758,14 @@ export const GHOST_MANNEQUIN_PROMPT = `Create a professional three-dimensional g
 ## DETAILED SCENE NARRATIVE:
 Imagine a high-end photography studio with perfect white cyclorama background and professional lighting equipment. In the center of this space, a garment floats in three-dimensional space, filled with the volume and shape of an invisible human body. The fabric drapes naturally with realistic weight and movement, showing natural creases and folds exactly as clothing would appear on a person. The garment maintains its authentic colors and patterns while displaying proper fit and dimensional form. This is captured with studio-quality photography equipment using an 85mm portrait lens with even, shadow-free lighting.
 
-## MULTI-SOURCE DATA AUTHORITY:
-**Image B (Detail Source)** - Primary visual reference containing the absolute truth for all colors, patterns, textures, construction details, and material properties. Copy these elements with complete fidelity.
+## REFERENCE IMAGE AUTHORITY:
+**Cleaned Garment Image** - This is your ONLY visual reference and contains the absolute truth for ALL colors, patterns, textures, construction details, material properties, and garment structure. Copy these elements with complete fidelity and precision.
 
 **Base Analysis JSON** - Contains mandatory preservation rules for specific elements, their coordinates, structural requirements, and construction details that must be followed exactly.
 
 **Enrichment Analysis JSON** - Provides technical specifications for color precision, fabric behavior, rendering guidance, and quality expectations that must be integrated into the final result.
 
-**Image A (Model Reference)** - Use only for understanding basic proportions and spatial relationships; all visual details should come from Image B.
+Use the cleaned garment image as the authoritative source for all visual information - transform this exact flatlay garment into a three-dimensional ghost mannequin form while preserving every detail perfectly.
 
 ## ENHANCED TECHNICAL SPECIFICATIONS:
 
@@ -747,7 +820,7 @@ Apply construction details from enrichment analysis:
 Create a three-dimensional human torso form with natural anatomical proportions - realistic shoulder width spanning approximately 18 inches, natural chest projection forward from the spine, gradual waist taper, and proper arm positioning with slight outward angle from the body. This invisible form should suggest a person of average build standing in a relaxed, professional pose.
 
 ### Step 2: Apply Color and Pattern Precision
-Map the exact visual information from Image B onto the three-dimensional form, using the precise hex color values from the enrichment analysis. Maintain perfect color fidelity and apply the specified color temperature adjustments. Ensure pattern elements follow the specified direction and scale parameters.
+Map the exact visual information from the cleaned garment image onto the three-dimensional form, using the precise hex color values from the enrichment analysis. Maintain perfect color fidelity and apply the specified color temperature adjustments. Ensure pattern elements follow the specified direction and scale parameters.
 
 ### Step 3: Implement Fabric Physics
 Apply the fabric behavior specifications from the enrichment analysis:

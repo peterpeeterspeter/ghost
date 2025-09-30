@@ -7,9 +7,9 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 This is an **AI-powered Ghost Mannequin Pipeline** built with Next.js 14 and TypeScript that transforms flatlay product photos into professional ghost mannequin images. The system orchestrates multiple AI services in a four-stage pipeline:
 
 1. **Background Removal** - FAL.AI Bria 2.0 removes backgrounds from flatlay images
-2. **Garment Analysis** - Gemini 2.5 Pro analyzes garment structure with structured JSON output
-3. **Enrichment Analysis** - Gemini 2.5 Pro performs focused analysis of rendering-critical attributes (colors, fabrics, construction details)
-4. **Ghost Mannequin Generation** - Freepik Gemini 2.5 Flash or FAL Seedream creates the final ghost mannequin effect using consolidated analysis
+2. **Garment Analysis** - Gemini 2.0 Flash Lite analyzes garment structure with structured JSON output
+3. **Enrichment Analysis** - Gemini 2.0 Flash Lite performs focused analysis of rendering-critical attributes (colors, fabrics, construction details)
+4. **Ghost Mannequin Generation** - Gemini 2.5 Flash Image or FAL Seedream creates the final ghost mannequin effect using consolidated analysis
 
 ## Architecture
 

@@ -20,15 +20,15 @@ Imagine a high-end photography studio with perfect white cyclorama background an
 
 This is professional e-commerce ghost mannequin photography - the garment displays perfect dimensional form with no visible person, mannequin, or model. The invisible mannequin effect shows how clothing appears when worn while maintaining complete transparency of the supporting form. This creates the ideal product photography for online retail, showing realistic fit and drape without any distracting human presence.
 
-## MULTI-SOURCE DATA AUTHORITY:
+## REFERENCE IMAGE AUTHORITY:
 
-**Image B (Detail Source)** - Primary visual reference containing the absolute truth for all colors, patterns, textures, construction details, and material properties. Copy these elements with complete fidelity.
+**Cleaned Garment Image** - This is your ONLY visual reference and contains the absolute truth for ALL colors, patterns, textures, construction details, material properties, and garment structure. Copy these elements with complete fidelity and precision.
 
 **Base Analysis JSON** - Contains mandatory preservation rules for specific elements, their coordinates, structural requirements, and construction details that must be followed exactly.
 
 **Enrichment Analysis JSON** - Provides technical specifications for color precision, fabric behavior, rendering guidance, and quality expectations that must be integrated into the final result.
 
-**Image A (Model Reference)** - Use only for understanding basic proportions and spatial relationships; all visual details should come from Image B.
+Use the cleaned garment image as the authoritative source for all visual information - transform this exact flatlay garment into a three-dimensional ghost mannequin form while preserving every detail perfectly.
 
 ## ENHANCED TECHNICAL SPECIFICATIONS:
 
@@ -93,7 +93,7 @@ Create a three-dimensional human torso form with natural anatomical proportions 
 
 ### Step 2: Apply Color and Pattern Precision
 
-Map the exact visual information from Image B onto the three-dimensional form, using the precise hex color values from the enrichment analysis. Maintain perfect color fidelity and apply the specified color temperature adjustments. Ensure pattern elements follow the specified direction and scale parameters.
+Map the exact visual information from the cleaned garment image onto the three-dimensional form, using the precise hex color values from the enrichment analysis. Maintain perfect color fidelity and apply the specified color temperature adjustments. Ensure pattern elements follow the specified direction and scale parameters.
 
 ### Step 3: Implement Fabric Physics
 
@@ -122,6 +122,19 @@ Process all elements from the base analysis JSON:
 - For elements marked "preserve: true" in labels_found, maintain perfect legibility without repainting or altering the text
 - Follow construction_details rules for structural requirements like maintaining wide sleeves or open fronts
 - Implement hollow_regions specifications for neck openings, sleeves, and front openings
+
+### Step 5.5: Interior Surface Integration (CRITICAL)
+
+Apply interior analysis data to ensure interior surfaces are not forgotten:
+
+- **Critical Interior Surfaces**: Render all interior surfaces marked with "critical" priority with maximum precision
+- **Interior Pattern Preservation**: Apply exact pattern descriptions from interior_analysis to maintain pattern fidelity
+- **Interior Color Accuracy**: Use specified color_hex values for all interior surfaces to ensure color consistency
+- **Interior Material Rendering**: Apply material_description specifications for proper fabric texture and finish
+- **Interior Edge Definition**: Render clear transitions between interior and exterior surfaces as specified in edge_definition
+- **Interior Construction Details**: Include interior seams, reinforcements, and structural elements from construction_notes
+- **Interior Spatial Placement**: Use region_bbox_norm coordinates to position interior surfaces accurately
+- **Interior Visibility Priority**: Ensure interior surfaces are visible through openings, under collars, and at garment edges
 
 ### Step 6: Final Quality Integration
 
@@ -160,11 +173,24 @@ Apply market context from enrichment analysis:
 - **Style Longevity**: Consider presentation approach for trendy vs classic pieces
 - **Target Season**: Ensure styling and presentation appropriate for seasonal context
 
-## PROFESSIONAL NEGATIVE PROMPTING:
+## CRITICAL EXCLUSION CONSTRAINTS:
 
-Achieve the ghost mannequin effect through positive description rather than negative commands. Instead of "remove person" or "remove mannequin", describe the desired result: "professional e-commerce product photography showing the garment with dimensional form and invisible support". The image shows only the garment displaying natural fit and drape suitable for online retail presentation.
+ABSOLUTELY EXCLUDE from the final image:
+- **NO mannequins** (visible or partial)
+- **NO models** (human figures, faces, body parts)
+- **NO human elements** (skin, hands, arms, legs, torso, neck, head)
+- **NO mannequin parts** (plastic forms, torso forms, dress forms)
+- **NO visible support structures** (hangers, stands, rods, clips)
+- **NO backgrounds** other than pure white (#FFFFFF)
+- **NO props** (accessories not part of the garment)
+- **NO shadows of human forms** or mannequin shapes
+- **NO reflections** showing people or equipment
 
-Generate this professional three-dimensional ghost mannequin product photograph with complete integration of both structural analysis and enrichment specifications, ensuring technical excellence and commercial appropriateness.`;
+## PROFESSIONAL RENDERING APPROACH:
+
+The ghost mannequin effect is achieved by showing ONLY the garment itself with dimensional form created by invisible internal structure. The garment appears naturally filled and shaped as if worn, but with complete absence of any visible person, mannequin, or support system. This is professional e-commerce product photography showing pure garment form with natural drape on a pure white background.
+
+Generate this professional three-dimensional ghost mannequin product photograph with complete integration of both structural analysis and enrichment specifications, ensuring technical excellence, commercial appropriateness, and absolute exclusion of all non-garment elements.`;
 
 /**
  * Generate dynamic prompt using Gemini 2.0 Flash-Lite by weaving FactsV3 data into Flash 2.5 template
@@ -188,7 +214,7 @@ export async function generateDynamicPrompt(
     console.log('🎯 Generating dynamic prompt with Gemini 2.0 Flash-Lite...');
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-2.5-flash-lite-preview-09-2025",
       generationConfig: {
         temperature: 0.1, // Low temperature for consistent, precise integration
         topK: 1,
@@ -210,9 +236,17 @@ Write in natural, flowing sentences - avoid bullets or lists. CRITICAL: Include 
 • **Frontal View Positioning**: Specify "direct front view", "centered positioning", "straight-on perspective" - the garment faces the camera head-on
 • **Dimensional Form**: The garment appears filled with invisible human form, showing natural drape and structure
 • **Garment Specifics**: Integrate the actual colors, materials, and construction details from the facts
+• **Interior Surfaces**: CRITICAL - Include all interior analysis data (interior patterns, colors, materials) to ensure interior surfaces are visible and properly rendered through openings, under collars, and at garment edges
 • **Quality Standards**: Professional, commercial-grade photography
 
-IMPORTANT NEGATIVE GUIDANCE: Instead of saying "remove person" or "remove mannequin", positively describe the desired result as "professional e-commerce ghost mannequin photography" and "garment displays dimensional form with no visible person or mannequin".
+CRITICAL EXCLUSION REQUIREMENTS - The prompt MUST explicitly exclude:
+• NO mannequins, models, human figures, or body parts (hands, arms, legs, skin, torso, neck, head)
+• NO visible support structures (hangers, stands, dress forms, plastic forms)
+• NO shadows or reflections of people or equipment
+• NO props or accessories beyond the garment itself
+• ONLY pure white background (#FFFFFF)
+
+The garment must appear with dimensional form created by INVISIBLE internal structure - as if worn but with complete absence of any visible person, mannequin, or support. Emphasize "ghost mannequin effect" and "invisible support" rather than negative commands.
 
 GARMENT FACTS TO INTEGRATE:
 \`\`\`json
